@@ -1,0 +1,380 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-neutral: var(--neutral);
+  --color-label: var(--label);
+  --color-rose: var(--rose);
+  --color-rose-pale: var(--rose-pale);
+  --color-burgundy-dark: var(--burgundy-dark);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --font-display: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --color-hero-foreground: var(--hero-foreground);
+  --color-hero-muted: var(--hero-muted);
+}
+
+:root {
+  --radius: 0.75rem;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-body);
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+  }
+  * {
+    letter-spacing: 0;
+  }
+}
+
+.brand-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--primary);
+}
+.page-heading {
+  font-size: 48px;
+  line-height: 1.12;
+  font-weight: 600;
+}
+.campus-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 560px;
+  height: min(680px, 78vh);
+}
+.campus-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, var(--hero-scrim), var(--hero-clear));
+}
+.hero-heading {
+  font-size: 72px;
+  line-height: 1.05;
+  font-weight: 600;
+  text-shadow: 0 2px 12px var(--hero-shadow);
+}
+.assistant-position {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-end;
+}
+.assistant-panel {
+  width: 390px;
+  max-width: calc(100vw - 32px);
+  height: 570px;
+  max-height: calc(100dvh - 100px);
+}
+@media (max-width: 767px) {
+  .hero-heading {
+    font-size: 48px;
+  }
+  .page-heading {
+    font-size: 36px;
+  }
+  .campus-hero {
+    height: auto;
+    min-height: 570px;
+  }
+  .campus-hero::after {
+    background: var(--hero-scrim);
+  }
+  .assistant-position {
+    right: 12px;
+    bottom: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-muted) transparent;
+}
+
+.portal-loading-bar {
+  animation: portal-load 1s ease-in-out infinite;
+}
+@keyframes portal-load {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
+/* The announcement strip and the dashboard spotlight advance on their own; each slide slides in
+   from the right as it appears. Reduced-motion settings flatten this to an instant change. */
+.announcement-slide {
+  animation: announcement-in 600ms ease-out;
+}
+@keyframes announcement-in {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.spotlight-slide {
+  animation: spotlight-in 700ms ease-out;
+}
+@keyframes spotlight-in {
+  from {
+    opacity: 0;
+    transform: scale(1.015);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ======================= Orbit: cream and burgundy theme ======================= */
+:root {
+  color-scheme: light;
+  /* Orbit cream & burgundy design tokens */
+  --ivory: #f7f3ed;
+  --burgundy: #702d40;
+  --burgundy-dark: #572032;
+  --rose: #b88a96;
+  --rose-pale: #f2e5e8;
+  --background: var(--ivory);
+  --foreground: #25232a;
+  --card: #ffffff;
+  --card-foreground: #25232a;
+  --popover: #ffffff;
+  --popover-foreground: #25232a;
+  --primary: var(--burgundy);
+  --primary-foreground: #ffffff;
+  --secondary: #f2ede6;
+  --secondary-foreground: #25232a;
+  --muted: #f2ede6;
+  --muted-foreground: #69636a;
+  --label: #847c83;
+  --accent: var(--rose-pale);
+  --accent-foreground: var(--burgundy-dark);
+  --destructive: #c43d4d;
+  --destructive-foreground: #ffffff;
+  --success: #16845b;
+  --success-foreground: #ffffff;
+  --warning: #b77916;
+  --warning-foreground: #ffffff;
+  --info: #3868b2;
+  --info-foreground: #ffffff;
+  --neutral: #77717a;
+  --border: #e8e0d8;
+  --border-hover: #cdb7bd;
+  --input: #e8e0d8;
+  --ring: #a65b70;
+  --chart-1: #702d40;
+  --chart-2: #b88a96;
+  --chart-3: #b77916;
+  --chart-4: #16845b;
+  --chart-5: #3868b2;
+  --hero-foreground: #ffffff;
+  --hero-muted: #f2e5e8;
+  --hero-scrim: rgb(87 32 50 / 78%);
+  --hero-clear: rgb(87 32 50 / 8%);
+  --hero-shadow: rgb(37 35 42 / 25%);
+  /* workspace banner and sidebar */
+  --role-from: #702d40;
+  --role-via: #632839;
+  --role-to: #572032;
+  --role-side-from: #572032;
+  --role-side-to: #3f1623;
+}
+body {
+  background-color: var(--background);
+  background-image: radial-gradient(60rem 30rem at 90% -10%, rgb(242 229 232 / 70%), transparent);
+  background-attachment: fixed;
+}
+.surface {
+  border-radius: 0.875rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 1px 2px rgb(37 35 42 / 6%);
+}
+a.surface,
+button.surface {
+  transition: border-color 0.15s ease;
+}
+a.surface:hover,
+button.surface:hover {
+  border-color: var(--border-hover);
+  box-shadow: 0 6px 16px -10px rgb(87 32 50 / 35%);
+}
+select {
+  border: 1px solid var(--input);
+  border-radius: 0.6rem;
+  background-color: var(--card);
+  color: var(--foreground);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+select:hover {
+  border-color: var(--border-hover);
+}
+select:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgb(166 91 112 / 30%);
+}
+.surface table thead th {
+  background: var(--secondary);
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding-top: 0.7rem;
+  padding-bottom: 0.7rem;
+  white-space: nowrap;
+}
+.surface table thead th:first-child {
+  border-top-left-radius: 1rem;
+}
+.surface table thead th:last-child {
+  border-top-right-radius: 1rem;
+}
+.surface table tbody tr:nth-child(even) {
+  background: #faf7f2;
+}
+.surface table tbody tr:hover {
+  background: var(--rose-pale);
+}
+.surface table th,
+.surface table td {
+  padding-left: 0.6rem;
+  padding-right: 0.6rem;
+}
+.surface table th:first-child,
+.surface table td:first-child {
+  padding-left: 0.9rem;
+}
+/* pale chip colours written for a dark background need deeper text on cream */
+.text-emerald-300 {
+  color: var(--color-emerald-700);
+}
+.text-indigo-300 {
+  color: var(--color-indigo-700);
+}
+.text-sky-300 {
+  color: var(--color-sky-700);
+}
+.text-violet-300 {
+  color: var(--color-violet-700);
+}
+.text-amber-300 {
+  color: var(--color-amber-700);
+}
+.text-rose-300 {
+  color: var(--color-rose-700);
+}
+.text-teal-300 {
+  color: var(--color-teal-700);
+}
+/* one palette for every workspace; keyboard focus is always visible */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media print {
+  aside,
+  header,
+  .assistant-position,
+  .print\:hidden {
+    display: none !important;
+  }
+  [data-role] {
+    padding-left: 0 !important;
+  }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .surface {
+    box-shadow: none !important;
+    background: #fff !important;
+    border-color: #ccc !important;
+  }
+}

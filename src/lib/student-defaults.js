@@ -1,0 +1,26 @@
+// A student with no data yet. cgpa 0 and -1 values mean "unknown": scores show as unavailable
+// and are filled in once real details are added.
+export const emptyStudent = {
+  id: "",
+  name: "",
+  branch: "Not set",
+  semester: 1,
+  gradYear: new Date().getFullYear() + 3,
+  gender: "",
+  course: "",
+  section: "",
+  mentorId: "",
+  cgpa: 0,
+  semesterGrades: [],
+  backlogs: 0,
+  subjects: [],
+  lms: [],
+  skills: { coding: -1, aptitude: -1, analytical: -1, verbal: -1, communication: -1 },
+  engagement: [],
+  resumeCompleteness: -1,
+  targetRoles: [],
+  assessmentsCompleted: 0,
+  assessmentsRequired: 0,
+  facultyFeedback: [],
+  studentFeedback: [],
+};
