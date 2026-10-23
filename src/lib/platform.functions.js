@@ -15,6 +15,7 @@ import * as results from "@/backend/results.server";
 import * as engagement from "@/backend/engagement.server";
 import * as skills from "@/backend/skills.server";
 import * as notifications from "@/backend/notifications.server";
+import * as messaging from "@/backend/messaging.server";
 
 // Thin, authenticated wrappers. The permission checks live in the server modules, which run the
 // SQL inside one transaction per request; nothing here trusts the browser about who the caller is.
@@ -240,6 +241,11 @@ export const loadAttendanceRoster = createServerFn({ method: "POST" })
   .handler(({ data, context }) =>
     run(context.user, (db, user) => attendance.loadRoster(db, user, data)),
   );
+export const loadAttendanceSubjects = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .handler(({ context }) =>
+    run(context.user, (db, user) => attendance.attendanceSubjects(db, user)),
+  );
 export const saveAttendance = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .validator(
@@ -300,6 +306,47 @@ export const removeTimetableSlot = createServerFn({ method: "POST" })
   .validator(id)
   .handler(({ data, context }) =>
     run(context.user, (db, user) => attendance.deleteSlot(db, user, data)),
+  );
+
+// ---------------------------------------------------------------- dashboard chat
+export const loadDashboardChat = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .handler(({ context }) =>
+    run(context.user, (db, user) => messaging.loadChatOverview(db, user)),
+  );
+export const loadDashboardChatMessages = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(z.object({ type: z.enum(["section", "private"]), id: z.string().uuid() }))
+  .handler(({ data, context }) =>
+    run(context.user, (db, user) => messaging.loadChatMessages(db, user, data)),
+  );
+export const sendDashboardChatMessage = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(
+    z.object({
+      type: z.enum(["section", "private"]),
+      id: z.string().uuid(),
+      body: text(2000, 1),
+    }),
+  )
+  .handler(({ data, context }) =>
+    run(context.user, (db, user) => messaging.sendChatMessage(db, user, data)),
+  );
+export const requestPrivateChat = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .handler(({ context }) =>
+    run(context.user, (db, user) => messaging.requestPrivateChat(db, user)),
+  );
+export const reviewPrivateChat = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(
+    z.object({
+      requestId: z.string().uuid(),
+      decision: z.enum(["approved", "rejected"]),
+    }),
+  )
+  .handler(({ data, context }) =>
+    run(context.user, (db, user) => messaging.reviewPrivateChat(db, user, data)),
   );
 
 // ---------------------------------------------------------------- results (SGPA and CGPA)

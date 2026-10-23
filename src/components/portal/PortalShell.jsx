@@ -16,6 +16,7 @@ import {
   LogOut,
   Mail,
   MessageSquare,
+  MessageCircle,
   Route as RouteIcon,
   ScrollText,
   ShieldAlert,
@@ -59,6 +60,7 @@ export const NAV = {
     { to: "/portal/results", label: "Results", icon: Award },
     { to: "/portal/learning", label: "Learning path", icon: RouteIcon },
     { to: "/portal/attendance", label: "Attendance", icon: CalendarCheck },
+    { to: "/portal/chat", label: "Chats", icon: MessageCircle },
     { to: "/portal/lms", label: "LMS", icon: BookOpen },
     { to: "/portal/skills", label: "Skills", icon: Brain },
     { to: "/portal/placement", label: "Placement", icon: Briefcase },
@@ -73,6 +75,7 @@ export const NAV = {
     { to: "/portal/results", label: "Results", icon: Award },
     { to: "/portal/placement", label: "Placement", icon: Briefcase },
     { to: "/portal/attendance", label: "Attendance", icon: CalendarCheck },
+    { to: "/portal/chat", label: "Chats", icon: MessageCircle },
     { to: "/portal/lms", label: "LMS", icon: BookOpen },
     { to: "/portal/engagement", label: "Engagement", icon: Trophy },
     { to: "/portal/skills", label: "Skills", icon: Brain },
@@ -89,6 +92,7 @@ export const NAV = {
     { to: "/portal/results", label: "Results", icon: Award },
     { to: "/portal/placement", label: "Placement", icon: Briefcase },
     { to: "/portal/attendance", label: "Attendance", icon: CalendarCheck },
+    { to: "/portal/chat", label: "Chats", icon: MessageCircle },
     { to: "/portal/lms", label: "LMS", icon: BookOpen },
     { to: "/portal/engagement", label: "Engagement", icon: Trophy },
     { to: "/portal/skills", label: "Skills", icon: Brain },
@@ -113,6 +117,7 @@ const RAIL_ICON = {
   engagement: Trophy,
   skills: Brain,
   feedback: MessageSquare,
+  chat: MessageCircle,
   results: Award,
   attendance: CalendarCheck,
   learning: BookOpen,
@@ -327,17 +332,17 @@ export function PortalShell({ children }) {
             <X className="size-5" />
           </button>
         </div>
-        <nav aria-label="Workspace" className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
+        <nav aria-label="Workspace" className="flex-1 space-y-1 overflow-y-auto px-3 py-3">
           {items.map((item) => (
             <Link
               key={item.to}
               to={item.to}
               onClick={() => setOpen(false)}
               activeOptions={{ exact: Boolean(item.exact) }}
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 transition-colors hover:bg-white/10 hover:text-white"
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-white/75 transition-colors hover:bg-white/10 hover:text-white"
               activeProps={{ className: "!bg-white/15 !text-white font-semibold" }}
             >
-              <item.icon className="size-[18px]" />
+              <item.icon className="size-4 shrink-0" />
               {item.label}
             </Link>
           ))}
@@ -357,7 +362,7 @@ export function PortalShell({ children }) {
       <div className="flex">
         <aside
           aria-label="Shortcuts"
-          className={`sticky top-16 hidden h-[calc(100vh-4rem)] shrink-0 flex-col overflow-y-auto bg-gradient-to-b from-[var(--role-side-from)] to-[var(--role-side-to)] text-white transition-[width] duration-200 print:hidden lg:flex ${rail ? "w-24" : "w-0"}`}
+          className={`sticky top-16 hidden h-[calc(100vh-4rem)] shrink-0 flex-col overflow-hidden bg-gradient-to-b from-[var(--role-side-from)] to-[var(--role-side-to)] text-white transition-[width] duration-200 print:hidden lg:flex ${rail ? "w-24" : "w-0"}`}
         >
           {RAIL[role].map(([to, label, icon]) => {
             const Icon = RAIL_ICON[icon];
@@ -366,13 +371,13 @@ export function PortalShell({ children }) {
                 key={to}
                 to={to}
                 activeOptions={{ exact: to === "/portal" }}
-                className="flex flex-col items-center gap-1.5 border-b border-white/10 px-1 py-4 text-center text-[12px] font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                className="flex flex-col items-center justify-center gap-1 border-b border-white/10 px-1 py-2 text-center text-[10px] font-medium leading-tight text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                 activeProps={{
                   className: "!bg-white/15 !text-white shadow-[inset_3px_0_0_var(--primary)]",
                 }}
               >
-                <Icon className="size-6" />
-                {label}
+                <Icon className="size-4 shrink-0" />
+                <span className="line-clamp-2 max-w-[4.5rem]">{label}</span>
               </Link>
             );
           })}

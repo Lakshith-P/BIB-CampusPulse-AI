@@ -21,7 +21,8 @@ const STAFF = ["faculty", "admin"];
 
 // ---------------------------------------------------------------- students
 export function StudentsPage() {
-  const { rows, isAdmin, refresh } = useCampus();
+  const { rows, profile, isAdmin, refresh } = useCampus();
+  const students = isAdmin ? rows : rows.filter((row) => row.mentorId === profile.id);
   const [importing, setImporting] = useState(false);
   return (
     <RoleGate allow={STAFF}>
@@ -51,7 +52,7 @@ export function StudentsPage() {
           )}
         </div>
       )}
-      {rows.length === 0 ? (
+      {students.length === 0 ? (
         <EmptyState
           title={isAdmin ? "No students yet" : "No students assigned to you yet"}
           hint={
@@ -61,7 +62,7 @@ export function StudentsPage() {
           }
         />
       ) : (
-        <StudentTable rows={rows} showMentor={isAdmin} />
+        <StudentTable rows={students} showMentor={isAdmin} />
       )}
     </RoleGate>
   );
@@ -69,7 +70,7 @@ export function StudentsPage() {
 
 export function StudentDetailPage({ id }) {
   const { rows, profile, isAdmin, isFaculty, refresh } = useCampus();
-  const row = rows.find((r) => r.id === id);
+  const row = rows.find((r) => r.id === id && (isAdmin || r.mentorId === profile.id));
   return (
     <RoleGate allow={STAFF}>
       <Link
