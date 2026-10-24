@@ -9,6 +9,7 @@ import * as aiLessons from "@/backend/ai-lessons.server";
 import * as attendance from "@/backend/attendance.server";
 import * as interview from "@/backend/interview.server";
 import { TYPE_KEYS } from "@/lib/interview-prompt";
+import * as chain from "@/backend/chain.server";
 import * as feedback from "@/backend/feedback.server";
 import * as placement from "@/backend/placement.server";
 import * as results from "@/backend/results.server";
@@ -415,11 +416,27 @@ export const answerComplaint = createServerFn({ method: "POST" })
       id: z.string().uuid(),
       status: z.enum(["new", "in-review", "resolved"]),
       response: text(3000),
+      severity: z.enum(["low", "medium", "high"]),
     }),
   )
   .handler(({ data, context }) =>
     run(context.user, (db, user) => feedback.respondToComplaint(db, user, data)),
   );
+export const assignComplaintToMe = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(id)
+  .handler(({ data, context }) =>
+    run(context.user, (db, user) => feedback.assignComplaintToMe(db, user, data)),
+  );
+export const loadComplaintChain = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(id)
+  .handler(({ data, context }) =>
+    run(context.user, (db, user) => chain.chainForComplaint(db, user, data.id)),
+  );
+export const verifyChainIntegrity = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .handler(({ context }) => run(context.user, (db, user) => chain.verifyChainIntegrity(db, user)));
 const star = z.number().int().min(1).max(5);
 export const sendRating = createServerFn({ method: "POST" })
   .middleware([requireAuth])

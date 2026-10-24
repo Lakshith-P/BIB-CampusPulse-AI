@@ -40,6 +40,7 @@ import { Route as AuthenticatedPortalResultsRouteImport } from './routes/_authen
 import { Route as AuthenticatedPortalSkillsRouteImport } from './routes/_authenticated/portal.skills'
 import { Route as AuthenticatedPortalTeachersRouteImport } from './routes/_authenticated/portal.teachers'
 import { Route as AuthenticatedPortalUpdatesRouteImport } from './routes/_authenticated/portal.updates'
+import { Route as ApiCronLeetcodeRouteImport } from './routes/api.cron.leetcode'
 import { Route as ApiPublicChatRouteImport } from './routes/api.public.chat'
 import { Route as ApiPublicWhatsappRouteImport } from './routes/api.public.whatsapp'
 import { Route as AuthenticatedPortalStudentsIndexRouteImport } from './routes/_authenticated/portal.students.index'
@@ -219,6 +220,11 @@ const AuthenticatedPortalUpdatesRoute =
     path: '/updates',
     getParentRoute: () => AuthenticatedPortalRoute,
   } as any)
+const ApiCronLeetcodeRoute = ApiCronLeetcodeRouteImport.update({
+  id: '/api/cron/leetcode',
+  path: '/api/cron/leetcode',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicChatRoute = ApiPublicChatRouteImport.update({
   id: '/api/public/chat',
   path: '/api/public/chat',
@@ -272,6 +278,7 @@ export interface FileRoutesByFullPath {
   '/portal/skills': typeof AuthenticatedPortalSkillsRoute
   '/portal/teachers': typeof AuthenticatedPortalTeachersRoute
   '/portal/updates': typeof AuthenticatedPortalUpdatesRoute
+  '/api/cron/leetcode': typeof ApiCronLeetcodeRoute
   '/api/public/chat': typeof ApiPublicChatRoute
   '/api/public/whatsapp': typeof ApiPublicWhatsappRoute
   '/portal/': typeof AuthenticatedPortalIndexRoute
@@ -307,6 +314,7 @@ export interface FileRoutesByTo {
   '/portal/skills': typeof AuthenticatedPortalSkillsRoute
   '/portal/teachers': typeof AuthenticatedPortalTeachersRoute
   '/portal/updates': typeof AuthenticatedPortalUpdatesRoute
+  '/api/cron/leetcode': typeof ApiCronLeetcodeRoute
   '/api/public/chat': typeof ApiPublicChatRoute
   '/api/public/whatsapp': typeof ApiPublicWhatsappRoute
   '/portal': typeof AuthenticatedPortalIndexRoute
@@ -345,6 +353,7 @@ export interface FileRoutesById {
   '/_authenticated/portal/skills': typeof AuthenticatedPortalSkillsRoute
   '/_authenticated/portal/teachers': typeof AuthenticatedPortalTeachersRoute
   '/_authenticated/portal/updates': typeof AuthenticatedPortalUpdatesRoute
+  '/api/cron/leetcode': typeof ApiCronLeetcodeRoute
   '/api/public/chat': typeof ApiPublicChatRoute
   '/api/public/whatsapp': typeof ApiPublicWhatsappRoute
   '/_authenticated/portal/': typeof AuthenticatedPortalIndexRoute
@@ -383,6 +392,7 @@ export interface FileRouteTypes {
     | '/portal/skills'
     | '/portal/teachers'
     | '/portal/updates'
+    | '/api/cron/leetcode'
     | '/api/public/chat'
     | '/api/public/whatsapp'
     | '/portal/'
@@ -418,6 +428,7 @@ export interface FileRouteTypes {
     | '/portal/skills'
     | '/portal/teachers'
     | '/portal/updates'
+    | '/api/cron/leetcode'
     | '/api/public/chat'
     | '/api/public/whatsapp'
     | '/portal'
@@ -455,6 +466,7 @@ export interface FileRouteTypes {
     | '/_authenticated/portal/skills'
     | '/_authenticated/portal/teachers'
     | '/_authenticated/portal/updates'
+    | '/api/cron/leetcode'
     | '/api/public/chat'
     | '/api/public/whatsapp'
     | '/_authenticated/portal/'
@@ -472,6 +484,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SolutionRoute: typeof SolutionRoute
+  ApiCronLeetcodeRoute: typeof ApiCronLeetcodeRoute
   ApiPublicChatRoute: typeof ApiPublicChatRoute
   ApiPublicWhatsappRoute: typeof ApiPublicWhatsappRoute
 }
@@ -695,6 +708,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPortalUpdatesRouteImport
       parentRoute: typeof AuthenticatedPortalRoute
     }
+    '/api/cron/leetcode': {
+      id: '/api/cron/leetcode'
+      path: '/api/cron/leetcode'
+      fullPath: '/api/cron/leetcode'
+      preLoaderRoute: typeof ApiCronLeetcodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/chat': {
       id: '/api/public/chat'
       path: '/api/public/chat'
@@ -802,6 +822,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SolutionRoute: SolutionRoute,
+  ApiCronLeetcodeRoute: ApiCronLeetcodeRoute,
   ApiPublicChatRoute: ApiPublicChatRoute,
   ApiPublicWhatsappRoute: ApiPublicWhatsappRoute,
 }

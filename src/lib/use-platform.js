@@ -6,6 +6,7 @@ import {
   loadAllComplaints,
   loadAssessments,
   loadAiLessons,
+  loadComplaintChain,
   loadDrives,
   loadLearningProfile,
   loadLms,
@@ -34,6 +35,7 @@ export const KEYS = {
   drives: ["drives"],
   opportunities: ["opportunities"],
   complaints: ["complaints"],
+  chain: ["complaint-chain"],
   ratings: ["ratings"],
   subjectReviews: ["subject-reviews"],
   timetableCoverage: ["timetable-coverage"],
@@ -65,6 +67,12 @@ export const useMyComplaints = () =>
   useQuery({ queryKey: [...KEYS.complaints, "mine"], queryFn: () => loadMyComplaints() });
 export const useAllComplaints = (enabled = true) =>
   useQuery({ queryKey: [...KEYS.complaints, "all"], queryFn: () => loadAllComplaints(), enabled });
+export const useComplaintChain = (id, enabled) =>
+  useQuery({
+    queryKey: [...KEYS.chain, id],
+    queryFn: () => loadComplaintChain({ data: { id } }),
+    enabled,
+  });
 export const useMyRatings = (enabled = true) =>
   useQuery({ queryKey: KEYS.ratings, queryFn: () => loadMyRatings(), enabled });
 export const useTimetableCoverage = (enabled = true) =>

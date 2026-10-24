@@ -6,6 +6,7 @@ import {
   Brain,
   Briefcase,
   CalendarCheck,
+  Code2,
   FileText,
   Flag,
   GraduationCap,
@@ -36,6 +37,7 @@ import { Field, inputClass, useAction } from "@/components/ui-kit";
 import { ReadinessBreakdown } from "@/components/portal/ReadinessBreakdown";
 import { addStudentNote, updateTargetRoles } from "@/lib/campus.functions";
 import { useCampus } from "@/lib/use-campus";
+import { useLeetcodeProfile } from "@/lib/use-leetcode";
 import { liveAssignments, liveNotifications } from "@/lib/live-profile";
 import { academicRisk, placementRisk, effectiveBand } from "@/lib/risk-flags";
 import { lmsCompletion, lmsParts, studentAttendancePct, successScore } from "@/lib/scoring";
@@ -52,6 +54,7 @@ const TABS = [
   { k: "Placement", icon: Briefcase },
   { k: "Engagement", icon: Trophy },
   { k: "Feedback", icon: MessageSquare },
+  { k: "LeetCode", icon: Code2 },
 ];
 
 export function LiveStudentProfile({ s, record, me, isAdmin, isFaculty, onChanged }) {
@@ -93,6 +96,58 @@ export function LiveStudentProfile({ s, record, me, isAdmin, isFaculty, onChange
             canWriteFaculty={canWriteFaculty}
             onChanged={onChanged}
           />
+        )}
+        {tab === "LeetCode" && <LiveLeetCode s={s} />}
+      </div>
+    </div>
+  );
+}
+
+export function LiveLeetCode({ s }) {
+  const { data: profile, isLoading } = useLeetcodeProfile(s.id);
+  if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (!profile)
+    return (
+      <EmptyState
+        title="No LeetCode account linked yet"
+        hint="The student can link one from their Profile page. Once linked, their stats and contest results appear here."
+      />
+    );
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <StatCard label="Solved" value={String(profile.totalSolved ?? "—")} />
+        <StatCard
+          label="Easy / Medium / Hard"
+          value={`${profile.easySolved ?? 0} / ${profile.mediumSolved ?? 0} / ${profile.hardSolved ?? 0}`}
+        />
+        <StatCard label="Global ranking" value={profile.ranking ? `#${profile.ranking}` : "—"} />
+        <StatCard
+          label="Contest rating"
+          value={profile.contestRating ? Math.round(profile.contestRating).toString() : "—"}
+        />
+      </div>
+      <div className={card}>
+        <SectionTitle sub={`leetcode.com/u/${profile.username}`}>Recent contests</SectionTitle>
+        {profile.contests.length ? (
+          profile.contests.map((c) => (
+            <div key={c.slug} className="flex justify-between gap-3 border-t py-2 text-sm">
+              <span>
+                {c.title}
+                <span className="block text-xs text-muted-foreground">
+                  {new Date(c.startTime).toLocaleDateString()}
+                </span>
+              </span>
+              <span className="text-right">
+                Rank {c.rank ?? "—"}
+                <span className="block text-xs text-muted-foreground">
+                  {c.problemsSolved ?? 0} solved · rating {c.newRating ?? "—"}
+                </span>
+              </span>
+            </div>
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground">No contest results recorded yet.</p>
         )}
       </div>
     </div>

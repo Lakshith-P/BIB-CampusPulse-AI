@@ -8,6 +8,7 @@ import {
   requireStaff,
   subjectsOf,
 } from "./access.server.js";
+import { appendChainBlock, sha256 } from "./chain.server.js";
 import { subjectsFor } from "./lms.server.js";
 
 export const COMPLAINT_CATEGORIES = ["academic", "faculty", "facilities", "harassment", "other"];
@@ -21,6 +22,12 @@ export async function submitComplaint(db, user, { category, subject, body }) {
     [user.id, category, subject, body],
   );
   const id = rows[0].id;
+  await appendChainBlock(db, {
+    complaintId: id,
+    eventType: "CREATED",
+    actorId: user.id,
+    payload: { category, subject, bodyHash: sha256(body), status: "new" },
+  });
   for (const adminId of await adminIds(db))
     await notify(db, adminId, {
       area: "Complaint",
@@ -51,26 +58,72 @@ export async function listAllComplaints(db, user) {
   requireAdminUser(user);
   const { rows } = await db.query(
     `SELECT c.id, c.category, c.subject, c.body, c.status, c.response, c.responded_at, c.created_at,
+            c.severity, c.assigned_to, a.display_name AS assignee_name, a.email AS assignee_email,
             u.email AS author_email, u.display_name AS author_name
        FROM complaints c JOIN users u ON u.id = c.user_id
+       LEFT JOIN users a ON a.id = c.assigned_to
       ORDER BY (c.status = 'resolved'), c.created_at DESC LIMIT 300`,
   );
   return rows.map(shape);
 }
 
-export async function respondToComplaint(db, user, { id, status, response }) {
+export async function assignComplaintToMe(db, user, { id }) {
   requireAdminUser(user);
   const { rows } = await db.query(
-    `UPDATE complaints SET status = $2, response = $3, reviewed_by = $4,
+    "UPDATE complaints SET assigned_to = $2 WHERE id = $1 RETURNING assigned_to",
+    [id, user.id],
+  );
+  if (!rows[0]) throw new Error("That complaint no longer exists.");
+  await appendChainBlock(db, {
+    complaintId: id,
+    eventType: "ASSIGNED",
+    actorId: user.id,
+    payload: { assignedTo: user.id },
+  });
+  return { saved: true };
+}
+
+export async function respondToComplaint(db, user, { id, status, response, severity }) {
+  requireAdminUser(user);
+  const before = await db.query("SELECT user_id, status, severity FROM complaints WHERE id = $1", [
+    id,
+  ]);
+  if (!before.rows[0]) throw new Error("That complaint no longer exists.");
+  const prior = before.rows[0];
+  severity ??= prior.severity;
+  const { rows } = await db.query(
+    `UPDATE complaints SET status = $2, response = $3, reviewed_by = $4, severity = $5,
             responded_at = CASE WHEN $3 <> '' THEN now() ELSE responded_at END
       WHERE id = $1 RETURNING user_id`,
-    [id, status, response, user.id],
+    [id, status, response, user.id, severity],
   );
   if (!rows[0]) throw new Error("That complaint no longer exists.");
   await db.query(
     "INSERT INTO campus_audit(actor_id, record_id, operation) VALUES($1,$2,'COMPLAINT')",
     [user.id, id],
   );
+  if (severity !== prior.severity)
+    await appendChainBlock(db, {
+      complaintId: id,
+      eventType: "SEVERITY_OVERRIDE",
+      actorId: user.id,
+      payload: { from: prior.severity, to: severity },
+    });
+  if (status !== prior.status)
+    await appendChainBlock(db, {
+      complaintId: id,
+      eventType:
+        prior.status === "resolved" && status !== "resolved" ? "REOPENED" : "STATUS_CHANGED",
+      actorId: user.id,
+      payload: { from: prior.status, to: status },
+    });
+  if (status === "resolved" && response)
+    await appendChainBlock(db, {
+      complaintId: id,
+      eventType: "RESOLUTION_EVIDENCE",
+      actorId: user.id,
+      payload: { status, responseHash: sha256(response) },
+    });
   await notify(db, rows[0].user_id, {
     area: "Complaint",
     priority: "medium",
@@ -145,15 +198,7 @@ export async function submitSubjectReview(db, user, data) {
      ON CONFLICT (student_id, subject) DO UPDATE SET
        teaching = EXCLUDED.teaching, clarity = EXCLUDED.clarity, support = EXCLUDED.support,
        pace = EXCLUDED.pace, comment = EXCLUDED.comment, updated_at = now()`,
-    [
-      own.id,
-      data.subject,
-      data.teaching,
-      data.clarity,
-      data.support,
-      data.pace,
-      data.comment,
-    ],
+    [own.id, data.subject, data.teaching, data.clarity, data.support, data.pace, data.comment],
   );
   return { saved: true };
 }

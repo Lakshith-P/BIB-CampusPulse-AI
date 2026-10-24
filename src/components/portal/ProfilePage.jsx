@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import { Pencil, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +10,10 @@ import { SectionTitle } from "@/components/widgets";
 import { PageTitle } from "@/components/portal/PortalShell";
 import { PowerBiDashboards } from "@/components/portal/PowerBiDashboards";
 import { updateMyProfile } from "@/lib/campus.functions";
+import { saveMyLeetcodeUsername } from "@/lib/leetcode.functions";
 import { useAccount } from "@/lib/account";
 import { useCampus } from "@/lib/use-campus";
+import { useLeetcodeProfile } from "@/lib/use-leetcode";
 
 const card = "surface p-5";
 const ROLE_LABEL = { student: "Student", faculty: "Teacher", admin: "Administrator" };
@@ -30,6 +33,63 @@ function Fact({ label, value }) {
     <div>
       <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
       <dd className="mt-0.5 text-sm font-medium">{value || "—"}</dd>
+    </div>
+  );
+}
+
+function LeetCodeCard({ studentId }) {
+  const { data: profile, isLoading } = useLeetcodeProfile(studentId);
+  const save = useServerFn(saveMyLeetcodeUsername);
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState(!profile && !isLoading);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  async function submit(e) {
+    e.preventDefault();
+    const username = String(new FormData(e.currentTarget).get("username")).trim();
+    setBusy(true);
+    setMsg("");
+    try {
+      await save({ data: { username } });
+      await qc.invalidateQueries({ queryKey: ["leetcode", studentId] });
+      setEditing(false);
+      setMsg("LeetCode account linked.");
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "Could not link that account.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className={`${card} mt-4`}>
+      <SectionTitle sub="Used to show your solved problems, ranking and contest results on your profile">
+        LeetCode account
+      </SectionTitle>
+      {msg && (
+        <p role="status" className="mb-3 text-sm text-muted-foreground">
+          {msg}
+        </p>
+      )}
+      {!isLoading && profile && !editing ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Fact label="Username" value={profile.username} />
+          <Button type="button" size="sm" variant="outline" onClick={() => setEditing(true)}>
+            <Pencil /> Change
+          </Button>
+        </div>
+      ) : (
+        <form onSubmit={submit} className="flex flex-wrap items-end gap-2">
+          <Field
+            label="LeetCode username"
+            hint="Your public LeetCode handle, e.g. the part after leetcode.com/u/"
+          >
+            <Input name="username" required maxLength={50} defaultValue={profile?.username} />
+          </Field>
+          <Button type="submit" disabled={busy}>
+            <Save /> {profile ? "Update" : "Link account"}
+          </Button>
+        </form>
+      )}
     </div>
   );
 }
@@ -194,6 +254,7 @@ export function ProfilePage() {
           </form>
         )}
       </div>
+      {myRow && <LeetCodeCard studentId={myRow.s.id} />}
       <PowerBiDashboards />
       {role !== "student" && (
         <p className="mt-4 text-xs text-muted-foreground">

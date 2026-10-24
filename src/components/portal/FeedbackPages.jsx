@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Lock, Send, ShieldCheck, Star } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Link2, Lock, Send, ShieldCheck, ShieldQuestion, Star, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,12 +17,15 @@ import {
 import { PageTitle, RoleGate } from "@/components/portal/PortalShell";
 import {
   answerComplaint,
+  assignComplaintToMe,
   sendComplaint,
   sendRating,
   sendSubjectReview,
+  verifyChainIntegrity,
 } from "@/lib/platform.functions";
 import {
   useAllComplaints,
+  useComplaintChain,
   useMyComplaints,
   useMyRatings,
   useMySubjectReviews,
@@ -161,6 +165,55 @@ const CATEGORY_LABEL = {
 };
 const STATUS_TONE = { new: "warning", "in-review": "info", resolved: "success" };
 const STATUS_LABEL = { new: "Received", "in-review": "Under review", resolved: "Resolved" };
+const SEVERITY_TONE = { low: "neutral", medium: "warning", high: "danger" };
+const SEVERITY_LABEL = { low: "Low", medium: "Medium", high: "High" };
+const EVENT_LABEL = {
+  CREATED: "Complaint filed",
+  STATUS_CHANGED: "Status changed",
+  REOPENED: "Reopened",
+  ASSIGNED: "Assigned",
+  SEVERITY_OVERRIDE: "Severity changed",
+  RESOLUTION_EVIDENCE: "Resolution recorded",
+};
+
+/** The tamper-evident history of one complaint: every lifecycle event as a linked hash block.
+ * Altering a stored block, or editing the complaint directly in the database, breaks the chain
+ * — see the "Verify integrity" check on the complaints page. */
+function AuditTrail({ id }) {
+  const [open, setOpen] = useState(false);
+  const chain = useComplaintChain(id, open);
+  return (
+    <div className="mt-3 border-t pt-3">
+      <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(!open)}>
+        <Link2 /> {open ? "Hide audit trail" : "View audit trail"}
+      </Button>
+      {open && (
+        <div className="mt-2 space-y-2">
+          {chain.isLoading ? (
+            <p className="text-xs text-muted-foreground">Loading…</p>
+          ) : chain.error ? (
+            <p className="text-xs text-destructive">Could not load the audit trail.</p>
+          ) : (
+            chain.data.map((b) => (
+              <div key={b.id} className="rounded-md border p-2 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium">{EVENT_LABEL[b.event_type] ?? b.event_type}</span>
+                  <span className="text-muted-foreground">
+                    {new Date(b.created_at).toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-muted-foreground">{b.actor_name || b.actor_email || "System"}</p>
+                <p className="mt-1 break-all font-mono text-[10px] text-muted-foreground">
+                  hash {b.hash.slice(0, 16)}… · prev {b.prev_hash.slice(0, 16)}…
+                </p>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function Complaints() {
   const refresh = useRefreshAll();
@@ -457,26 +510,53 @@ export function StudentFeedbackCentre({ s }) {
 }
 
 // ---------------------------------------------------------------- administrators
-function ComplaintCard({ c, refresh }) {
+function ComplaintCard({ c, refresh, me }) {
   const [status, setStatus] = useState(c.status);
   const [response, setResponse] = useState(c.response);
+  const [severity, setSeverity] = useState(c.severity);
   const { busy, run } = useAction(refresh);
+  const assign = useServerFn(assignComplaintToMe);
   return (
     <article className="surface p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-semibold">{c.subject}</h3>
-        <StatusPill tone={STATUS_TONE[c.status]}>{STATUS_LABEL[c.status]}</StatusPill>
+        <div className="flex gap-1.5">
+          <StatusPill tone={SEVERITY_TONE[c.severity]}>{SEVERITY_LABEL[c.severity]}</StatusPill>
+          <StatusPill tone={STATUS_TONE[c.status]}>{STATUS_LABEL[c.status]}</StatusPill>
+        </div>
       </div>
       <p className="text-xs text-muted-foreground">
         {CATEGORY_LABEL[c.category]} · from {c.author_name || c.author_email} ({c.author_email}) ·{" "}
         {new Date(c.created_at).toLocaleString()}
+      </p>
+      <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+        <UserCheck className="size-3.5" />
+        {c.assigned_to
+          ? c.assigned_to === me
+            ? "Assigned to you"
+            : `Assigned to ${c.assignee_name || c.assignee_email}`
+          : "Unassigned"}
+        {c.assigned_to !== me && (
+          <Button
+            type="button"
+            size="sm"
+            variant="link"
+            className="h-auto p-0 text-xs"
+            onClick={() => run(() => assign({ data: { id: c.id } }), "Assigned to you.")}
+          >
+            {c.assigned_to ? "Reassign to me" : "Assign to me"}
+          </Button>
+        )}
       </p>
       <p className="mt-2 whitespace-pre-wrap text-sm">{c.body}</p>
       <form
         className="mt-3 space-y-2 border-t pt-3"
         onSubmit={(e) => {
           e.preventDefault();
-          run(() => answerComplaint({ data: { id: c.id, status, response } }), "Response saved.");
+          run(
+            () => answerComplaint({ data: { id: c.id, status, response, severity } }),
+            "Response saved.",
+          );
         }}
       >
         <Field label="Response to the student">
@@ -500,28 +580,73 @@ function ComplaintCard({ c, refresh }) {
               </option>
             ))}
           </select>
+          <select
+            value={severity}
+            onChange={(e) => setSeverity(e.target.value)}
+            aria-label="Severity"
+            className={inputClass + " w-auto"}
+          >
+            {Object.entries(SEVERITY_LABEL).map(([k, l]) => (
+              <option key={k} value={k}>
+                {l} severity
+              </option>
+            ))}
+          </select>
           <Button type="submit" size="sm" disabled={busy}>
             Save response
           </Button>
         </div>
       </form>
+      <AuditTrail id={c.id} />
     </article>
+  );
+}
+
+function VerifyIntegrity() {
+  const verify = useServerFn(verifyChainIntegrity);
+  const [result, setResult] = useState(null);
+  const { busy, run } = useAction();
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-3">
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        disabled={busy}
+        onClick={async () => {
+          const r = await run(() => verify());
+          if (r.ok) setResult(r.result);
+        }}
+      >
+        <ShieldQuestion /> Verify integrity
+      </Button>
+      {result && (
+        <StatusPill tone={result.valid ? "success" : "danger"}>
+          {result.valid
+            ? `Chain intact — ${result.blocks} block(s), no tampering detected`
+            : result.reason}
+        </StatusPill>
+      )}
+    </div>
   );
 }
 
 export function ComplaintsPage() {
   const refresh = useRefreshAll();
   const all = useAllComplaints();
+  const { profile } = useCampus();
   return (
     <RoleGate allow={["admin"]}>
       <PageTitle
         title="Confidential complaints"
         sub="Visible to administrators only. Notifications never include what was written."
       />
-      <p className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+      <p className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
         <ShieldCheck className="size-4 text-primary" />
-        Handle these privately. Opening or answering a complaint is recorded in the audit log.
+        Handle these privately. Every status change, assignment and resolution is recorded in a
+        tamper-evident hash chain, independent of the audit log.
       </p>
+      <VerifyIntegrity />
       {all.isLoading ? (
         <PageSkeleton rows={3} />
       ) : all.error ? (
@@ -531,7 +656,12 @@ export function ComplaintsPage() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {all.data.map((c) => (
-            <ComplaintCard key={c.id + c.status + c.response.length} c={c} refresh={refresh} />
+            <ComplaintCard
+              key={c.id + c.status + c.response.length + c.severity + c.assigned_to}
+              c={c}
+              refresh={refresh}
+              me={profile.id}
+            />
           ))}
         </div>
       )}
