@@ -6,14 +6,15 @@ For every student, the platform answers three questions: who needs support, why,
 
 ## Where to start
 
-| I want to…                                           | Read                                        |
-| ---------------------------------------------------- | ------------------------------------------- |
-| Install, configure, run or deploy the app            | [Project README](../README.md)              |
-| Understand how the system is put together            | [Architecture](architecture.md)             |
-| Explain the score and segments (judges' note)        | [Success Score note](success-score-note.md) |
-| Understand the database and the student record       | [Data model](data-model.md)                 |
-| Find out what the server exposes and who may call it | [Server functions](server-functions.md)     |
-| Work on the code, add a feature, run the tests       | [Development guide](development.md)         |
+| I want to…                                           | Read                                              |
+| ---------------------------------------------------- | ------------------------------------------------- |
+| See every feature and how it works                   | [Project documentation](PROJECT_DOCUMENTATION.md) |
+| Install, configure, run or deploy the app            | [Project README](../README.md)                    |
+| Understand how the system is put together            | [Architecture](architecture.md)                   |
+| Explain the score and segments (judges' note)        | [Success Score note](success-score-note.md)       |
+| Understand the database and the student record       | [Data model](data-model.md)                       |
+| Find out what the server exposes and who may call it | [Server functions](server-functions.md)           |
+| Work on the code, add a feature, run the tests       | [Development guide](development.md)               |
 
 ## The product in brief
 
