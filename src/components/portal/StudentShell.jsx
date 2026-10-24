@@ -19,6 +19,7 @@ import {
   Terminal,
   Trophy,
   UserRound,
+  WandSparkles,
   X,
 } from "lucide-react";
 import { GlobalSearch } from "@/components/portal/GlobalSearch";
@@ -41,6 +42,7 @@ const PRIMARY = [
   { to: "/portal/lms", label: "Learning & LMS", icon: BookOpen },
   { to: "/portal/placement", label: "Placement & Careers", icon: Briefcase },
   { to: "/portal/skills", label: "Skills & Coding", icon: Terminal },
+  { to: "/portal/ai-lessons", label: "Personalised AI Lessons", icon: WandSparkles },
 ];
 const MORE = [
   { to: "/portal/notifications", label: "Notifications", icon: Bell },

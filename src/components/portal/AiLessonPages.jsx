@@ -8,10 +8,11 @@ import {
   Sparkles,
   Trash2,
   Volume2,
+  WandSparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { EmptyState, ProgressBar, SectionTitle } from "@/components/widgets";
+import { EmptyState, ProgressBar } from "@/components/widgets";
 import {
   ConfirmDialog,
   ErrorState,
@@ -30,7 +31,9 @@ import {
   saveAiQuiz,
   saveLearningProfile,
 } from "@/lib/platform.functions";
-import { KEYS, useAiLessons, useLearningProfile } from "@/lib/use-platform";
+import { KEYS, useAiLessons, useLearningProfile, useLms } from "@/lib/use-platform";
+import { RoleGate } from "@/components/portal/PortalShell";
+import { useCampus } from "@/lib/use-campus";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BossBattle } from "@/components/portal/AiLessonGame";
 
@@ -51,7 +54,7 @@ function Questionnaire({ initial, onDone, onCancel }) {
   const last = step === QUESTIONS.length - 1;
   return (
     <section
-      className="rounded-xl border bg-card p-4 sm:p-5"
+      className="rounded-xl border border-[#D9E1EC] bg-white shadow-xs p-5 sm:p-6"
       aria-label="Learning-style questionnaire"
     >
       <div className="mb-3 flex items-center justify-between gap-3 text-xs text-muted-foreground">
@@ -65,7 +68,7 @@ function Questionnaire({ initial, onDone, onCancel }) {
         )}
       </div>
       <ProgressBar value={((step + 1) / QUESTIONS.length) * 100} />
-      <h3 className="mt-4 text-base font-semibold">{q.text}</h3>
+      <h3 className="mt-5 text-lg font-semibold tracking-tight text-[#00205f]">{q.text}</h3>
       <p className="text-xs text-muted-foreground">Pick every answer that fits you.</p>
       <div className="mt-3 grid gap-2">
         {q.options.map((o) => {
@@ -78,8 +81,10 @@ function Questionnaire({ initial, onDone, onCancel }) {
               aria-checked={on}
               onClick={() => toggle(o.id)}
               className={cn(
-                "min-h-11 rounded-lg border px-3 py-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                on ? "border-primary bg-primary/10 font-medium" : "hover:bg-accent",
+                "min-h-11 rounded-lg border px-4 py-2.5 text-left text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                on
+                  ? "border-[#00338D] bg-[#eef4ff] font-medium text-[#00205f] shadow-xs"
+                  : "border-[#D9E1EC] bg-white hover:border-[#00338D]/40 hover:bg-slate-50",
               )}
             >
               {o.label}
@@ -484,7 +489,7 @@ function LessonView({ id, onBack }) {
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="font-semibold">{lesson.title}</p>
+          <p className="text-lg font-semibold tracking-tight text-[#00205f]">{lesson.title}</p>
           <p className="text-xs text-muted-foreground">
             {lesson.subject} · {lesson.topic}
           </p>
@@ -545,7 +550,7 @@ function GenerateForm({ subjects, onCreated }) {
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   return (
     <form
-      className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2"
+      className="grid gap-4 rounded-xl border border-[#D9E1EC] bg-white shadow-xs p-5 sm:grid-cols-2 sm:p-6"
       onSubmit={async (e) => {
         e.preventDefault();
         const r = await run(
@@ -600,7 +605,11 @@ function GenerateForm({ subjects, onCreated }) {
         </Field>
       </div>
       <div className="sm:col-span-2">
-        <Button type="submit" disabled={busy}>
+        <Button
+          type="submit"
+          disabled={busy}
+          className="bg-[#00338D] text-white hover:bg-[#00205f]"
+        >
           <Sparkles /> {busy ? "Writing your lesson… this can take a minute" : "Create my lesson"}
         </Button>
       </div>
@@ -625,17 +634,20 @@ export function AiLessonsPanel({ subjects }) {
   if (profile.isLoading) return <p role="status">Loading…</p>;
 
   return (
-    <section className="space-y-4" aria-label="Personalised AI video lessons">
-      <SectionTitle sub="A narrated board lesson written for how you learn, on any topic in your subjects.">
-        Personalised AI lessons
-      </SectionTitle>
+    <section className="space-y-5" aria-label="Personalised AI video lessons">
       {!profile.data || retake ? (
         <>
           {!profile.data && (
-            <p className="text-sm text-muted-foreground">
-              Answer 20 quick questions once so every lesson is shaped around you: pace, depth, tone
-              and examples.
-            </p>
+            <div className="rounded-xl bg-gradient-to-br from-[var(--role-from)] via-[var(--role-via)] to-[var(--role-to)] p-5 text-white shadow-xs sm:p-6">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#8fd8ff]">
+                <WandSparkles className="size-4" /> Step 1 of 2
+              </p>
+              <h2 className="mt-1 text-xl font-semibold tracking-tight">Tell us how you learn</h2>
+              <p className="mt-1 max-w-xl text-sm text-white/80">
+                Answer 20 quick questions once so every lesson is shaped around you: pace, depth,
+                tone and examples.
+              </p>
+            </div>
           )}
           <Questionnaire
             initial={Boolean(profile.data)}
@@ -647,7 +659,10 @@ export function AiLessonsPanel({ subjects }) {
         <LessonView id={open} onBack={() => setOpen(null)} />
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="rounded-xl border border-[#D9E1EC] bg-white shadow-xs flex flex-wrap items-center gap-2 p-4">
+            <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Your learning style
+            </span>
             {describeProfile(profile.data.traits).map((label) => (
               <StatusPill key={label} tone="info">
                 {label}
@@ -672,18 +687,18 @@ export function AiLessonsPanel({ subjects }) {
               hint="Pick a topic above and your first lesson is generated in about a minute."
             />
           ) : (
-            <ul className="grid gap-2 sm:grid-cols-2">
+            <ul className="grid gap-3 sm:grid-cols-2">
               {lessons.data.map((l) => (
                 <li
                   key={l.id}
-                  className="flex items-start justify-between gap-2 rounded-lg border bg-card p-3"
+                  className="group flex items-start justify-between gap-2 rounded-xl border border-[#D9E1EC] bg-white shadow-xs p-4 transition hover:-translate-y-0.5 hover:border-[#00338D]/40 hover:shadow-md"
                 >
                   <button
                     type="button"
                     className="min-w-0 flex-1 text-left"
                     onClick={() => setOpen(l.id)}
                   >
-                    <p className="truncate font-medium">{l.title}</p>
+                    <p className="truncate font-semibold text-[#00205f]">{l.title}</p>
                     <p className="text-xs text-muted-foreground">
                       {l.subject}
                       {l.unit ? ` · Unit ${l.unit}` : ""} · {l.slides} slides
@@ -715,5 +730,44 @@ export function AiLessonsPanel({ subjects }) {
         }
       />
     </section>
+  );
+}
+
+/** The sidebar page: personalised AI lessons for the student's own subjects. */
+export function AiLessonsPage() {
+  const { role } = useCampus();
+  const { data, isLoading, error, refetch } = useLms();
+  const subjects = data?.subjects?.map((x) => x.subject) ?? [];
+  return (
+    <RoleGate allow={["student"]}>
+      <div className="mx-auto max-w-5xl space-y-6">
+        <header>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-[1.75rem] font-semibold leading-9 tracking-tight text-[#00205f]">
+              Personalised AI Lessons
+            </h1>
+            <span className="rounded border border-blue-200 bg-[#eef4ff] px-2 py-0.5 text-[11px] font-semibold tracking-wide text-[#00338D]">
+              Beta
+            </span>
+          </div>
+          <p className="mt-1 max-w-2xl text-[0.9375rem] text-[#444652]">
+            A narrated board lesson written for how you learn, on any topic in your subjects, with a
+            quiz and a boss battle to lock it in.
+          </p>
+        </header>
+        {role !== "student" ? null : isLoading ? (
+          <p role="status">Loading…</p>
+        ) : error ? (
+          <ErrorState error={error} onRetry={refetch} />
+        ) : !subjects.length ? (
+          <EmptyState
+            title="No subjects yet"
+            hint="Lessons are written for your subjects. They appear here once your teacher records them."
+          />
+        ) : (
+          <AiLessonsPanel subjects={subjects} />
+        )}
+      </div>
+    </RoleGate>
   );
 }

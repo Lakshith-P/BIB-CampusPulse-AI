@@ -27,7 +27,6 @@ import {
 } from "@/components/ui-kit";
 import { PageTitle, RoleGate } from "@/components/portal/PortalShell";
 import { StaffCategory } from "@/components/portal/CategoryView";
-import { AiLessonsPanel } from "@/components/portal/AiLessonPages";
 import {
   downloadLmsFile,
   gradeLmsSubmission,
@@ -317,7 +316,6 @@ function StudentLms() {
           />
         ))}
       </div>
-      <AiLessonsPanel subjects={data.subjects.map((s) => s.subject)} />
     </div>
   );
 }

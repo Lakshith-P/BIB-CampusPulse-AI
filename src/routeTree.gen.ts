@@ -20,6 +20,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SolutionRouteImport } from './routes/solution'
 import { Route as AuthenticatedPortalRouteImport } from './routes/_authenticated/portal'
 import { Route as AuthenticatedPortalIndexRouteImport } from './routes/_authenticated/portal.index'
+import { Route as AuthenticatedPortalAiLessonsRouteImport } from './routes/_authenticated/portal.ai-lessons'
 import { Route as AuthenticatedPortalAssignRouteImport } from './routes/_authenticated/portal.assign'
 import { Route as AuthenticatedPortalAttendanceRouteImport } from './routes/_authenticated/portal.attendance'
 import { Route as AuthenticatedPortalAuditRouteImport } from './routes/_authenticated/portal.audit'
@@ -102,6 +103,12 @@ const AuthenticatedPortalIndexRoute =
   AuthenticatedPortalIndexRouteImport.update({
     id: '/',
     path: '/',
+    getParentRoute: () => AuthenticatedPortalRoute,
+  } as any)
+const AuthenticatedPortalAiLessonsRoute =
+  AuthenticatedPortalAiLessonsRouteImport.update({
+    id: '/ai-lessons',
+    path: '/ai-lessons',
     getParentRoute: () => AuthenticatedPortalRoute,
   } as any)
 const AuthenticatedPortalAssignRoute =
@@ -278,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/solution': typeof SolutionRoute
   '/portal': typeof AuthenticatedPortalRouteWithChildren
+  '/portal/ai-lessons': typeof AuthenticatedPortalAiLessonsRoute
   '/portal/assign': typeof AuthenticatedPortalAssignRoute
   '/portal/attendance': typeof AuthenticatedPortalAttendanceRoute
   '/portal/audit': typeof AuthenticatedPortalAuditRoute
@@ -317,6 +325,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/solution': typeof SolutionRoute
+  '/portal/ai-lessons': typeof AuthenticatedPortalAiLessonsRoute
   '/portal/assign': typeof AuthenticatedPortalAssignRoute
   '/portal/attendance': typeof AuthenticatedPortalAttendanceRoute
   '/portal/audit': typeof AuthenticatedPortalAuditRoute
@@ -359,6 +368,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/solution': typeof SolutionRoute
   '/_authenticated/portal': typeof AuthenticatedPortalRouteWithChildren
+  '/_authenticated/portal/ai-lessons': typeof AuthenticatedPortalAiLessonsRoute
   '/_authenticated/portal/assign': typeof AuthenticatedPortalAssignRoute
   '/_authenticated/portal/attendance': typeof AuthenticatedPortalAttendanceRoute
   '/_authenticated/portal/audit': typeof AuthenticatedPortalAuditRoute
@@ -401,6 +411,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/solution'
     | '/portal'
+    | '/portal/ai-lessons'
     | '/portal/assign'
     | '/portal/attendance'
     | '/portal/audit'
@@ -440,6 +451,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/solution'
+    | '/portal/ai-lessons'
     | '/portal/assign'
     | '/portal/attendance'
     | '/portal/audit'
@@ -481,6 +493,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/solution'
     | '/_authenticated/portal'
+    | '/_authenticated/portal/ai-lessons'
     | '/_authenticated/portal/assign'
     | '/_authenticated/portal/attendance'
     | '/_authenticated/portal/audit'
@@ -604,6 +617,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/portal/'
       preLoaderRoute: typeof AuthenticatedPortalIndexRouteImport
+      parentRoute: typeof AuthenticatedPortalRoute
+    }
+    '/_authenticated/portal/ai-lessons': {
+      id: '/_authenticated/portal/ai-lessons'
+      path: '/ai-lessons'
+      fullPath: '/portal/ai-lessons'
+      preLoaderRoute: typeof AuthenticatedPortalAiLessonsRouteImport
       parentRoute: typeof AuthenticatedPortalRoute
     }
     '/_authenticated/portal/assign': {
@@ -806,6 +826,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedPortalRouteChildren {
+  AuthenticatedPortalAiLessonsRoute: typeof AuthenticatedPortalAiLessonsRoute
   AuthenticatedPortalAssignRoute: typeof AuthenticatedPortalAssignRoute
   AuthenticatedPortalAttendanceRoute: typeof AuthenticatedPortalAttendanceRoute
   AuthenticatedPortalAuditRoute: typeof AuthenticatedPortalAuditRoute
@@ -835,6 +856,7 @@ interface AuthenticatedPortalRouteChildren {
 }
 
 const AuthenticatedPortalRouteChildren: AuthenticatedPortalRouteChildren = {
+  AuthenticatedPortalAiLessonsRoute: AuthenticatedPortalAiLessonsRoute,
   AuthenticatedPortalAssignRoute: AuthenticatedPortalAssignRoute,
   AuthenticatedPortalAttendanceRoute: AuthenticatedPortalAttendanceRoute,
   AuthenticatedPortalAuditRoute: AuthenticatedPortalAuditRoute,

@@ -73,6 +73,11 @@ export const SEARCH_GROUPS = {
       "LMS and Assignments",
       [
         ["LMS lessons and units", "/portal/lms", "learning management lessons"],
+        [
+          "Personalised AI lessons",
+          "/portal/ai-lessons",
+          "ai video lesson quiz boss battle learning style generate topic",
+        ],
         ["Assignment deadlines", "/portal/lms", "submit due homework pending"],
       ],
     ],
