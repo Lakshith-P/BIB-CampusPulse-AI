@@ -21,6 +21,8 @@ export const Route = createFileRoute("/auth")({
     workspace: ["student", "faculty", "admin"].includes(search.workspace)
       ? search.workspace
       : undefined,
+    // set after an account is created: the email to fill in on the login page
+    created: typeof search.created === "string" ? search.created.slice(0, 254) : undefined,
   }),
   head: () => pageHead("Log In", "Sign in to SLQG with student, teacher or administrator access."),
   component: Auth,
@@ -65,7 +67,7 @@ function Auth() {
   const navigate = useNavigate();
   const { user, refresh } = useAccount();
   const { captcha, reload: loadCaptcha } = useCaptcha(setError);
-  const [created, setCreated] = useState(""); // the email of an account that was just created
+  const [created, setCreated] = useState(Route.useSearch().created ?? ""); // email of an account just created
   const signingUp = mode === "signup";
 
   async function submit(e) {
@@ -92,8 +94,11 @@ function Auth() {
           return;
         }
         // Account made: go to the login page, with the email filled in, instead of signing in.
+        await refresh(); // forget any earlier session, so the login form is what shows
         setCreated(email);
         setMode("login");
+        setShow(false);
+        await navigate({ to: "/auth", search: { workspace, created: email }, replace: true });
         void loadCaptcha();
         return;
       } else {

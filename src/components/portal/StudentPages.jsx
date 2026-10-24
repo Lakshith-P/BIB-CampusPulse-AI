@@ -112,7 +112,7 @@ export function AttendancePage() {
     <StudentFrame title="Attendance" sub="Where you stand and how many classes you need">
       {(s) => (
         <div className="space-y-8">
-          <Attendance s={s} />
+          <Attendance s={s} weekly />
           <MyAttendanceLog subjects={s.subjects.map((x) => x.subject)} />
           <Timetable canEdit={false} />
         </div>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   BELOW_THRESHOLD_MARKS,
+  attendOrSkip,
   combine,
   marksFor,
   plan,
@@ -62,5 +63,47 @@ describe("attendance planner", () => {
         { classesHeld: 20, classesAttended: 20 },
       ]),
     ).toEqual({ subject: "Overall", held: 60, attended: 50 });
+  });
+});
+
+describe("attend or skip", () => {
+  const AS = attendOrSkip;
+  it("says attend every class when below the target", () => {
+    // 6 of 10 is 60%: below 75%, so nothing can be skipped; 6 classes in a row are needed
+    expect(AS({ held: 10, attended: 6 }, 75, 3)).toMatchObject({
+      verdict: "attend",
+      canSkip: 0,
+      need: 6,
+      skipThisWeek: 0,
+      attendThisWeek: 3,
+    });
+  });
+  it("counts the classes that can be skipped while staying at the target", () => {
+    // 37 of 42: 7 more can be skipped and 37/49 is still above 75%
+    const d = AS({ held: 42, attended: 37 }, 75, 3);
+    expect(d).toMatchObject({ verdict: "skip", canSkip: 7, skipThisWeek: 3, attendThisWeek: 0 });
+    expect(37 / 49).toBeGreaterThanOrEqual(0.75);
+    expect(37 / 50).toBeLessThan(0.75);
+    expect(d.ifSkipNext).toBeCloseTo((37 / 43) * 100, 5);
+  });
+  it("never skips more than the classes held that week", () => {
+    expect(AS({ held: 42, attended: 37 }, 75, 2)).toMatchObject({
+      skipThisWeek: 2,
+      attendThisWeek: 0,
+    });
+    expect(AS({ held: 42, attended: 37 }, 75, 10)).toMatchObject({
+      skipThisWeek: 7,
+      attendThisWeek: 3,
+    });
+  });
+  it("warns when there is hardly any room", () => {
+    // 3 of 4 is exactly 75%: nothing to spare
+    expect(AS({ held: 4, attended: 3 }, 75, 2)).toMatchObject({ verdict: "careful", canSkip: 0 });
+  });
+  it("has no advice for a subject with no classes held", () => {
+    expect(AS({ held: 0, attended: 0 }, 75, 2)).toMatchObject({
+      verdict: "unknown",
+      ifSkipNext: null,
+    });
   });
 });
