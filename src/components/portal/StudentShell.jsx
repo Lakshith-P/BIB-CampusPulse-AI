@@ -187,7 +187,7 @@ export function StudentShell({ profile, myRow, rows, onSignOut, children }) {
           <div className="flex items-center gap-3">
             {term && (
               <span className="hidden items-center gap-1.5 rounded-full border border-[#A7F3D0] bg-[#ECFDF5] px-3 py-1 text-xs font-semibold tracking-wide text-[#047857] md:inline-flex">
-                <span className="size-1.5 rounded-full bg-[#10B981]" />
+                <span className="size-1.5 rounded-full bg-[#3A7FC8]" />
                 {term}
               </span>
             )}

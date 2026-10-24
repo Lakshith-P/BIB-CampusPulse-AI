@@ -49,9 +49,9 @@ const C = {
   container: "#00338D",
   electric: "#0066CC",
   cyan: "#00B8F5",
-  success: "#16865B",
-  warning: "#D99216",
-  risk: "#C83C4A",
+  success: "#0066CC",
+  warning: "#3A7FC8",
+  risk: "#00205F",
 };
 const card = "rounded-xl border border-[#D9E1EC] bg-white shadow-xs";
 const ATTENDANCE_MIN = 75;
@@ -59,7 +59,7 @@ const RISK_FLOOR_SGPA = 6.0;
 const BAND_COLOR = {
   "On Track": C.success,
   Monitor: C.warning,
-  "Needs Attention": "#C2410C",
+  "Needs Attention": "#1E4FA0",
   "High Priority": C.risk,
 };
 const DAY = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -137,7 +137,7 @@ function Greeting({ s, myRow, alerts, lowest }) {
           <h1 className="text-[1.75rem] font-semibold leading-9 tracking-tight text-[#00205f]">
             {greeting(new Date().getHours())}, {first}
           </h1>
-          <span className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold tracking-wide text-[#16865B]">
+          <span className="rounded border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-semibold tracking-wide text-[#0066CC]">
             Semester {s.semester} · Class of {s.gradYear}
           </span>
         </div>
@@ -279,7 +279,7 @@ function KpiRow({ s, myRow, cohort, readiness, drives }) {
             </span>
           </span>
         }
-        side={<IconBox icon={Star} bg="#ecfdf5" color={C.success} />}
+        side={<IconBox icon={Star} bg="#eff6ff" color={C.success} />}
       >
         <span className="cp-num text-[2.25rem] font-bold leading-10 text-[#00205f]">
           {myRow.cgpa === null ? "—" : myRow.cgpa.toFixed(2)}
@@ -294,7 +294,7 @@ function KpiRow({ s, myRow, cohort, readiness, drives }) {
             Institutional minimum: <strong className="text-slate-800">75.0%</strong>
           </>
         }
-        side={<IconBox icon={CalendarCheck} bg="#fffbeb" color={C.warning} />}
+        side={<IconBox icon={CalendarCheck} bg="#e8f1fb" color={C.warning} />}
       >
         <span className="cp-num text-[2.25rem] font-bold leading-10 text-[#00205f]">
           {fmtPct(att)}
@@ -536,10 +536,10 @@ function VelocityChart({ s, cohort, readiness, leetcode, attendanceList }) {
           <span className="text-[10px] text-slate-500">Average subject marks this semester</span>
         </div>
         <div
-          className={`rounded-lg border p-2.5 ${recovery !== null ? "border-amber-200/60 bg-amber-50/50" : "border-[#D9E1EC] bg-[#eef4ff]"}`}
+          className={`rounded-lg border p-2.5 ${recovery !== null ? "border-blue-200/60 bg-sky-50/50" : "border-[#D9E1EC] bg-[#eef4ff]"}`}
         >
           <span
-            className={`block text-[10px] font-bold uppercase tracking-wider ${recovery !== null ? "text-amber-800" : "text-slate-500"}`}
+            className={`block text-[10px] font-bold uppercase tracking-wider ${recovery !== null ? "text-blue-900" : "text-slate-500"}`}
           >
             Attendance Velocity
           </span>
@@ -555,7 +555,7 @@ function VelocityChart({ s, cohort, readiness, leetcode, attendanceList }) {
             )}
           </div>
           <span
-            className={`text-[10px] font-medium ${recovery !== null ? "text-amber-700" : "text-slate-500"}`}
+            className={`text-[10px] font-medium ${recovery !== null ? "text-blue-800" : "text-slate-500"}`}
           >
             {recovery !== null
               ? `Recovery needed: attend the next ${recovery} class${recovery === 1 ? "" : "es"}`
@@ -648,7 +648,7 @@ function CompetencyVector({ cohort, cohortStatus, drives }) {
         {cohortStatus === "loading" ? (
           <p className="mt-4 text-sm text-slate-500">Loading cohort comparison…</p>
         ) : cohortStatus === "error" ? (
-          <p className="mt-4 text-sm text-[#C83C4A]">
+          <p className="mt-4 text-sm text-[#00205F]">
             Could not load the cohort comparison. Refresh to try again.
           </p>
         ) : !cohort ? (
@@ -783,7 +783,7 @@ function directives(s, today, slots, attendanceList) {
             ? "Due today"
             : `Due in ${pending.daysLeft} day${pending.daysLeft === 1 ? "" : "s"}`,
       badgeClass:
-        pending.daysLeft <= 2 ? "bg-red-100 text-[#C83C4A]" : "bg-amber-100 text-amber-800",
+        pending.daysLeft <= 2 ? "bg-blue-200 text-[#00205F]" : "bg-blue-100 text-blue-900",
       context: pending.subject,
       title: `Complete ${pending.title}`,
       body: `Submission deadline ${pending.deadline || "not set"}. Submitting it keeps your LMS credit, which counts towards 15% of your Success Score.`,
@@ -802,14 +802,14 @@ function directives(s, today, slots, attendanceList) {
     out.push({
       key: "attendance",
       icon: CalendarDays,
-      iconBg: "#fffbeb",
+      iconBg: "#e8f1fb",
       iconColor: C.warning,
       badge: todaySlot
         ? `Today at ${clock(todaySlot.start).time} ${clock(todaySlot.start).ampm}`
         : lowest.pct < ATTENDANCE_MIN
           ? "Below 75%"
           : "Below 85%",
-      badgeClass: "bg-amber-100 text-amber-800",
+      badgeClass: "bg-blue-100 text-blue-900",
       context: todaySlot?.room || "Attendance",
       title: `Attend ${lowest.subject}${todaySlot ? " today" : ""}`,
       body:
@@ -900,7 +900,7 @@ function Directives({ list }) {
           </div>
         ))}
         {!list.length && (
-          <div className={`${card} p-4 text-sm text-[#16865B]`}>
+          <div className={`${card} p-4 text-sm text-[#0066CC]`}>
             Nothing urgent today — you are on track everywhere we can measure.
           </div>
         )}
@@ -951,7 +951,7 @@ function ScheduleTab({ s, myRow, slots, attendanceList, interventions }) {
           return (
             <div
               key={slot.id}
-              className={`flex items-center justify-between gap-3 rounded-lg border p-3 ${critical && !done ? "border-amber-200/80 bg-amber-50/40" : "border-[#D9E1EC] bg-white"}`}
+              className={`flex items-center justify-between gap-3 rounded-lg border p-3 ${critical && !done ? "border-blue-200/80 bg-sky-50/40" : "border-[#D9E1EC] bg-white"}`}
             >
               <div className="flex min-w-0 items-center gap-3">
                 <div className="w-12 shrink-0 text-center">
@@ -968,7 +968,7 @@ function ScheduleTab({ s, myRow, slots, attendanceList, interventions }) {
                       {slot.subject}
                     </span>
                     {critical && (
-                      <span className="rounded bg-amber-100 px-1.5 text-[9px] font-bold uppercase text-amber-800">
+                      <span className="rounded bg-blue-100 px-1.5 text-[9px] font-bold uppercase text-blue-900">
                         Attendance Critical
                       </span>
                     )}
@@ -980,7 +980,7 @@ function ScheduleTab({ s, myRow, slots, attendanceList, interventions }) {
                 </div>
               </div>
               <span
-                className={`shrink-0 rounded border px-2.5 py-1 text-xs font-semibold ${live ? "border-emerald-200 bg-emerald-50 text-[#16865B]" : done ? "border-slate-200 bg-slate-50 text-slate-400" : "border-slate-200 bg-white text-slate-700"}`}
+                className={`shrink-0 rounded border px-2.5 py-1 text-xs font-semibold ${live ? "border-blue-200 bg-blue-50 text-[#0066CC]" : done ? "border-slate-200 bg-slate-50 text-slate-400" : "border-slate-200 bg-white text-slate-700"}`}
               >
                 {live ? "In progress" : done ? "Done" : "Upcoming"}
               </span>
@@ -1200,7 +1200,7 @@ function PlacementTab({ s, drives, readiness }) {
                   </p>
                 </div>
                 <span
-                  className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-bold uppercase ${state === "eligible" ? "bg-emerald-50 text-[#16865B]" : state === "no" ? "bg-red-50 text-[#C83C4A]" : "bg-amber-50 text-amber-800"}`}
+                  className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-bold uppercase ${state === "eligible" ? "bg-blue-50 text-[#0066CC]" : state === "no" ? "bg-blue-100 text-[#00205F]" : "bg-sky-50 text-blue-900"}`}
                   title={e?.explanation}
                 >
                   {state === "eligible" ? "Eligible" : state === "no" ? "Not eligible" : "Unknown"}
@@ -1509,7 +1509,7 @@ function AttentionList({ s, today, score }) {
   const alerts = liveNotifications(s, today).filter((n) => n.tone !== "info");
   if (!alerts.length)
     return (
-      <p className="text-sm text-[#16865B]">
+      <p className="text-sm text-[#0066CC]">
         {score === null
           ? "Nothing to show yet. Alerts appear once your marks and attendance are added."
           : "You are on track everywhere."}

@@ -103,14 +103,14 @@
   --accent-cyan: #00b8f5;
 
   /* risk ramp, colourblind-safe and separable in greyscale */
-  --risk-track: #0f6e5c;
-  --risk-track-pale: #e4f0ec;
-  --risk-monitor: #936017;
-  --risk-monitor-pale: #f6ecd9;
-  --risk-attention: #b44a16;
-  --risk-attention-pale: #f9e8dd;
-  --risk-critical: #a3122b;
-  --risk-critical-pale: #f7e2e5;
+  --risk-track: #2a74b5;
+  --risk-track-pale: #e6f1fa;
+  --risk-monitor: #1f64a8;
+  --risk-monitor-pale: #d6e7f6;
+  --risk-attention: #144a8a;
+  --risk-attention-pale: #c5dcf1;
+  --risk-critical: #0a2f66;
+  --risk-critical-pale: #b5cfec;
 
   /* shadcn surface + semantic tokens */
   --background: var(--paper);
@@ -143,8 +143,8 @@
 
   /* five series separable by hue and by lightness, so greyscale print survives */
   --chart-1: #00205f;
-  --chart-2: #9c1b2e;
-  --chart-3: #17705a;
+  --chart-2: #1f64a8;
+  --chart-3: #4a8fd0;
   --chart-4: #0066cc;
   --chart-5: #00b8f5;
 
@@ -570,9 +570,9 @@ th.num {
   --primary: #00338d;
   --primary-foreground: #ffffff;
   --ring: #0066cc;
-  --success: #16865b;
-  --warning: #d99216;
-  --destructive: #c83c4a;
+  --success: #0066cc;
+  --warning: #3a7fc8;
+  --destructive: #00205f;
   --info: #0066cc;
   --label: #00205f;
   --border: #d9e1ec;
