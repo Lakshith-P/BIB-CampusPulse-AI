@@ -90,3 +90,16 @@ describe("model chain", () => {
     expect(modelChain({ GROK_API_KEY: "b" }).map((m) => m.name)).toEqual(["grok"]);
   });
 });
+
+describe("Groq", () => {
+  it("is tried first, ahead of Gemini and Grok, when its key is set", () => {
+    const chain = modelChain({ GROQ_API_KEY: "g", LLM_API_KEY: "a", GROK_API_KEY: "b" });
+    expect(chain[0]).toMatchObject({
+      name: "groq",
+      baseURL: "https://api.groq.com/openai/v1",
+      model: "llama-3.3-70b-versatile",
+    });
+    expect(chain.at(-1).name).toBe("grok");
+    expect(modelChain({ GROQ_API_KEY: "g" }).map((m) => m.name)).toEqual(["groq"]);
+  });
+});

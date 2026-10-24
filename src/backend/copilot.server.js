@@ -456,10 +456,11 @@ const history = (messages) =>
 /** Runs one question end to end. Returns the answer text and the evidence it was built on. */
 /** The models to try, in order: the main provider, then Grok (xAI) as a fallback if it is set. */
 export function modelChain(env = process.env) {
-  // Gemini first (LLM_MODEL, then the "latest" aliases), so a retired model name is not a dead end.
+  // Groq first when set, then Gemini (LLM_MODEL, then the "latest" aliases, so a retired model name
+  // is not a dead end). Hugging Face is left out: the Copilot needs reliable tool calling.
   const chain = llmConfigs(env)
-    .filter((c) => c.name === "llm")
-    .map((c) => ({ ...c, name: "primary" }));
+    .filter((c) => c.name === "groq" || c.name === "llm")
+    .map((c) => ({ ...c, name: c.name === "groq" ? "groq" : "primary" }));
   if (env["GROK_API_KEY"])
     chain.push({
       name: "grok",

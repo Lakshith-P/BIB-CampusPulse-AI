@@ -4,11 +4,13 @@ import { generateText } from "ai";
 // One place that decides which model answers. Every configured model is tried in order and one
 // that fails because its quota or credits are spent, or its key is rejected, is skipped for a
 // while, so a single exhausted allowance never takes the assistants down. Providers, in order:
-//   1. Hugging Face (HF_API_KEY), the Inference Providers router
-//   2. Gemini (LLM_API_KEY): LLM_MODEL if set, then the "latest" aliases, which have their own
+//   1. Groq (GROQ_API_KEY), fast OpenAI-compatible inference
+//   2. Hugging Face (HF_API_KEY), the Inference Providers router
+//   3. Gemini (LLM_API_KEY): LLM_MODEL if set, then the "latest" aliases, which have their own
 //      free-tier allowances (fixed names such as gemini-2.5-flash are closed to new accounts)
 // Keys and prompts never reach the browser.
 
+const GROQ = "https://api.groq.com/openai/v1";
 const HF_ROUTER = "https://router.huggingface.co/v1";
 const GEMINI = "https://generativelanguage.googleapis.com/v1beta/openai/";
 const GEMINI_MODELS = ["gemini-flash-lite-latest", "gemini-flash-latest"]; // the lite model answers in seconds
@@ -18,6 +20,13 @@ const SKIP_MS = { quota: 10 * 60 * 1000, auth: 30 * 60 * 1000, other: 60 * 1000 
 /** Every configured model, preferred first. */
 export function llmConfigs(env = process.env) {
   const list = [];
+  if (env["GROQ_API_KEY"])
+    list.push({
+      name: "groq",
+      apiKey: env["GROQ_API_KEY"],
+      baseURL: env["GROQ_BASE_URL"] ?? GROQ,
+      model: env["GROQ_MODEL"] ?? "llama-3.3-70b-versatile",
+    });
   if (env["HF_API_KEY"])
     list.push({
       name: "huggingface",
