@@ -47,6 +47,7 @@
   --color-ochre: var(--ochre);
   --color-ochre-ink: var(--ochre-ink);
   --color-ochre-pale: var(--ochre-pale);
+  --color-accent-cyan: var(--accent-cyan);
   /* Risk bands keep their own ramp, deliberately outside the brand hues. */
   --color-risk-track: var(--risk-track);
   --color-risk-track-pale: var(--risk-track-pale);
@@ -87,18 +88,19 @@
   --rule: #e6e0d6;
   --rule-strong: #d3cabb;
 
-  /* ink */
-  --ink: #1c2541;
-  --ink-strong: #141c2f;
-  --ink-soft: #2b3756;
+  /* ink: deep enterprise navy */
+  --ink: #00205f;
+  --ink-strong: #00133d;
+  --ink-soft: #0a3480;
   --burgundy-dark: var(--ink-strong);
 
-  /* ochre: the only decorative colour in the system */
-  --ochre: #b9761c;
-  --ochre-ink: #8a5410;
-  --ochre-pale: #f6eee0;
-  --rose: #c9b79a;
+  /* ochre: the only decorative colour in the system (now an electric-blue/cyan accent) */
+  --ochre: #0066cc;
+  --ochre-ink: #00338d;
+  --ochre-pale: #e8f2ff;
+  --rose: #8db8e8;
   --rose-pale: var(--ochre-pale);
+  --accent-cyan: #00b8f5;
 
   /* risk ramp, colourblind-safe and separable in greyscale */
   --risk-track: #0f6e5c;
@@ -124,7 +126,7 @@
   --muted-foreground: #5b5952;
   --label: #6e6657;
   --accent: var(--ochre-pale);
-  --accent-foreground: #5e3c0c;
+  --accent-foreground: #00245f;
   --destructive: var(--risk-critical);
   --destructive-foreground: #ffffff;
   --success: var(--risk-track);
@@ -140,28 +142,28 @@
   --ring: var(--ochre);
 
   /* five series separable by hue and by lightness, so greyscale print survives */
-  --chart-1: #22304f;
+  --chart-1: #00205f;
   --chart-2: #9c1b2e;
   --chart-3: #17705a;
-  --chart-4: #b9761c;
-  --chart-5: #7d9cc4;
+  --chart-4: #0066cc;
+  --chart-5: #00b8f5;
 
   --hero-foreground: #ffffff;
-  --hero-muted: #ded7c7;
-  --hero-scrim: rgb(28 37 65 / 82%);
-  --hero-clear: rgb(28 37 65 / 12%);
-  --hero-shadow: rgb(16 22 38 / 32%);
+  --hero-muted: #cfe0f7;
+  --hero-scrim: rgb(0 32 95 / 82%);
+  --hero-clear: rgb(0 32 95 / 12%);
+  --hero-shadow: rgb(0 19 61 / 32%);
 
   /* workspace banner and sidebar */
-  --role-from: #2b3756;
-  --role-via: #1c2541;
-  --role-to: #141c2f;
-  --role-side-from: #1c2541;
-  --role-side-to: #121929;
+  --role-from: #0a3480;
+  --role-via: #00205f;
+  --role-to: #00133d;
+  --role-side-from: #00205f;
+  --role-side-to: #00112e;
 
   --shadow-raised:
-    0 1px 2px rgb(28 37 65 / 6%), 0 12px 32px -20px rgb(28 37 65 / 30%),
-    0 2px 8px -6px rgb(28 37 65 / 16%);
+    0 1px 2px rgb(0 32 95 / 6%), 0 12px 32px -20px rgb(0 32 95 / 30%),
+    0 2px 8px -6px rgb(0 32 95 / 16%);
 }
 
 @layer base {
@@ -544,12 +546,46 @@ th.num {
   font-variant-numeric: tabular-nums;
 }
 
+/* ========================= Student workspace (CampusPulse layout) =========================
+   Inter for reading, Manrope for headings and figures, on a cool grey canvas. */
+.cp-shell {
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  background: #f4f6f9;
+  color: #151c25;
+}
+.cp-shell h1,
+.cp-shell h2,
+.cp-shell h3,
+.cp-shell h4,
+.cp-display,
+.cp-num {
+  font-family: "Manrope", "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+.cp-num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+.cp-nav-active {
+  background: #eef4ff;
+  color: #00338d !important;
+  font-weight: 600;
+}
+.cp-nav-active .cp-nav-icon {
+  color: #00338d;
+}
+
 @media print {
   aside,
   header,
   .assistant-position,
   .print\:hidden {
     display: none !important;
+  }
+  .cp-shell .lg\:pl-72 {
+    padding-left: 0 !important;
+  }
+  .cp-shell {
+    background: #fff !important;
   }
   [data-role] {
     padding-left: 0 !important;

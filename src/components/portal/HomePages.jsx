@@ -1,20 +1,15 @@
-import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { BandBadge, EmptyState, ScoreRing, SectionTitle, StatCard } from "@/components/widgets";
+import { BandBadge, EmptyState, SectionTitle, StatCard } from "@/components/widgets";
 import { OverviewHub } from "@/components/portal/OverviewHub";
-import { ScoreInsights } from "@/components/portal/ScoreInsights";
-import {
-  CampusRiskIdentification,
-  MyRiskIdentification,
-} from "@/components/portal/RiskIdentification";
+import { CampusRiskIdentification } from "@/components/portal/RiskIdentification";
 import { FacultyInsights } from "@/components/portal/FacultyInsights";
 import { AdminAnalytics } from "@/components/portal/AdminAnalytics";
 import { CampusInsights } from "@/components/portal/CampusInsights";
-import { Banner, BannerStat, PageTitle } from "@/components/portal/PortalShell";
+import { Banner, BannerStat } from "@/components/portal/PortalShell";
+import { StudentDashboard } from "@/components/portal/StudentDashboard";
 import { pct } from "@/components/portal/StudentTable";
 import { BAND_ORDER, averages, byAttention, isAtRisk, lowAttendance } from "@/lib/campus-derive";
-import { liveAssignments, liveNotifications } from "@/lib/live-profile";
 import { useCampus } from "@/lib/use-campus";
 
 const card = "surface p-5";
@@ -65,148 +60,7 @@ function AcademicStats({ rows }) {
 
 // ---------------------------------------------------------------- student
 function StudentHome() {
-  const { profile, myRow, interventions, today } = useCampus();
-  const first = firstName(profile.display_name);
-  if (!myRow)
-    return (
-      <div>
-        <Banner title={`Welcome, ${first}`} sub="Overview" />
-        <EmptyState
-          title="Your account is ready"
-          hint="Your student record has not been linked yet. An administrator links it to your account and assigns your teacher. You can already complete your profile."
-        />
-        <div className="mt-4 flex gap-2">
-          <Button asChild>
-            <Link to="/portal/profile">Complete my profile</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  const s = myRow.s;
-  const alerts = liveNotifications(s, today).filter((n) => n.tone !== "info");
-  const deadlines = liveAssignments(s, today).slice(0, 4);
-  const mine = interventions.filter((i) => i.student_id === s.id && i.status !== "resolved");
-  const next = [...mine].sort((a, b) => a.follow_up_date.localeCompare(b.follow_up_date))[0];
-  return (
-    <div>
-      <Banner
-        title={`Welcome back, ${first}`}
-        sub={`${s.id} · ${s.branch} · Semester ${s.semester}`}
-      >
-        <div className="flex items-center gap-5 border-t border-white/30 pt-3">
-          <ScoreRing score={myRow.score} size={84} />
-          <div>
-            <p className="text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-white/65">
-              Success score
-            </p>
-            <p className="mt-1 font-numeric text-xl font-semibold tracking-[-0.02em]">
-              {myRow.band ?? "No data yet"}
-            </p>
-          </div>
-        </div>
-      </Banner>
-      <OverviewHub />
-      <div className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4">
-        <StatCard label="CGPA" value={myRow.cgpa === null ? "—" : myRow.cgpa.toFixed(2)} />
-        <StatCard
-          label="Attendance"
-          value={pct(myRow.attendance)}
-          tone={lowAttendance(myRow) ? "danger" : "default"}
-        />
-        <StatCard label="LMS" value={pct(myRow.lms)} />
-        <StatCard
-          label="Alerts"
-          value={String(alerts.length)}
-          tone={myRow.urgent ? "danger" : alerts.length ? "warning" : "success"}
-        />
-      </div>
-      <div className="mt-5 gap-4 lg:columns-2 [&>*]:mb-4 [&>*]:break-inside-avoid">
-        <div className={card}>
-          <SectionTitle>Needs your attention</SectionTitle>
-          {alerts.length === 0 && (
-            <p className="text-sm text-success">
-              {myRow.score === null
-                ? "Nothing to show yet. Alerts appear once your marks and attendance are added."
-                : "You are on track everywhere."}
-            </p>
-          )}
-          <div className="divide-y divide-rule">
-            {alerts.slice(0, 4).map((n, i) => (
-              <div
-                key={i}
-                className={`flex gap-2.5 border-l-2 py-2.5 pl-3 text-sm ${
-                  n.tone === "danger" ? "border-l-destructive" : "border-l-warning"
-                }`}
-              >
-                <div className="min-w-0">
-                  <p className="font-medium leading-snug">
-                    <span className="mr-1.5 text-[11px] font-semibold uppercase tracking-wide text-label">
-                      {n.area}
-                    </span>
-                    {n.text}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{n.tip}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className={card}>
-          <SectionTitle>Coming up</SectionTitle>
-          <p className="text-sm">
-            {myRow.mentorId ? (
-              <>
-                Mentor <b>{myRow.mentorName}</b>
-                {myRow.mentorEmail && (
-                  <span className="text-muted-foreground"> · {myRow.mentorEmail}</span>
-                )}
-              </>
-            ) : (
-              <span className="text-muted-foreground">No mentor assigned yet.</span>
-            )}
-          </p>
-          {next && (
-            <p className="mt-1 text-sm text-muted-foreground">
-              Next follow-up <b className="text-foreground">{next.follow_up_date}</b>: {next.action}
-            </p>
-          )}
-          <div className="mt-3 divide-y divide-rule border-t border-rule">
-            {deadlines.length === 0 && (
-              <p className="py-2 text-sm text-muted-foreground">
-                {s.lms.length ? "No pending assignments." : "No LMS data recorded yet."}
-              </p>
-            )}
-            {deadlines.map((a) => (
-              <div
-                key={a.subject + a.title}
-                className="flex items-center justify-between gap-3 py-2 text-sm"
-              >
-                <span className="min-w-0 truncate">
-                  <span className="font-medium">{a.title}</span>
-                  <span className="ml-1.5 text-xs text-muted-foreground">· {a.subject}</span>
-                </span>
-                <span
-                  className={`shrink-0 text-xs font-semibold ${
-                    a.daysLeft !== null && a.daysLeft <= 2
-                      ? "text-destructive"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {a.deadline || "no date"}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="mt-5">
-        <MyRiskIdentification s={s} />
-      </div>
-      <div className="mt-5">
-        <ScoreInsights s={s} />
-      </div>
-    </div>
-  );
+  return <StudentDashboard />;
 }
 
 // ---------------------------------------------------------------- shared staff bits

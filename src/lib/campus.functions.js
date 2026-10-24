@@ -4,7 +4,7 @@ import { requireAuth } from "@/backend/auth-middleware";
 import { hashPassword, limitByIp } from "@/backend/auth.server";
 import { randomBytes } from "node:crypto";
 import { query, withTransaction } from "@/backend/db.server";
-import { backfillStudentRecords } from "@/backend/student-record.server";
+import { backfillStudentRecords, cohortStanding } from "@/backend/student-record.server";
 import { studentSchema } from "@/lib/student-validation";
 import { emptyStudent } from "@/lib/student-defaults";
 // Which student records a user may see: their own, those assigned to them as faculty, or all as admin.
@@ -495,6 +495,10 @@ export const updateTargetRoles = createServerFn({ method: "POST" })
     if (!changed) throw new Error("No student record is linked to your account yet.");
     return { saved: true };
   });
+
+export const loadCohortStanding = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .handler(({ context }) => withTransaction((db) => cohortStanding(db, context.user)));
 
 export const listAudit = createServerFn({ method: "POST" })
   .middleware([requireAuth])

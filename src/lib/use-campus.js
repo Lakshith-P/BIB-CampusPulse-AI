@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from "react";
-import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 import { buildRows, summarize } from "@/lib/campus-derive";
-import { loadCampus } from "@/lib/campus.functions";
+import { loadCampus, loadCohortStanding } from "@/lib/campus.functions";
 import { todayIso } from "@/lib/live-profile";
 
 export const campusOptions = queryOptions({
@@ -51,3 +51,8 @@ export function useCampus() {
     refresh,
   };
 }
+
+/** The signed-in student's percentile against peers in their branch and semester, computed
+ * server-side so no peer record ever reaches the browser. */
+export const useCohortStanding = () =>
+  useQuery({ queryKey: ["cohort-standing"], queryFn: () => loadCohortStanding() });

@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { Brand } from "@/components/PublicLayout";
 import { GlobalSearch } from "@/components/portal/GlobalSearch";
+import { StudentShell } from "@/components/portal/StudentShell";
 import { NotificationBell } from "@/components/portal/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CATEGORY, useAnnouncements } from "@/components/portal/Announcements";
@@ -242,6 +243,13 @@ export function PortalShell({ children }) {
     await refresh();
     await navigate({ to: "/auth", replace: true });
   }
+  if (role === "student")
+    return (
+      <StudentShell profile={profile} myRow={myRow} rows={rows} onSignOut={logout}>
+        <LoadingBar />
+        {children}
+      </StudentShell>
+    );
   const name = profile.display_name || profile.email;
   const line1 = myRow ? `${myRow.s.id} | Sem ${myRow.s.semester}` : ROLE_LABEL[role];
   const line2 = myRow ? myRow.s.branch : profile.email;
