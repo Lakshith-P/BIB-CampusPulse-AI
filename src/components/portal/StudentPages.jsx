@@ -93,9 +93,17 @@ export function AttendancePage() {
     return (
       <StaffTabs
         title="Attendance"
-        sub="Mark classes, set the timetable and watch attendance shortages"
+        sub={
+          role === "admin"
+            ? "View attendance, set the timetable and watch attendance shortages"
+            : "Mark the subjects you teach, set the timetable and watch attendance shortages"
+        }
         tabs={[
-          ["mark", "Mark attendance", <MarkAttendance key="a" />],
+          [
+            "mark",
+            role === "admin" ? "View attendance" : "Mark attendance",
+            <MarkAttendance key="a" />,
+          ],
           [
             "timetable",
             "Timetable",

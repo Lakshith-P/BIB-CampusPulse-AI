@@ -15,47 +15,72 @@ import { PERIODS, planTimetable } from "@/lib/timetable-plan";
 // on the student's record in step, so the Success Score and risk flags use the marked data.
 // Re-marking a class replaces its earlier marks instead of counting it twice.
 
-/**
- * Whether attendance is open to every student. Only an administrator who is not also a teacher
- * sees everyone: anyone with the teacher role marks attendance for their assigned students only.
- */
-const seesEveryone = (user) => isAdmin(user) && !isFaculty(user);
+// Who may do what: the teacher of a subject (teacher_subjects) marks its attendance for every
+// student taking it. Administrators assign subjects to teachers and can view any subject's
+// attendance, but never mark it. Students see only their own log.
 
-/** Teachers can manage attendance only for their assigned students; admins can manage all. */
-async function requireAttendanceManager(db, user, subject) {
-  requireStaff(user);
-  const { rowCount } = await db.query(
-    `SELECT 1 FROM student_records sr
-      WHERE ($2::boolean OR sr.faculty_id = $1)
-        AND sr.record->'subjects' @> jsonb_build_array(jsonb_build_object('subject', $3::text))
-      LIMIT 1`,
-    [user.id, seesEveryone(user), subject],
-  );
-  if (!rowCount) throw new Error("That subject has no students assigned to you.");
-}
+const ADMIN_CANNOT_MARK =
+  "Administrators can view attendance but not mark it. The subject's teacher marks it.";
 
-export async function attendanceSubjects(db, user) {
-  requireStaff(user);
+/** The subjects this account teaches. */
+export async function taughtSubjects(db, userId) {
   const { rows } = await db.query(
-    `SELECT DISTINCT s->>'subject' AS subject
-       FROM student_records sr, jsonb_array_elements(sr.record->'subjects') s
-      WHERE ($2::boolean OR sr.faculty_id = $1)
-        AND s->>'subject' IS NOT NULL
-      ORDER BY 1`,
-    [user.id, seesEveryone(user)],
+    "SELECT subject FROM teacher_subjects WHERE teacher_id = $1 ORDER BY subject",
+    [userId],
   );
   return rows.map((r) => r.subject);
 }
 
-/** Students taking the subject who are assigned to this teacher, or all students for admins. */
-async function roster(db, user, subject) {
+const teaches = async (db, user, subject) =>
+  isFaculty(user) &&
+  (
+    await db.query("SELECT 1 FROM teacher_subjects WHERE teacher_id = $1 AND subject = $2", [
+      user.id,
+      subject,
+    ])
+  ).rowCount > 0;
+
+/** Viewing a subject's attendance: its teacher, or any administrator. */
+async function requireAttendanceViewer(db, user, subject) {
+  requireStaff(user);
+  if (isAdmin(user) || (await teaches(db, user, subject))) return;
+  throw new Error("You can only open attendance for the subjects you teach.");
+}
+
+/** Marking a subject's attendance: only the teacher who teaches it. */
+async function requireAttendanceMarker(db, user, subject) {
+  requireStaff(user);
+  if (await teaches(db, user, subject)) return;
+  throw new Error(
+    isAdmin(user) ? ADMIN_CANNOT_MARK : "You can only mark attendance for the subjects you teach.",
+  );
+}
+
+/**
+ * The subjects the caller can open, and whether they can mark them. A teacher gets the subjects
+ * they teach; an administrator gets every subject on record, to view.
+ */
+export async function attendanceSubjects(db, user) {
+  requireStaff(user);
+  const mine = isFaculty(user) ? await taughtSubjects(db, user.id) : [];
+  if (!isAdmin(user)) return { subjects: mine, taught: mine };
+  const { rows } = await db.query(
+    `SELECT DISTINCT s->>'subject' AS subject
+       FROM student_records sr, jsonb_array_elements(sr.record->'subjects') s
+      WHERE s->>'subject' IS NOT NULL
+      ORDER BY 1`,
+  );
+  return { subjects: rows.map((r) => r.subject), taught: mine };
+}
+
+/** Every student taking the subject. */
+async function roster(db, subject) {
   const { rows } = await db.query(
     `SELECT sr.id, sr.owner_id, sr.record->>'name' AS name
        FROM student_records sr
-      WHERE ($2::boolean OR sr.faculty_id = $1)
-        AND sr.record->'subjects' @> jsonb_build_array(jsonb_build_object('subject', $3::text))
+      WHERE sr.record->'subjects' @> jsonb_build_array(jsonb_build_object('subject', $1::text))
       ORDER BY sr.record->>'name', sr.id`,
-    [user.id, seesEveryone(user), subject],
+    [subject],
   );
   return rows;
 }
@@ -64,8 +89,8 @@ const isoDate = (d) => (typeof d === "string" ? d : new Date(d).toISOString().sl
 
 /** The class list for a subject, date and period, pre-filled with any earlier marks. */
 export async function loadRoster(db, user, { subject, date, period }) {
-  await requireAttendanceManager(db, user, subject);
-  const students = await roster(db, user, subject);
+  await requireAttendanceViewer(db, user, subject);
+  const students = await roster(db, subject);
   const session = (
     await db.query(
       "SELECT id FROM attendance_sessions WHERE subject = $1 AND held_on = $2 AND period = $3",
@@ -82,6 +107,7 @@ export async function loadRoster(db, user, { subject, date, period }) {
     : [];
   const byStudent = new Map(marks.map((m) => [m.student_id, m.present]));
   return {
+    canMark: await teaches(db, user, subject),
     marked: marks.length > 0,
     students: students.map((s) => ({
       id: s.id,
@@ -93,14 +119,15 @@ export async function loadRoster(db, user, { subject, date, period }) {
 }
 
 export async function markAttendance(db, user, { subject, date, period, marks }, today) {
-  await requireAttendanceManager(db, user, subject);
+  await requireAttendanceMarker(db, user, subject);
   if (date > today) throw new Error("You cannot mark attendance for a future date.");
-  const students = await roster(db, user, subject);
-  if (!students.length) throw new Error("No students of yours take this subject.");
+  const students = await roster(db, subject);
+  if (!students.length) throw new Error("No students take this subject.");
   const allowed = new Map(students.map((s) => [s.id, s]));
   const present = new Map();
   for (const m of marks) {
-    if (!allowed.has(m.studentId)) throw new Error("A student in the list is not in your class.");
+    if (!allowed.has(m.studentId))
+      throw new Error("A student in the list does not take this subject.");
     present.set(m.studentId, m.present);
   }
   // Anyone left out of the request counts as present, matching the pre-filled list.
@@ -171,19 +198,16 @@ async function bumpTotals(db, studentId, subject, heldDelta, attendedDelta) {
 
 /** Recent classes marked for a subject, with how many were present. */
 export async function recentSessions(db, user, { subject }) {
-  await requireAttendanceManager(db, user, subject);
+  await requireAttendanceViewer(db, user, subject);
   const { rows } = await db.query(
     `SELECT s.id, s.held_on::text AS held_on, s.period,
             count(m.*) FILTER (WHERE m.present)::int AS present,
             count(m.*) FILTER (WHERE NOT m.present)::int AS absent
        FROM attendance_sessions s LEFT JOIN attendance_marks m ON m.session_id = s.id
       WHERE s.subject = $1
-        AND EXISTS (
-          SELECT 1 FROM student_records sr
-           WHERE sr.id = m.student_id AND ($2::boolean OR sr.faculty_id = $3)
-        )
-      GROUP BY s.id ORDER BY s.held_on DESC, s.period DESC LIMIT 15`,
-    [subject, seesEveryone(user), user.id],
+      GROUP BY s.id HAVING count(m.*) > 0
+      ORDER BY s.held_on DESC, s.period DESC LIMIT 15`,
+    [subject],
   );
   return rows.map((r) => ({ ...r, held_on: isoDate(r.held_on) }));
 }
@@ -229,7 +253,7 @@ export async function timetableCoverage(db, user) {
        FROM student_records sr
       WHERE ($2::boolean OR sr.faculty_id = $1)
       ORDER BY sr.record->>'name', sr.id`,
-    [user.id, seesEveryone(user)],
+    [user.id, isAdmin(user) && !isFaculty(user)],
   );
   const slots = await db.query(
     "SELECT subject, count(*)::int AS slots FROM timetable_slots GROUP BY subject",
@@ -361,4 +385,45 @@ export async function generateTimetable(db, user, { replace = false } = {}) {
     unplaced: plan.unplaced,
     students: covered.rows[0],
   };
+}
+
+// ---------------------------------------------------------------- subject teachers (admin)
+
+/** Every teacher's subjects, and every subject on record to choose from. */
+export async function listTeacherSubjects(db, user) {
+  requireAdminUser(user);
+  const [assigned, all] = await Promise.all([
+    db.query("SELECT teacher_id, subject FROM teacher_subjects ORDER BY subject"),
+    db.query(
+      `SELECT DISTINCT s->>'subject' AS subject
+         FROM student_records sr, jsonb_array_elements(sr.record->'subjects') s
+        WHERE s->>'subject' IS NOT NULL ORDER BY 1`,
+    ),
+  ]);
+  return {
+    assignments: assigned.rows.map((r) => ({ teacherId: r.teacher_id, subject: r.subject })),
+    subjects: all.rows.map((r) => r.subject),
+  };
+}
+
+/** Replaces the subjects one teacher teaches. Only teachers can be given subjects. */
+export async function setTeacherSubjects(db, user, { teacherId, subjects }) {
+  requireAdminUser(user);
+  const { rowCount } = await db.query(
+    "SELECT 1 FROM user_roles WHERE user_id = $1 AND role = 'faculty'",
+    [teacherId],
+  );
+  if (!rowCount) throw new Error("Subjects can only be assigned to teachers.");
+  const unique = [...new Set(subjects.map((x) => x.trim()).filter(Boolean))];
+  await db.query(
+    "DELETE FROM teacher_subjects WHERE teacher_id = $1 AND NOT (subject = ANY($2::text[]))",
+    [teacherId, unique],
+  );
+  for (const subject of unique)
+    await db.query(
+      `INSERT INTO teacher_subjects(teacher_id, subject, assigned_by) VALUES($1,$2,$3)
+       ON CONFLICT DO NOTHING`,
+      [teacherId, subject, user.id],
+    );
+  return { saved: true, subjects: unique };
 }

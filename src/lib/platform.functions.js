@@ -269,6 +269,17 @@ export const loadRecentSessions = createServerFn({ method: "POST" })
   .handler(({ data, context }) =>
     run(context.user, (db, user) => attendance.recentSessions(db, user, data)),
   );
+export const loadTeacherSubjects = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .handler(({ context }) =>
+    run(context.user, (db, user) => attendance.listTeacherSubjects(db, user)),
+  );
+export const saveTeacherSubjects = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(z.object({ teacherId: z.string().uuid(), subjects: z.array(text(100, 1)).max(40) }))
+  .handler(({ data, context }) =>
+    run(context.user, (db, user) => attendance.setTeacherSubjects(db, user, data)),
+  );
 export const loadMyAttendance = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .validator(z.object({ subject: text(100) }))

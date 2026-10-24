@@ -32,6 +32,7 @@ const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 // ---------------------------------------------------------------- mark attendance (staff)
 export function MarkAttendance() {
   const qc = useQueryClient();
+  const { isAdmin } = useCampus();
   const subjectsQuery = useQuery({
     queryKey: ["attendance-subjects"],
     queryFn: () => loadAttendanceSubjects(),
@@ -40,7 +41,7 @@ export function MarkAttendance() {
   const [date, setDate] = useState(todayIso());
   const [period, setPeriod] = useState(1);
   const [present, setPresent] = useState({});
-  const subjects = subjectsQuery.data ?? [];
+  const subjects = subjectsQuery.data?.subjects ?? [];
   const current = subject || subjects[0] || "";
   const key = ["attendance-roster", current, date, period];
   const roster = useQuery({
@@ -72,16 +73,27 @@ export function MarkAttendance() {
   if (!subjects.length)
     return (
       <EmptyState
-        title="No subjects to mark"
-        hint="Subjects appear here once students have them on their record."
+        title={isAdmin ? "No subjects yet" : "No subjects are assigned to you yet"}
+        hint={
+          isAdmin
+            ? "Subjects appear here once students have them on their record."
+            : "You mark attendance only for the subjects you teach. An administrator assigns them on the Teachers page."
+        }
       />
     );
   const students = roster.data?.students ?? [];
   const absentCount = students.filter((s) => present[s.id] === false).length;
+  const canMark = roster.data?.canMark ?? false;
   return (
     <div className="space-y-4">
-      <SectionTitle sub="Choose a date and period to review saved marks. Changes update student attendance only after you save. Everyone starts as present; tick who is absent.">
-        Mark attendance
+      <SectionTitle
+        sub={
+          isAdmin && !subjectsQuery.data?.taught?.length
+            ? "View any subject's attendance by date and period. Only the teacher of a subject marks it."
+            : "Choose one of the subjects you teach, a date and a period. Everyone starts as present; tick who is absent, then save."
+        }
+      >
+        {isAdmin && !subjectsQuery.data?.taught?.length ? "View attendance" : "Mark attendance"}
       </SectionTitle>
       <div className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-3">
         <Field label="Subject">
@@ -126,6 +138,30 @@ export function MarkAttendance() {
           title="No students in this class"
           hint="No students are currently enrolled in this subject."
         />
+      ) : !canMark ? (
+        <div className="space-y-3">
+          <p className="rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground">
+            View only. {roster.data.marked ? "" : "This class has not been marked yet. "}
+            {students.length - absentCount} present · {absentCount} absent
+          </p>
+          <ul className="divide-y rounded-xl border bg-card">
+            {students.map((s) => (
+              <li key={s.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                <span className="min-w-0 truncate text-sm">
+                  <span className="font-medium">{s.name}</span>{" "}
+                  <span className="text-xs text-muted-foreground">{s.id}</span>
+                </span>
+                {roster.data.marked ? (
+                  <StatusPill tone={s.present ? "success" : "danger"}>
+                    {s.present ? "Present" : "Absent"}
+                  </StatusPill>
+                ) : (
+                  <span className="text-xs text-muted-foreground">Not marked</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : (
         <form
           className="space-y-3"

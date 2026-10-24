@@ -30,14 +30,33 @@ afterAll(() => ctx?.close());
 const base = { subject: "Maths", date: "2026-10-20", period: 1 };
 const totals = async (id) => (await recordOf(db, id)).subjects[0];
 
+describe("who teaches what", () => {
+  it("lets only an administrator assign subjects, and only to teachers", async () => {
+    await expect(
+      attendance.setTeacherSubjects(db, teacher, { teacherId: teacher.id, subjects: ["Maths"] }),
+    ).rejects.toThrow();
+    await expect(
+      attendance.setTeacherSubjects(db, admin, { teacherId: ann.id, subjects: ["Maths"] }),
+    ).rejects.toThrow(/only be assigned to teachers/);
+    await attendance.setTeacherSubjects(db, admin, { teacherId: teacher.id, subjects: ["Maths"] });
+    const list = await attendance.listTeacherSubjects(db, admin);
+    expect(list.assignments).toEqual([{ teacherId: teacher.id, subject: "Maths" }]);
+    expect(list.subjects).toEqual(["Maths"]);
+    expect(await attendance.attendanceSubjects(db, teacher)).toMatchObject({
+      subjects: ["Maths"],
+    });
+    // a teacher with no subjects has nothing to mark
+    expect(await attendance.attendanceSubjects(db, other)).toMatchObject({ subjects: [] });
+  });
+});
+
 describe("marking attendance", () => {
-  it("lists only assigned students and does not update totals before saving", async () => {
+  it("gives the subject's teacher every student taking it, without changing totals", async () => {
     const r = await attendance.loadRoster(db, teacher, base);
-    expect(r.marked).toBe(false);
-    expect(r.students.map((s) => s.id)).toEqual(["S-ANN", "S-BEN"]);
+    expect(r).toMatchObject({ marked: false, canMark: true });
+    expect(r.students.map((s) => s.id)).toEqual(["S-ANN", "S-BEN", "S-CARA"]);
     expect(r.students.every((s) => s.present)).toBe(true);
     expect(await totals("S-ANN")).toMatchObject({ classesHeld: 10, classesAttended: 8 });
-    expect(await totals("S-BEN")).toMatchObject({ classesHeld: 10, classesAttended: 10 });
     expect(await totals("S-CARA")).toMatchObject({ classesHeld: 10, classesAttended: 5 });
   });
 
@@ -48,10 +67,10 @@ describe("marking attendance", () => {
       { ...base, marks: [{ studentId: "S-ANN", present: false }] },
       TODAY,
     );
-    expect(r).toMatchObject({ present: 1, absent: 1 });
+    expect(r).toMatchObject({ present: 2, absent: 1 });
     expect(await totals("S-ANN")).toMatchObject({ classesHeld: 11, classesAttended: 8 });
     expect(await totals("S-BEN")).toMatchObject({ classesHeld: 11, classesAttended: 11 });
-    expect(await totals("S-CARA")).toMatchObject({ classesHeld: 10, classesAttended: 5 });
+    expect(await totals("S-CARA")).toMatchObject({ classesHeld: 11, classesAttended: 6 });
     const n = await db.query("SELECT title FROM notifications WHERE user_id = $1", [ann.id]);
     expect(n.rows[0].title).toMatch(/absent in Maths/);
   });
@@ -75,52 +94,56 @@ describe("marking attendance", () => {
     expect(r.marked).toBe(true);
     expect(r.students.find((s) => s.id === "S-BEN").present).toBe(false);
     expect(await attendance.recentSessions(db, teacher, { subject: "Maths" })).toMatchObject([
-      { held_on: base.date, period: base.period, present: 1, absent: 1 },
+      { held_on: base.date, period: base.period, present: 2, absent: 1 },
     ]);
   });
 
-  it("limits each teacher to assigned students, and rejects unrelated subjects", async () => {
-    expect(await attendance.attendanceSubjects(db, other)).toEqual(["Maths"]);
-    const otherRoster = await attendance.loadRoster(db, other, { ...base, period: 2 });
-    expect(otherRoster.students.map((s) => s.id)).toEqual(["S-CARA"]);
+  it("stops a teacher from opening or marking a subject they do not teach", async () => {
+    await expect(attendance.loadRoster(db, other, base)).rejects.toThrow(/subjects you teach/);
+    await expect(
+      attendance.markAttendance(
+        db,
+        other,
+        { ...base, period: 2, marks: [{ studentId: "S-CARA", present: false }] },
+        TODAY,
+      ),
+    ).rejects.toThrow(/subjects you teach/);
+    await expect(attendance.recentSessions(db, other, { subject: "Maths" })).rejects.toThrow();
     await expect(
       attendance.markAttendance(
         db,
         teacher,
-        { ...base, period: 2, marks: [{ studentId: "S-CARA", present: false }] },
+        { ...base, period: 2, marks: [{ studentId: "S-NOPE", present: false }] },
         TODAY,
       ),
-    ).rejects.toThrow(/not in your class/);
-    const saved = await attendance.markAttendance(
-      db,
-      other,
-      { ...base, period: 2, marks: [{ studentId: "S-CARA", present: false }] },
-      TODAY,
-    );
-    expect(saved).toMatchObject({ present: 0, absent: 1 });
-    expect(await totals("S-CARA")).toMatchObject({ classesHeld: 11, classesAttended: 5 });
-    const history = await attendance.loadRoster(db, other, { ...base, period: 2 });
-    expect(history.marked).toBe(true);
-    expect(history.students[0].present).toBe(false);
-    expect(await attendance.recentSessions(db, teacher, { subject: "Maths" })).toHaveLength(1);
-    expect(await attendance.recentSessions(db, other, { subject: "Maths" })).toMatchObject([
-      { held_on: base.date, period: 2, present: 0, absent: 1 },
-    ]);
-    await expect(
-      attendance.loadRoster(db, teacher, { ...base, subject: "History" }),
-    ).rejects.toThrow(/assigned to you/);
+    ).rejects.toThrow(/does not take this subject/);
     await expect(
       attendance.markAttendance(db, ann, { ...base, marks: [] }, TODAY),
     ).rejects.toThrow();
     await expect(
       attendance.markAttendance(db, teacher, { ...base, date: "2026-10-22", marks: [] }, TODAY),
     ).rejects.toThrow(/future/);
-    expect(await totals("S-CARA")).toMatchObject({ classesHeld: 11, classesAttended: 5 });
+    expect(await totals("S-CARA")).toMatchObject({ classesHeld: 11, classesAttended: 6 });
   });
 
-  it("lets an administrator mark everyone and a student see only their own log", async () => {
-    const r = await attendance.loadRoster(db, admin, { ...base, period: 2 });
+  it("lets an administrator view every subject but never mark it", async () => {
+    expect(await attendance.attendanceSubjects(db, admin)).toMatchObject({ subjects: ["Maths"] });
+    const r = await attendance.loadRoster(db, admin, base);
+    expect(r).toMatchObject({ canMark: false, marked: true });
     expect(r.students).toHaveLength(3);
+    expect(await attendance.recentSessions(db, admin, { subject: "Maths" })).toHaveLength(1);
+    await expect(
+      attendance.markAttendance(
+        db,
+        admin,
+        { ...base, period: 2, marks: [{ studentId: "S-ANN", present: false }] },
+        TODAY,
+      ),
+    ).rejects.toThrow(/Administrators can view attendance but not mark it/);
+    expect(await totals("S-ANN")).toMatchObject({ classesHeld: 11, classesAttended: 9 });
+  });
+
+  it("shows a student only their own log", async () => {
     const log = await attendance.myAttendance(db, ann, { subject: "Maths" });
     expect(log.sessions).toEqual([
       { subject: "Maths", held_on: "2026-10-20", period: 1, present: true },
@@ -134,28 +157,14 @@ describe("marking attendance", () => {
 });
 
 describe("an account that is both a teacher and an administrator", () => {
-  it("marks attendance only for the students assigned to them, like any teacher", async () => {
+  it("marks only the subjects it teaches", async () => {
     const both = await addUser(db, "both@x.edu", "Both", ["admin", "faculty"]);
-    // no students yet: the whole campus is not theirs to mark
-    expect(await attendance.attendanceSubjects(db, both)).toEqual([]);
-    await expect(attendance.loadRoster(db, both, { ...base, period: 3 })).rejects.toThrow(
-      /assigned to you/,
-    );
-    const dee = await addUser(db, "dee@x.edu", "Dee");
-    await addStudent(db, "S-DEE", dee, both, { subjects: maths(4, 4) });
-    const roster = await attendance.loadRoster(db, both, { ...base, period: 3 });
-    expect(roster.students.map((x) => x.id)).toEqual(["S-DEE"]);
     await expect(
-      attendance.markAttendance(
-        db,
-        both,
-        { ...base, period: 3, marks: [{ studentId: "S-ANN", present: false }] },
-        TODAY,
-      ),
-    ).rejects.toThrow(/not in your class/);
-    // leave the shared data as it was for the tests after this one
-    await db.query("DELETE FROM student_records WHERE id = 'S-DEE'");
-    await db.query("DELETE FROM users WHERE id = ANY($1)", [[both.id, dee.id]]);
+      attendance.markAttendance(db, both, { ...base, period: 3, marks: [] }, TODAY),
+    ).rejects.toThrow(/Administrators can view/);
+    await attendance.setTeacherSubjects(db, admin, { teacherId: both.id, subjects: ["Maths"] });
+    expect((await attendance.loadRoster(db, both, { ...base, period: 3 })).canMark).toBe(true);
+    await db.query("DELETE FROM users WHERE id = $1", [both.id]);
   });
 });
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BandBadge, EmptyState, SectionTitle } from "@/components/widgets";
 import { AdminTools } from "@/components/AdminTools";
@@ -13,6 +13,8 @@ import { PredictionInputsEditor, PredictionPanel } from "@/components/portal/Pre
 import { LiveStudentProfile } from "@/components/student-profile/LiveStudentProfile";
 import { byAttention, isAtRisk, lowAttendance } from "@/lib/campus-derive";
 import { listAccounts, listAudit } from "@/lib/campus.functions";
+import { loadTeacherSubjects, saveTeacherSubjects } from "@/lib/platform.functions";
+import { useAction } from "@/components/ui-kit";
 import { liveAssignments } from "@/lib/live-profile";
 import { attendancePct } from "@/lib/scoring";
 import { useCampus } from "@/lib/use-campus";
@@ -290,8 +292,81 @@ export function MonitorPage() {
 }
 
 // ---------------------------------------------------------------- teachers (admin)
+/** The subjects one teacher teaches; only they can mark those subjects' attendance. */
+function TeacherSubjects({ teacher, assigned, all }) {
+  const qc = useQueryClient();
+  const [pick, setPick] = useState("");
+  const { busy, run } = useAction(() => qc.invalidateQueries({ queryKey: ["teacher-subjects"] }));
+  const save = (subjects, message) =>
+    run(() => saveTeacherSubjects({ data: { teacherId: teacher.id, subjects } }), message);
+  const free = all.filter((x) => !assigned.includes(x));
+  return (
+    <div className="flex min-w-56 flex-wrap items-center gap-1.5 py-2">
+      {assigned.length === 0 && (
+        <span className="text-xs text-muted-foreground">No subjects yet</span>
+      )}
+      {assigned.map((subject) => (
+        <span
+          key={subject}
+          className="inline-flex items-center gap-1 rounded-full bg-primary/10 py-0.5 pl-2.5 pr-1 text-xs font-medium text-primary"
+        >
+          {subject}
+          <button
+            type="button"
+            disabled={busy}
+            aria-label={`Remove ${subject} from ${teacher.name || teacher.email}`}
+            onClick={() =>
+              save(
+                assigned.filter((x) => x !== subject),
+                `${subject} removed.`,
+              )
+            }
+            className="rounded-full p-0.5 hover:bg-primary/20"
+          >
+            <X className="size-3" />
+          </button>
+        </span>
+      ))}
+      {free.length > 0 && (
+        <span className="inline-flex items-center gap-1">
+          <select
+            aria-label={`Add a subject for ${teacher.name || teacher.email}`}
+            value={pick}
+            onChange={(e) => setPick(e.target.value)}
+            className="h-7 rounded-md border bg-card px-1.5 text-xs"
+          >
+            <option value="">Add subject…</option>
+            {free.map((x) => (
+              <option key={x}>{x}</option>
+            ))}
+          </select>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-7 px-2"
+            disabled={!pick || busy}
+            onClick={async () => {
+              await save([...assigned, pick], `${pick} assigned.`);
+              setPick("");
+            }}
+          >
+            <Plus className="size-3.5" /> Add
+          </Button>
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function TeachersPage() {
   const { rows, interventions } = useCampus();
+  const taught = useQuery({
+    queryKey: ["teacher-subjects"],
+    queryFn: () => loadTeacherSubjects(),
+  });
+  const subjectsOf = (id) =>
+    (taught.data?.assignments ?? []).filter((a) => a.teacherId === id).map((a) => a.subject);
   const accounts = useQuery({
     queryKey: ["accounts"],
     queryFn: () => listAccounts(),
@@ -321,6 +396,10 @@ export function TeachersPage() {
                 <th>Average score</th>
                 <th>Need help</th>
                 <th>Open follow-ups</th>
+                <th className="pr-3">
+                  Subjects taught{" "}
+                  <span className="font-normal">(only they mark its attendance)</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -347,6 +426,13 @@ export function TeachersPage() {
                       {mine.filter(isAtRisk).length}
                     </td>
                     <td>{open}</td>
+                    <td className="pr-3">
+                      <TeacherSubjects
+                        teacher={t}
+                        assigned={subjectsOf(t.id)}
+                        all={taught.data?.subjects ?? []}
+                      />
+                    </td>
                   </tr>
                 );
               })}
