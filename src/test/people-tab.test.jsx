@@ -59,6 +59,11 @@ vi.mock("@/lib/campus.functions", () => ({
   linkStudentsToTeacher: vi.fn(),
 }));
 
+vi.mock("@/lib/access.functions", () => ({
+  postAdminMessage: vi.fn(),
+  loadAdminMessages: vi.fn(async () => []),
+}));
+
 import { AdminTools } from "@/components/AdminTools";
 
 const renderPeople = () =>

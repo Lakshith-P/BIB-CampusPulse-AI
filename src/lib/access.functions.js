@@ -4,6 +4,7 @@ import { requireAuth } from "@/backend/auth-middleware";
 import { limitByIp } from "@/backend/auth.server";
 import { withTransaction } from "@/backend/db.server";
 import * as registration from "@/backend/registration.server";
+import * as adminMessages from "@/backend/admin-messages.server";
 
 // Administrators only: registering students and teachers (the system emails each their login) and
 // deciding password requests. The role check is in the server module, not here.
@@ -58,3 +59,25 @@ export const loadMailStatus = createServerFn({ method: "POST" })
     if (!context.user.roles.includes("admin")) throw new Error("Only administrators can do this.");
     return { ready: (await registration.defaultMailer()).ready };
   });
+
+// Messages an administrator posts from the Messages page (administrators only).
+export const postAdminMessage = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(
+    z.object({
+      audience: z.enum(["students", "teachers", "everyone", "person"]),
+      userId: z.string().uuid().optional(),
+      subject: text(150),
+      body: text(2000, 1),
+    }),
+  )
+  .handler(({ data, context }) => {
+    limitByIp("admin-message", 60, 60 * 60 * 1000);
+    return run(context.user, (db, user) => adminMessages.postAdminMessage(db, user, data));
+  });
+
+export const loadAdminMessages = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .handler(({ context }) =>
+    run(context.user, (db, user) => adminMessages.listAdminMessages(db, user)),
+  );

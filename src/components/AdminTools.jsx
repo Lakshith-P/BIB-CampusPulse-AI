@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { SectionTitle } from "@/components/widgets";
+import { AdminMessages } from "@/components/portal/AdminMessages";
 import {
   linkStudentsToTeacher,
   listAccounts,
@@ -53,6 +54,7 @@ export function AdminTools({ students, records, selectedId = "", onSaved, tabs =
     enabled: open === "messages",
   });
   const [msg, setMsg] = useState("");
+  const [replyTo, setReplyTo] = useState(null);
   const [busy, setBusy] = useState(false);
   const people = useMemo(() => accounts.data ?? [], [accounts.data]);
   const byId = useMemo(() => new Map(people.map((p) => [p.id, p])), [people]);
@@ -894,7 +896,8 @@ export function AdminTools({ students, records, selectedId = "", onSaved, tabs =
       )}
 
       {open === "messages" && (
-        <div>
+        <div className="space-y-5">
+          <AdminMessages replyTo={replyTo} onClearReply={() => setReplyTo(null)} />
           <p className="mb-3 text-sm text-muted-foreground">
             Messages and concerns sent from the Contact page, newest first. Only administrators can
             read these.
@@ -916,6 +919,20 @@ export function AdminTools({ students, records, selectedId = "", onSaved, tabs =
                   {new Date(m.created_at).toLocaleString()}
                 </p>
                 <p className="mt-1 whitespace-pre-wrap">{m.message}</p>
+                {m.user_id && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="mt-2"
+                    onClick={() => {
+                      setReplyTo({ userId: m.user_id, name: m.name || m.email });
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                  >
+                    Reply
+                  </Button>
+                )}
               </article>
             ))}
           </div>

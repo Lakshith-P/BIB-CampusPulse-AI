@@ -39,6 +39,10 @@ beforeAll(async () => {
   await db.query("UPDATE users SET password_hash = $1", [hash]);
   await addStudent(db, "S-ANN", ann, teacher, { subjects, cgpa: 8.1 });
   await addStudent(db, "S-CARA", cara, other, { subjects, cgpa: 6.2 });
+  // a teacher edits the timetable only for subjects they teach
+  await db.query("INSERT INTO teacher_subjects(teacher_id, subject) VALUES($1, 'Maths')", [
+    teacher.id,
+  ]);
   await attendance.saveSlot(db, teacher, {
     subject: "Maths",
     day: 2,

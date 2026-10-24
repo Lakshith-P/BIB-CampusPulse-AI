@@ -429,7 +429,7 @@ export const listContactMessages = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     requireAdmin(context.user);
     const { rows } = await query(
-      "SELECT id, name, email, message, created_at FROM contact_messages ORDER BY created_at DESC LIMIT 200",
+      "SELECT id, user_id, name, email, message, created_at FROM contact_messages ORDER BY created_at DESC LIMIT 200",
     );
     return rows.map((r) => ({ ...r, created_at: new Date(r.created_at).toISOString() }));
   });

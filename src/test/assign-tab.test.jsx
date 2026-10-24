@@ -56,6 +56,11 @@ vi.mock("@/lib/campus.functions", () => ({
   saveCampusStudent: vi.fn(),
 }));
 
+vi.mock("@/lib/access.functions", () => ({
+  postAdminMessage: vi.fn(),
+  loadAdminMessages: vi.fn(async () => []),
+}));
+
 import { AdminTools } from "@/components/AdminTools";
 
 const renderAssign = () =>

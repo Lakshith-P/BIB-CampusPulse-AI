@@ -1,6 +1,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useState, useRef, useEffect } from "react";
+import { useDraggable } from "@/lib/use-draggable";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Compass, X, MessageCircle, ArrowUpRight, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,9 @@ export function CampusAssistant() {
   });
   const [text, setText] = useState("");
   const input = useRef(null);
+  // Pluto can be dragged anywhere on the page (by its button or by the top of its window)
+  const box = useRef(null);
+  const drag = useDraggable(box, "slqg-pluto-position", open);
   const { user } = useAccount();
   const role = roleOf(user);
   const copy = ROLE_COPY[role];
@@ -63,13 +67,21 @@ export function CampusAssistant() {
     if (open && !busy) input.current?.focus();
   }, [open, busy]);
   return (
-    <div className={`assistant-position${onChatPage ? " assistant-position-raised" : ""}`}>
+    <div
+      ref={box}
+      style={drag.style}
+      className={`assistant-position${onChatPage ? " assistant-position-raised" : ""}`}
+    >
       {open && (
         <section
           className="assistant-panel flex flex-col overflow-hidden rounded-lg border bg-card shadow-xl"
           aria-label="Pluto assistant"
         >
-          <header className="flex items-center justify-between gap-3 border-b p-4">
+          <header
+            {...drag.handle}
+            title="Drag to move Pluto"
+            className="flex items-center justify-between gap-3 border-b p-4"
+          >
             <div className="flex items-center gap-3">
               <span className="flex size-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
                 <Compass className="size-5" />
@@ -82,6 +94,7 @@ export function CampusAssistant() {
             <Button
               size="icon"
               variant="ghost"
+              data-nodrag
               aria-label="Close assistant"
               onClick={() => setOpen(false)}
             >
@@ -184,7 +197,11 @@ export function CampusAssistant() {
       <Button
         className="ml-auto flex h-12 gap-2 rounded-full px-5 shadow-lg"
         aria-label={open ? "Hide Pluto" : "Ask Pluto"}
-        onClick={() => setOpen(!open)}
+        title="Click to open, drag to move"
+        {...drag.handle}
+        onClick={() => {
+          if (!drag.wasDragged()) setOpen(!open);
+        }}
       >
         {open ? <X /> : <MessageCircle className="motion-icon" />}
         <span>Ask Pluto</span>
