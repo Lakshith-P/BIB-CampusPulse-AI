@@ -2,7 +2,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { addStudent, addUser, createTestDb } from "./harness";
-import { askCopilot, buildTools, loadScope } from "@/backend/copilot.server";
+import { askCopilot, buildTools, loadScope, modelChain } from "@/backend/copilot.server";
 
 const TODAY = "2026-10-24";
 const att = (attended) => [
@@ -76,5 +76,15 @@ describe("analytics copilot", () => {
       /not configured/,
     );
     if (saved) process.env["LLM_API_KEY"] = saved;
+  });
+});
+
+describe("model chain", () => {
+  it("tries the main model first and Grok as the fallback", () => {
+    expect(modelChain({})).toEqual([]);
+    const both = modelChain({ LLM_API_KEY: "a", GROK_API_KEY: "b" });
+    expect(both.map((m) => m.name)).toEqual(["primary", "grok"]);
+    expect(both[1]).toMatchObject({ baseURL: "https://api.x.ai/v1" });
+    expect(modelChain({ GROK_API_KEY: "b" }).map((m) => m.name)).toEqual(["grok"]);
   });
 });

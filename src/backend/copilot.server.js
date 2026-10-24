@@ -444,39 +444,67 @@ const history = (messages) =>
   messages.slice(-6).map((m) => ({ role: m.role, content: m.content.slice(0, 2000) }));
 
 /** Runs one question end to end. Returns the answer text and the evidence it was built on. */
+/** The models to try, in order: the main provider, then Grok (xAI) as a fallback if it is set. */
+export function modelChain(env = process.env) {
+  const chain = [];
+  if (env["LLM_API_KEY"])
+    chain.push({
+      name: "primary",
+      apiKey: env["LLM_API_KEY"],
+      baseURL: env["LLM_BASE_URL"] ?? "https://generativelanguage.googleapis.com/v1beta/openai/",
+      model: env["LLM_MODEL"] ?? "gemini-2.5-flash",
+    });
+  if (env["GROK_API_KEY"])
+    chain.push({
+      name: "grok",
+      apiKey: env["GROK_API_KEY"],
+      baseURL: env["GROK_BASE_URL"] ?? "https://api.x.ai/v1",
+      model: env["GROK_MODEL"] ?? "grok-4",
+    });
+  return chain;
+}
+
 export async function askCopilot(db, user, { question, messages = [] }, today) {
-  const key = process.env["LLM_API_KEY"];
-  if (!key)
+  const chain = modelChain();
+  if (!chain.length)
     throw new Error(
       "The Analytics Copilot is not configured yet. Ask an administrator to set LLM_API_KEY.",
     );
   const text = question.trim().slice(0, MAX_QUESTION);
   const scope = await loadScope(db, user, today);
-  const evidence = [];
-  const provider = createOpenAICompatible({
-    name: "llm",
-    apiKey: key,
-    baseURL:
-      process.env["LLM_BASE_URL"] ?? "https://generativelanguage.googleapis.com/v1beta/openai/",
-  });
+  let evidence = [];
   let result;
-  try {
-    result = await generateText({
-      model: provider.chatModel(process.env["LLM_MODEL"] ?? "gemini-2.5-flash"),
-      instructions: instructions(scope.scope, scope.rows.length, today),
-      messages: [...history(messages), { role: "user", content: text }],
-      tools: buildTools(scope, today, evidence),
-      stopWhen: isStepCount(6),
-      temperature: 0.2,
-    });
-  } catch (error) {
+  let failure;
+  for (const cfg of chain) {
+    // Each attempt starts with clean evidence so a failed try leaves nothing behind.
+    evidence = [];
+    try {
+      const provider = createOpenAICompatible({
+        name: cfg.name,
+        apiKey: cfg.apiKey,
+        baseURL: cfg.baseURL,
+      });
+      result = await generateText({
+        model: provider.chatModel(cfg.model),
+        instructions: instructions(scope.scope, scope.rows.length, today),
+        messages: [...history(messages), { role: "user", content: text }],
+        tools: buildTools(scope, today, evidence),
+        stopWhen: isStepCount(6),
+        temperature: 0.2,
+      });
+      if (result.text.trim()) break;
+      failure = new Error("empty answer");
+    } catch (error) {
+      failure = error;
+    }
     console.error(
-      "[copilot] model call failed",
-      error?.lastError?.statusCode ?? error?.statusCode,
-      error?.lastError?.message ?? error?.message,
+      `[copilot] ${cfg.name} (${cfg.model}) failed`,
+      failure?.lastError?.statusCode ?? failure?.statusCode,
+      failure?.lastError?.message ?? failure?.message,
     );
-    throw new Error(modelFailure(error));
+    result = undefined;
   }
+  if (!result) throw new Error(modelFailure(failure));
   const answer = result.text.trim();
   if (!answer) throw new Error("The Copilot could not produce an answer. Please rephrase.");
   // Only evidence the answer cites is shown first; anything else the model looked at follows.
