@@ -149,7 +149,7 @@ function EvidenceCard({ evidence, messageId, defaultOpen }) {
   );
 }
 
-function Answer({ turn }) {
+export function Answer({ turn }) {
   const cited = turn.evidence.filter((e) => e.cited);
   const other = turn.evidence.filter((e) => !e.cited);
   const components = {

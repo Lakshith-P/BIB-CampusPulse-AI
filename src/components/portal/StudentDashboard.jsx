@@ -35,6 +35,8 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/widgets";
 import { PageTitle, RoleGate } from "@/components/portal/PortalShell";
 import { PRODUCT } from "@/components/portal/StudentShell";
+import { StudentCoach } from "@/components/portal/StudentCoach";
+import { RankingCard } from "@/components/portal/RankingCard";
 import { liveAssignments, liveNotifications } from "@/lib/live-profile";
 import { classesNeededForTarget, componentScores, recommendations } from "@/lib/scoring";
 import { PredictiveRisk } from "@/components/portal/PredictiveRisk";
@@ -1430,6 +1432,7 @@ export function StudentDashboard() {
     <div className="flex w-full flex-col gap-6">
       <Greeting s={s} myRow={myRow} alerts={alerts} lowest={lowest} />
       <KpiRow s={s} myRow={myRow} cohort={cohort} readiness={readiness} drives={drives} />
+      <RankingCard />
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <VelocityChart
           s={s}
@@ -1478,6 +1481,7 @@ export function StudentDashboard() {
  * Success Score — the detail behind the triage status on the dashboard. */
 export function StudentInsightsPage() {
   const { myRow } = useCampus();
+  const [tab, setTab] = useState("coach");
   return (
     <RoleGate allow={["student"]}>
       {!myRow ? (
@@ -1486,7 +1490,30 @@ export function StudentInsightsPage() {
           hint="These insights appear once your record is linked."
         />
       ) : (
-        <PredictiveRisk />
+        <div className="space-y-4">
+          <div className="flex gap-2" role="tablist" aria-label="Predictive Risk and AI">
+            {[
+              ["coach", "Ask your coach"],
+              ["predictions", "My predictions and risk"],
+            ].map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={tab === key}
+                onClick={() => setTab(key)}
+                className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
+                  tab === key
+                    ? "border-[#00338D] bg-[#00338D] text-white"
+                    : "border-[#D9E1EC] bg-white text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {tab === "coach" ? <StudentCoach /> : <PredictiveRisk />}
+        </div>
       )}
     </RoleGate>
   );

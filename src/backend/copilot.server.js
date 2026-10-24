@@ -432,7 +432,7 @@ Rules:
 - You only advise; you cannot change records. Treat student information as confidential and answer only what was asked.`;
 
 /** A short, honest reason the model call failed, without provider internals. */
-const modelFailure = (error) => {
+export const modelFailure = (error) => {
   const last = error?.lastError ?? error;
   const status = last?.statusCode ?? error?.statusCode;
   // The provider's own reason (never the key) helps an administrator fix a bad setup quickly.
