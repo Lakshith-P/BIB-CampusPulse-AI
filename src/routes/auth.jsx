@@ -65,6 +65,7 @@ function Auth() {
   const navigate = useNavigate();
   const { user, refresh } = useAccount();
   const { captcha, reload: loadCaptcha } = useCaptcha(setError);
+  const [created, setCreated] = useState(""); // the email of an account that was just created
   const signingUp = mode === "signup";
 
   async function submit(e) {
@@ -90,6 +91,11 @@ function Auth() {
           setView("notice");
           return;
         }
+        // Account made: go to the login page, with the email filled in, instead of signing in.
+        setCreated(email);
+        setMode("login");
+        void loadCaptcha();
+        return;
       } else {
         await signIn({ data: { email, password, workspace, ...proof } });
       }
@@ -308,12 +314,22 @@ function Auth() {
                   className={fieldBox}
                 />
               )}
+              {created && !signingUp && (
+                <p
+                  role="status"
+                  className="rounded-xl bg-primary/10 px-3 py-2 text-sm text-primary"
+                >
+                  Your account was created. Log in with your email and password.
+                </p>
+              )}
               <div className="relative">
                 <input
                   name="email"
                   type="email"
                   required
                   autoComplete="email"
+                  defaultValue={signingUp ? undefined : created}
+                  key={`${signingUp}-${created}`}
                   placeholder="User ID (your college email)"
                   aria-label="User ID, your college email"
                   className={`${fieldBox} pr-14`}
@@ -381,6 +397,7 @@ function Auth() {
                     className="font-semibold text-primary hover:underline"
                     onClick={() => {
                       setMode(signingUp ? "login" : "signup");
+                      setCreated("");
                       setError("");
                     }}
                   >
