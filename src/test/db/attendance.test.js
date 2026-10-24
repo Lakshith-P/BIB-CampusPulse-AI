@@ -169,6 +169,29 @@ describe("an account that is both a teacher and an administrator", () => {
 });
 
 describe("timetable", () => {
+  it("shows a teacher only the subjects they teach, even when their students take more", async () => {
+    await addStudent(db, "S-EVE", null, teacher, {
+      subjects: [
+        ...maths(0, 0),
+        { subject: "Physics", marks: 60, classesHeld: 0, classesAttended: 0 },
+      ],
+    });
+    await attendance.saveSlot(db, admin, {
+      subject: "Physics",
+      day: 4,
+      start: "09:00",
+      end: "10:00",
+      room: "P1",
+    });
+    const t = await attendance.loadTimetable(db, teacher);
+    expect(t.subjects).toEqual(["Maths"]);
+    expect(t.slots.every((x) => x.subject === "Maths")).toBe(true);
+    // the administrator still sees and edits every subject
+    expect((await attendance.loadTimetable(db, admin)).subjects).toEqual(["Maths", "Physics"]);
+    await db.query("DELETE FROM timetable_slots WHERE subject = 'Physics'");
+    await db.query("DELETE FROM student_records WHERE id = 'S-EVE'");
+  });
+
   it("lets a teacher add classes, rejects clashes and bad times, and shows them to students", async () => {
     await attendance.saveSlot(db, teacher, {
       subject: "Maths",
@@ -211,7 +234,19 @@ describe("timetable", () => {
         room: "",
       }),
     ).rejects.toThrow();
+    // A teacher who does not teach Maths neither sees nor changes its classes.
+    expect(await attendance.loadTimetable(db, other)).toEqual({ subjects: [], slots: [] });
+    await expect(
+      attendance.saveSlot(db, other, {
+        subject: "Maths",
+        day: 3,
+        start: "09:00",
+        end: "10:00",
+        room: "",
+      }),
+    ).rejects.toThrow(/subjects you teach/);
     const { slots } = await attendance.loadTimetable(db, teacher);
+    await expect(attendance.deleteSlot(db, other, { id: slots[0].id })).rejects.toThrow();
     await expect(attendance.deleteSlot(db, ann, { id: slots[0].id })).rejects.toThrow();
     await attendance.deleteSlot(db, teacher, { id: slots[0].id });
     expect((await attendance.loadTimetable(db, teacher)).slots).toEqual([]);

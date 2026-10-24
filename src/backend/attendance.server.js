@@ -274,8 +274,22 @@ export async function timetableCoverage(db, user) {
 }
 
 // ------------------------------------------------------------------ timetable
+/** Changing a subject's classes: its teacher, or an administrator (who builds the timetable). */
+async function requireTimetableEditor(db, user, subject) {
+  requireStaff(user);
+  if (isAdmin(user) || (await teaches(db, user, subject))) return;
+  throw new Error("You can only change the timetable for the subjects you teach.");
+}
+
+/**
+ * The week's classes. A student sees the subjects on their record, a teacher the subjects they
+ * teach, and an administrator every subject.
+ */
 export async function loadTimetable(db, user) {
-  const subjects = await subjectsFor(db, user);
+  const subjects =
+    isFaculty(user) && !isAdmin(user)
+      ? await taughtSubjects(db, user.id)
+      : await subjectsFor(db, user);
   if (!subjects.length) return { subjects: [], slots: [] };
   const { rows } = await db.query(
     `SELECT id, subject, day, to_char(start_time, 'HH24:MI') AS start,
@@ -287,7 +301,7 @@ export async function loadTimetable(db, user) {
 }
 
 export async function saveSlot(db, user, { subject, day, start, end, room }) {
-  await requireSubjectManager(db, user, subject);
+  await requireTimetableEditor(db, user, subject);
   if (end <= start) throw new Error("A class must end after it starts.");
   const clash = await db.query(
     `SELECT 1 FROM timetable_slots
@@ -306,7 +320,7 @@ export async function saveSlot(db, user, { subject, day, start, end, room }) {
 export async function deleteSlot(db, user, { id }) {
   const slot = (await db.query("SELECT subject FROM timetable_slots WHERE id = $1", [id])).rows[0];
   if (!slot) throw new Error("That class was not found.");
-  await requireSubjectManager(db, user, slot.subject);
+  await requireTimetableEditor(db, user, slot.subject);
   await db.query("DELETE FROM timetable_slots WHERE id = $1", [id]);
   return { deleted: true };
 }
