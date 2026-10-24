@@ -17,11 +17,9 @@ import {
 import {
   applyDrive,
   loadApplicants,
-  logMockInterview,
   moveApplication,
   postDrive,
   removeDrive,
-  removeMockInterview,
   setDriveRound,
 } from "@/lib/platform.functions";
 import {
@@ -33,9 +31,8 @@ import {
 import { parseRounds } from "@/lib/drive-rounds";
 import { roleMatch } from "@/lib/role-match";
 import { todayIso } from "@/lib/live-profile";
-import { useDrives, useMockInterviews, useRefreshAll } from "@/lib/use-platform";
+import { useDrives, useRefreshAll } from "@/lib/use-platform";
 import { AtsChecker, DriveMatch } from "@/components/portal/AtsChecker";
-import { useCampus } from "@/lib/use-campus";
 
 const RESULT = {
   Pass: { icon: CheckCircle2, cls: "text-success", label: "Passed" },
@@ -251,54 +248,6 @@ function RoleMatch({ s }) {
         Rule-based comparison with typical skill levels per role, not a prediction of selection.
       </p>
     </div>
-  );
-}
-
-function MockList({ studentId, canEdit }) {
-  const { data, isLoading, error, refetch } = useMockInterviews(studentId);
-  const refresh = useRefreshAll();
-  const { run } = useAction(refresh);
-  const [removing, setRemoving] = useState(null);
-  if (isLoading) return <PageSkeleton rows={1} />;
-  if (error) return <ErrorState error={error} onRetry={refetch} />;
-  if (!data.length)
-    return <p className="text-sm text-muted-foreground">No mock interviews recorded yet.</p>;
-  return (
-    <ul className="divide-y">
-      {data.map((m) => (
-        <li key={m.id} className="flex items-start justify-between gap-3 py-2 text-sm">
-          <div>
-            <p className="font-medium">
-              {m.interview_date}
-              {m.interviewer && ` · ${m.interviewer}`}
-              {m.score !== null && <span className="ml-2 tabular-nums">{m.score}/100</span>}
-            </p>
-            {m.feedback && <p className="text-muted-foreground">{m.feedback}</p>}
-          </div>
-          {canEdit && (
-            <Button
-              type="button"
-              size="icon-sm"
-              variant="ghost"
-              aria-label="Remove interview"
-              onClick={() => setRemoving(m)}
-            >
-              <Trash2 />
-            </Button>
-          )}
-        </li>
-      ))}
-      <ConfirmDialog
-        open={Boolean(removing)}
-        onOpenChange={(v) => !v && setRemoving(null)}
-        title="Remove this mock interview?"
-        description="The interview count used in the placement score goes down by one."
-        confirmLabel="Remove"
-        onConfirm={() =>
-          run(() => removeMockInterview({ data: { id: removing.id } }), "Interview removed.")
-        }
-      />
-    </ul>
   );
 }
 
@@ -627,76 +576,7 @@ function Applicants({ drive, onChanged }) {
   );
 }
 
-function MockInterviewForm({ rows, onDone }) {
-  const [f, setF] = useState({
-    studentId: "",
-    date: todayIso(),
-    interviewer: "",
-    score: "",
-    feedback: "",
-  });
-  const { busy, run } = useAction(onDone);
-  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
-  return (
-    <>
-      <form
-        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
-        onSubmit={async (e) => {
-          e.preventDefault();
-          const r = await run(
-            () =>
-              logMockInterview({
-                data: { ...f, score: f.score === "" ? null : Number(f.score) },
-              }),
-            "Mock interview recorded.",
-          );
-          if (r.ok) setF({ ...f, interviewer: "", score: "", feedback: "" });
-        }}
-      >
-        <Field label="Student">
-          <select value={f.studentId} onChange={set("studentId")} required className={inputClass}>
-            <option value="">Choose a student</option>
-            {rows.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name} ({r.id})
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Date">
-          <Input type="date" value={f.date} onChange={set("date")} required />
-        </Field>
-        <Field label="Interviewer (optional)">
-          <Input value={f.interviewer} onChange={set("interviewer")} maxLength={100} />
-        </Field>
-        <Field label="Score out of 100 (optional)">
-          <Input type="number" min={0} max={100} value={f.score} onChange={set("score")} />
-        </Field>
-        <div className="sm:col-span-2">
-          <Field label="Feedback">
-            <Input value={f.feedback} onChange={set("feedback")} maxLength={1000} />
-          </Field>
-        </div>
-        <div>
-          <Button type="submit" disabled={busy || !f.studentId}>
-            <Plus /> Record interview
-          </Button>
-        </div>
-      </form>
-      {f.studentId && (
-        <div className="mt-4">
-          <p className="mb-1 text-xs font-semibold uppercase text-label">
-            Interviews for this student
-          </p>
-          <MockList studentId={f.studentId} canEdit />
-        </div>
-      )}
-    </>
-  );
-}
-
 export function StaffDrives() {
-  const { rows } = useCampus();
   const { data, isLoading, error, refetch } = useDrives();
   const refresh = useRefreshAll();
   const { run } = useAction(refresh);
@@ -768,12 +648,6 @@ export function StaffDrives() {
             </div>
           </>
         )}
-      </section>
-      <section className="surface p-4">
-        <SectionTitle sub="The count feeds each student's placement readiness">
-          Mock interviews
-        </SectionTitle>
-        <MockInterviewForm rows={rows} onDone={refresh} />
       </section>
       <ConfirmDialog
         open={Boolean(removing)}
