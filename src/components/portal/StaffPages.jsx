@@ -14,6 +14,7 @@ import { LiveStudentProfile } from "@/components/student-profile/LiveStudentProf
 import { byAttention, isAtRisk, lowAttendance } from "@/lib/campus-derive";
 import { listAccounts, listAudit } from "@/lib/campus.functions";
 import { loadTeacherSubjects, saveTeacherSubjects } from "@/lib/platform.functions";
+import { MentorMeetingsPanel } from "@/components/portal/MentorMeetings";
 import { useAction } from "@/components/ui-kit";
 import { liveAssignments } from "@/lib/live-profile";
 import { attendancePct } from "@/lib/scoring";
@@ -126,7 +127,7 @@ export function StudentDetailPage({ id }) {
 
 // ---------------------------------------------------------------- interventions
 export function InterventionsPage() {
-  const { interventions, rows, today } = useCampus();
+  const { interventions, rows, today, role } = useCampus();
   const [status, setStatus] = useState("active");
   const names = new Map(rows.map((r) => [r.id, r.name]));
   const shown = interventions
@@ -151,6 +152,7 @@ export function InterventionsPage() {
           <option value="all">All</option>
         </select>
       </PageTitle>
+      {role === "faculty" && <MentorMeetingsPanel />}
       {overdue.length > 0 && (
         <p className="mb-4 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
           {overdue.length} follow-up(s) are past their date.

@@ -38,6 +38,7 @@ import { PRODUCT } from "@/components/portal/StudentShell";
 import { liveAssignments, liveNotifications } from "@/lib/live-profile";
 import { classesNeededForTarget, componentScores, recommendations } from "@/lib/scoring";
 import { PredictiveRisk } from "@/components/portal/PredictiveRisk";
+import { MyUpcomingMeetings, ScheduleSlotDialog } from "@/components/portal/MentorMeetings";
 import { useCampus, useCohortStanding } from "@/lib/use-campus";
 import { useLeetcodeProfile } from "@/lib/use-leetcode";
 import { useDrives, useTimetable } from "@/lib/use-platform";
@@ -997,6 +998,7 @@ function Advisor({ s, myRow, interventions }) {
     .sort((a, b) => a.follow_up_date.localeCompare(b.follow_up_date));
   const next = open[0];
   const today = new Date().toISOString().slice(0, 10);
+  const [scheduling, setScheduling] = useState(false);
   return (
     <div className="flex flex-col justify-between rounded-lg border border-[#D9E1EC] bg-[#eef4ff] p-4 lg:col-span-4">
       <div>
@@ -1051,6 +1053,7 @@ function Advisor({ s, myRow, interventions }) {
           </div>
           {next?.action && <p className="pt-1 text-[11px] text-slate-500">Plan: {next.action}</p>}
         </div>
+        {myRow.mentorId && <MyUpcomingMeetings />}
       </div>
       <div className="mt-4 flex items-center gap-2 border-t border-[#D9E1EC] pt-3">
         <Link
@@ -1059,15 +1062,23 @@ function Advisor({ s, myRow, interventions }) {
         >
           Send Message
         </Link>
-        {myRow.mentorEmail && (
-          <a
-            href={`mailto:${myRow.mentorEmail}?subject=${encodeURIComponent(`Meeting request — ${s.name} (${s.id})`)}`}
+        {myRow.mentorId && (
+          <button
+            type="button"
+            onClick={() => setScheduling(true)}
             className="rounded-lg bg-[#00205f] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#001B54]"
           >
             Schedule Slot
-          </a>
+          </button>
         )}
       </div>
+      {myRow.mentorId && (
+        <ScheduleSlotDialog
+          open={scheduling}
+          onOpenChange={setScheduling}
+          mentorName={myRow.mentorName}
+        />
+      )}
     </div>
   );
 }
