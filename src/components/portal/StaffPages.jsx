@@ -60,7 +60,7 @@ export function StudentsPage() {
           title={isAdmin ? "No students yet" : "No students assigned to you yet"}
           hint={
             isAdmin
-              ? "Students appear after they sign up and are assigned to a teacher."
+              ? "Students appear once an administrator registers them and assigns them to a teacher."
               : "An administrator assigns students to teachers."
           }
         />

@@ -8,13 +8,15 @@ import {
   startSession,
   verifyPassword,
 } from "@/backend/auth.server";
-import { createHash, randomBytes } from "node:crypto";
+import { createHash } from "node:crypto";
 import { checkCaptcha, createCaptcha } from "@/backend/captcha.server";
-import { appUrl, mailReady, sendMail } from "@/backend/mail.server";
 import { requireAuth } from "@/backend/auth-middleware";
 import { query, withTransaction } from "@/backend/db.server";
-import { grantAccountRole } from "@/backend/accounts.server";
-import { ensureStudentRecord } from "@/backend/student-record.server";
+import {
+  completeForgotPassword,
+  requestForgotPassword,
+  requestPasswordChange as requestChange,
+} from "@/backend/registration.server";
 const email = z.string().trim().toLowerCase().email().max(254);
 const password = z
   .string()
@@ -29,104 +31,11 @@ export const getCaptcha = createServerFn({ method: "POST" }).handler(async () =>
   limitByIp("captcha", 60, 15 * 60 * 1000);
   return createCaptcha();
 });
-
 export const getSession = createServerFn({ method: "GET" }).handler(async () => currentUser());
-const emailList = (name) =>
-  (process.env[name] ?? "")
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
 
-// Anyone can create an account in any workspace, but the powers differ:
-//  - Student: active straight away.
-//  - Teacher: active if the email is in TEACHER_EMAILS; otherwise the account is created and a
-//    request appears in the administrators' Messages for one-click approval (People & roles).
-//  - Administrator: active if the email is in ADMIN_EMAILS, or if the site has no administrator
-//    yet (first set-up). Otherwise refused, so nobody can make themselves an administrator.
-// Someone who already has an account can ask for teacher or administrator access by signing up
-// again with their existing password.
-export const signUp = createServerFn({ method: "POST" })
-  .validator(
-    z.object({
-      email,
-      password,
-      name: z.string().trim().max(100).default(""),
-      workspace: z.enum(["student", "faculty", "admin"]).default("student"),
-      ...captcha,
-    }),
-  )
-  .handler(async ({ data }) => {
-    limitByIp("signup", 10, 60 * 60 * 1000);
-    await checkCaptcha(data.captchaToken, data.captchaAnswer);
-    const { workspace } = data;
-    const bootstrapAdmin = emailList("ADMIN_EMAILS").includes(data.email);
-    const autoTeacher = emailList("TEACHER_EMAILS").includes(data.email);
-    if (workspace === "admin" && !bootstrapAdmin) {
-      const anyAdmin = await query("SELECT 1 FROM user_roles WHERE role = 'admin' LIMIT 1");
-      if (anyAdmin.rowCount)
-        throw new Error(
-          "Administrator accounts must be approved. Ask an existing administrator to give you access, or have your email added to ADMIN_EMAILS.",
-        );
-    }
-    const outcome = await withTransaction(async (db) => {
-      const found = await db.query(
-        "SELECT id, password_hash, display_name FROM users WHERE email = $1 FOR UPDATE",
-        [data.email],
-      );
-      let user = found.rows[0];
-      if (user) {
-        if (workspace === "student" || !(await verifyPassword(data.password, user.password_hash)))
-          return { exists: true };
-      } else {
-        const created = await db.query(
-          "INSERT INTO users(email, password_hash, display_name) VALUES($1,$2,$3) RETURNING id, display_name",
-          [data.email, await hashPassword(data.password), data.name],
-        );
-        user = created.rows[0];
-        // Only a student sign-up is a student. A teacher or administrator gets that role alone
-        // (a teacher waiting for approval has none yet), and never a student record.
-        if (workspace === "student") {
-          await db.query("INSERT INTO user_roles(user_id, role) VALUES($1,'student')", [user.id]);
-          if (!bootstrapAdmin) await ensureStudentRecord(db, { ...user, email: data.email });
-        }
-      }
-      const held = (
-        await db.query("SELECT role::text AS role FROM user_roles WHERE user_id = $1", [user.id])
-      ).rows.map((r) => r.role);
-      const give = (role) => grantAccountRole(db, user.id, role);
-      if (bootstrapAdmin && !held.includes("admin")) await give("admin");
-      if (workspace === "admin") {
-        await give("admin");
-        return { id: user.id, status: "active" };
-      }
-      if (workspace === "faculty" && !held.includes("faculty")) {
-        if (autoTeacher || bootstrapAdmin) {
-          await give("faculty");
-          return { id: user.id, status: "active" };
-        }
-        await db.query(
-          `INSERT INTO contact_messages(user_id, name, email, message)
-           SELECT $1, $2, $3, $4
-            WHERE NOT EXISTS (SELECT 1 FROM contact_messages
-                               WHERE user_id = $1 AND message = $4 AND created_at > now() - interval '1 day')`,
-          [
-            user.id,
-            user.display_name || data.email,
-            data.email,
-            "Teacher access requested. Approve it under People & roles with Make faculty.",
-          ],
-        );
-        return { id: user.id, status: "pending" };
-      }
-      return { id: user.id, status: "active" };
-    });
-    if (outcome.exists)
-      throw new Error("An account with this email already exists. Try signing in.");
-    // Signing up does not sign the person in: they go to the login page and log in themselves.
-    // Any session left over from someone else is ended too, so the login page really is shown.
-    await endSession();
-    return { ok: true, status: outcome.status };
-  });
+// There is no sign-up. An administrator registers every student and teacher (Login credentials in the
+// administrator workspace), and the system emails each person a generated password. The first
+// administrator is created from the command line: npm run db:create-admin -- <email> "<name>".
 export const signIn = createServerFn({ method: "POST" })
   .validator(
     z.object({
@@ -156,62 +65,28 @@ export const signIn = createServerFn({ method: "POST" })
     return { ok: true };
   });
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
-const RESET_MINUTES = 30;
 
-// Step 1 of "Forgot your password?". The answer is the same whether or not the email has an
-// account, so this cannot be used to find out who is registered.
+// "Forgot your password?", step 1. The person asks; the request goes to the administrators, who
+// see it under Login credentials. The answer says only whether it is still waiting or approved, and
+// is the same for an email with no account, so this cannot be used to find out who is registered.
 export const requestPasswordReset = createServerFn({ method: "POST" })
   .validator(z.object({ email, ...captcha }))
   .handler(async ({ data }) => {
-    limitByIp("forgot", 8, 60 * 60 * 1000);
+    limitByIp("forgot", 12, 60 * 60 * 1000);
     await checkCaptcha(data.captchaToken, data.captchaAnswer);
-    const delivery = mailReady() ? "email" : "admin";
-    const { rows } = await query("SELECT id, display_name FROM users WHERE email = $1", [
-      data.email,
-    ]);
-    const user = rows[0];
-    if (!user) return { delivery };
-    let sent = false;
-    if (delivery === "email") {
-      const token = randomBytes(32).toString("base64url");
-      await query("DELETE FROM password_resets WHERE user_id = $1 AND used_at IS NULL", [user.id]);
-      await query(
-        `INSERT INTO password_resets(token_hash, user_id, expires_at)
-         VALUES($1, $2, now() + make_interval(mins => $3))`,
-        [sha256(token), user.id, RESET_MINUTES],
-      );
-      const link = `${appUrl()}/new-password?token=${token}`;
-      try {
-        await sendMail({
-          to: data.email,
-          subject: "Reset your SLQG password",
-          text: `Hello${user.display_name ? " " + user.display_name : ""},\n\nUse this link to choose a new password. It works once and expires in ${RESET_MINUTES} minutes:\n${link}\n\nIf you did not ask for this, ignore this email; your password has not changed.`,
-          html: `<p>Hello${user.display_name ? " " + user.display_name : ""},</p><p><a href="${link}">Choose a new password</a>. The link works once and expires in ${RESET_MINUTES} minutes.</p><p>If you did not ask for this, ignore this email; your password has not changed.</p>`,
-        });
-        sent = true;
-      } catch (error) {
-        console.error(
-          "Password reset email failed:",
-          error instanceof Error ? error.message : error,
-        );
-      }
-    }
-    if (!sent) {
-      // No email available: leave a note for the administrators, once a day per person.
-      await query(
-        `INSERT INTO contact_messages(user_id, name, email, message)
-         SELECT $1, $2, $3, $4
-          WHERE NOT EXISTS (SELECT 1 FROM contact_messages
-                             WHERE user_id = $1 AND message = $4 AND created_at > now() - interval '1 day')`,
-        [
-          user.id,
-          user.display_name || data.email,
-          data.email,
-          "Password reset requested from the login page. Reset it under People & roles and share the temporary password privately.",
-        ],
-      );
-    }
-    return { delivery };
+    return withTransaction((db) => requestForgotPassword(db, { email: data.email }));
+  });
+
+// Step 2, once an administrator has approved: the person chooses the new password here, and it is
+// saved to the database. The approval works once and for a limited time.
+export const setForgottenPassword = createServerFn({ method: "POST" })
+  .validator(z.object({ email, password, ...captcha }))
+  .handler(async ({ data }) => {
+    limitByIp("forgot-set", 10, 15 * 60 * 1000);
+    await checkCaptcha(data.captchaToken, data.captchaAnswer);
+    return withTransaction((db) =>
+      completeForgotPassword(db, { email: data.email, password: data.password }),
+    );
   });
 
 // Step 2: the link from the email. The token is single-use and is marked used before the
@@ -243,21 +118,13 @@ export const signOut = createServerFn({ method: "POST" }).handler(async () => {
   await endSession();
   return { ok: true };
 });
-export const changePassword = createServerFn({ method: "POST" })
+// A signed-in person asks to change their password. It takes effect when an administrator approves.
+export const requestPasswordChange = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .validator(z.object({ current: z.string().min(1).max(72), next: password }))
   .handler(async ({ data, context }) => {
     limitByIp("passwd", 10, 15 * 60 * 1000);
-    const { rows } = await query("SELECT password_hash FROM users WHERE id = $1", [
-      context.user.id,
-    ]);
-    if (!(await verifyPassword(data.current, rows[0]?.password_hash)))
-      throw new Error("Current password is incorrect.");
-    await query("UPDATE users SET password_hash = $1 WHERE id = $2", [
-      await hashPassword(data.next),
-      context.user.id,
-    ]);
-    return { ok: true };
+    return withTransaction((db) => requestChange(db, context.user, data));
   });
 // Open to visitors, so it needs the captcha and a rate limit; a signed-in person is recorded too.
 export const sendContactMessage = createServerFn({ method: "POST" })
