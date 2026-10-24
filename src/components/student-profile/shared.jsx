@@ -214,6 +214,6 @@ export function Academics({ s }) {
   );
 }
 
-export function Attendance({ s }) {
-  return <AttendancePlanner s={s} />;
+export function Attendance({ s, weekly = false }) {
+  return <AttendancePlanner s={s} weekly={weekly} />;
 }

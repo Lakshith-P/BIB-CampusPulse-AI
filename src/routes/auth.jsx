@@ -21,18 +21,18 @@ export const Route = createFileRoute("/auth")({
     workspace: ["student", "faculty", "admin"].includes(search.workspace)
       ? search.workspace
       : undefined,
+    // set after an account is created: the email to fill in on the login page
+    created: typeof search.created === "string" ? search.created.slice(0, 254) : undefined,
   }),
-  head: () => pageHead("Log In", "Sign in to SLQG with student or teacher access."),
+  head: () => pageHead("Log In", "Sign in to SLQG with student, teacher or administrator access."),
   component: Auth,
 });
 
-// The administrator workspace is not offered on the public page. Administrators open the sign-in
-// page with ?workspace=admin, which adds it to the list; the server checks the role either way.
-const PUBLIC_WORKSPACES = [
+const WORKSPACES = [
   ["student", "Student"],
   ["faculty", "Teacher"],
+  ["admin", "Administrator"],
 ];
-const ADMIN_WORKSPACE = ["admin", "Administrator"];
 
 // The server reports invalid input as a JSON list of problems; turn that into one sentence.
 function friendly(err) {
@@ -57,10 +57,7 @@ const fieldBox =
   "h-[clamp(2.5rem,6vh,3.5rem)] w-full rounded-xl border-0 bg-muted px-5 text-sm text-foreground outline-none transition focus:ring-2 focus:ring-primary placeholder:text-muted-foreground";
 
 function Auth() {
-  const requested = Route.useSearch().workspace;
-  const WORKSPACES =
-    requested === "admin" ? [...PUBLIC_WORKSPACES, ADMIN_WORKSPACE] : PUBLIC_WORKSPACES;
-  const [workspace, setWorkspace] = useState(requested ?? "student");
+  const [workspace, setWorkspace] = useState(Route.useSearch().workspace ?? "student");
   const [mode, setMode] = useState("login");
   const [busy, setBusy] = useState(false);
   const [show, setShow] = useState(false);
@@ -70,6 +67,7 @@ function Auth() {
   const navigate = useNavigate();
   const { user, refresh } = useAccount();
   const { captcha, reload: loadCaptcha } = useCaptcha(setError);
+  const [created, setCreated] = useState(Route.useSearch().created ?? ""); // email of an account just created
   const signingUp = mode === "signup";
 
   async function submit(e) {
@@ -95,6 +93,14 @@ function Auth() {
           setView("notice");
           return;
         }
+        // Account made: go to the login page, with the email filled in, instead of signing in.
+        await refresh(); // forget any earlier session, so the login form is what shows
+        setCreated(email);
+        setMode("login");
+        setShow(false);
+        await navigate({ to: "/auth", search: { workspace, created: email }, replace: true });
+        void loadCaptcha();
+        return;
       } else {
         await signIn({ data: { email, password, workspace, ...proof } });
       }
@@ -152,7 +158,6 @@ function Auth() {
       <div className="hidden lg:block">
         <LoginShowcase
           workspace={workspace}
-          showAdmin={requested === "admin"}
           onWorkspace={(next) => {
             setWorkspace(next);
             setError("");
@@ -314,12 +319,22 @@ function Auth() {
                   className={fieldBox}
                 />
               )}
+              {created && !signingUp && (
+                <p
+                  role="status"
+                  className="rounded-xl bg-primary/10 px-3 py-2 text-sm text-primary"
+                >
+                  Your account was created. Log in with your email and password.
+                </p>
+              )}
               <div className="relative">
                 <input
                   name="email"
                   type="email"
                   required
                   autoComplete="email"
+                  defaultValue={signingUp ? undefined : created}
+                  key={`${signingUp}-${created}`}
                   placeholder="User ID (your college email)"
                   aria-label="User ID, your college email"
                   className={`${fieldBox} pr-14`}
@@ -387,6 +402,7 @@ function Auth() {
                     className="font-semibold text-primary hover:underline"
                     onClick={() => {
                       setMode(signingUp ? "login" : "signup");
+                      setCreated("");
                       setError("");
                     }}
                   >

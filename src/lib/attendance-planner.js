@@ -97,3 +97,39 @@ export function combine(subjects) {
     { subject: "Overall", held: 0, attended: 0 },
   );
 }
+
+/**
+ * Attend or skip, for one subject. `perWeek` is how many classes the timetable holds each week
+ * (0 when it is not known). The target is the percentage to stay at or above.
+ *   attend: below the target, every class counts, so none can be skipped
+ *   careful: at or above it, but only one class (or none) can be skipped
+ *   skip: there is room to skip some classes and stay at the target
+ * `skipThisWeek` never goes beyond the classes held that week. `ifSkipNext` is the percentage
+ * after skipping the next class.
+ */
+export function attendOrSkip({ held, attended }, target, perWeek = 0) {
+  const pct = pctOf(attended, held);
+  if (held <= 0)
+    return {
+      verdict: "unknown",
+      pct: null,
+      canSkip: 0,
+      need: 0,
+      skipThisWeek: 0,
+      attendThisWeek: perWeek,
+      ifSkipNext: null,
+    };
+  const need = classesNeededForTarget(attended, held, target);
+  const canSkip = need > 0 ? 0 : maxMissableClasses(attended, held, target);
+  const verdict = need > 0 ? "attend" : canSkip <= 1 ? "careful" : "skip";
+  const skipThisWeek = Math.min(canSkip, perWeek);
+  return {
+    verdict,
+    pct,
+    canSkip,
+    need,
+    skipThisWeek,
+    attendThisWeek: perWeek - skipThisWeek,
+    ifSkipNext: pctOf(attended, held + 1),
+  };
+}

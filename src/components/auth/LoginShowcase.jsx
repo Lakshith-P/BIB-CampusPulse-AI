@@ -97,7 +97,7 @@ function Screen({ role, scene, stage, time, onPage, onSignIn }) {
         <div className="ls-disclosure">Animated demo · no credentials collected</div>
         <div className="ls-login-foot">
           ◈<br />
-          Student and teacher access
+          Student, teacher and administrator access
           <br />
           follow the permissions of each account.
         </div>

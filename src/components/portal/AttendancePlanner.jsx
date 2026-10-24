@@ -3,8 +3,11 @@ import { AlertTriangle, CheckCircle2, OctagonAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyState, SectionTitle, StatCard } from "@/components/widgets";
+import { StatusPill } from "@/components/ui-kit";
+import { useTimetable } from "@/lib/use-platform";
 import {
   TARGETS,
+  attendOrSkip,
   combine,
   marksFor,
   plan,
@@ -71,7 +74,89 @@ function Bar({ pct, target }) {
   );
 }
 
-export function AttendancePlanner({ s }) {
+const VERDICT = {
+  attend: ["danger", "Attend every class"],
+  careful: ["warning", "Attend, little room"],
+  skip: ["success", "Safe to skip some"],
+  unknown: ["neutral", "No classes yet"],
+};
+
+/**
+ * Subject by subject: attend or skip. For each subject it says whether every class counts or there
+ * is room to skip, how many classes this week to attend and how many can be skipped, and what
+ * skipping the next class would do. `perWeek` maps a subject to its classes a week (the timetable).
+ */
+export function AttendOrSkipTable({ subjects, target, perWeek }) {
+  const known = Object.keys(perWeek).length > 0;
+  return (
+    <div className={card}>
+      <SectionTitle
+        sub={`Staying at ${target}% or above. ${known ? "This week uses your timetable." : ""}`}
+      >
+        Attend or skip, subject by subject
+      </SectionTitle>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="text-left text-xs text-muted-foreground">
+            <tr>
+              <th className="py-2">Subject</th>
+              <th>Now</th>
+              <th>Advice</th>
+              {known && <th>This week</th>}
+              <th>Skippable in total</th>
+              <th>If you skip the next one</th>
+            </tr>
+          </thead>
+          <tbody>
+            {subjects.map((x) => {
+              const week = perWeek[x.subject] ?? 0;
+              const d = attendOrSkip(x, target, week);
+              const [tone, label] = VERDICT[d.verdict];
+              return (
+                <tr key={x.subject} className="border-t">
+                  <td className="py-2 font-medium">{x.subject}</td>
+                  <td className="tabular-nums">{fmt(d.pct)}</td>
+                  <td>
+                    <StatusPill tone={tone}>{label}</StatusPill>
+                  </td>
+                  {known && (
+                    <td className="tabular-nums">
+                      {week === 0
+                        ? "No class"
+                        : `Attend ${d.attendThisWeek} of ${week}${d.skipThisWeek ? `, skip ${d.skipThisWeek}` : ""}`}
+                    </td>
+                  )}
+                  <td className="tabular-nums">
+                    {d.verdict === "attend"
+                      ? `None; attend ${d.need} in a row first`
+                      : d.verdict === "unknown"
+                        ? "—"
+                        : d.canSkip}
+                  </td>
+                  <td
+                    className={`tabular-nums ${d.ifSkipNext !== null && d.ifSkipNext < target ? "text-destructive" : ""}`}
+                  >
+                    {fmt(d.ifSkipNext)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/** The same table, with each subject's classes a week taken from the timetable. */
+function WeeklyAttendOrSkip({ subjects, target }) {
+  const { data } = useTimetable();
+  const perWeek = {};
+  for (const slot of data?.slots ?? []) perWeek[slot.subject] = (perWeek[slot.subject] ?? 0) + 1;
+  return <AttendOrSkipTable subjects={subjects} target={target} perWeek={perWeek} />;
+}
+
+export function AttendancePlanner({ s, weekly = false }) {
   const [target, setTarget] = useState(75);
   const [remaining, setRemaining] = useState(REMAINING_CLASSES_PER_SUBJECT);
   const [missNext, setMissNext] = useState(0);
@@ -167,6 +252,12 @@ export function AttendancePlanner({ s }) {
           warning.
         </p>
       </div>
+
+      {weekly ? (
+        <WeeklyAttendOrSkip subjects={subjects} target={target} />
+      ) : (
+        <AttendOrSkipTable subjects={subjects} target={target} perWeek={{}} />
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {plans.map((p) => {

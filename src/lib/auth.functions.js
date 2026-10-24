@@ -122,7 +122,9 @@ export const signUp = createServerFn({ method: "POST" })
     });
     if (outcome.exists)
       throw new Error("An account with this email already exists. Try signing in.");
-    if (outcome.status === "active") await startSession(outcome.id);
+    // Signing up does not sign the person in: they go to the login page and log in themselves.
+    // Any session left over from someone else is ended too, so the login page really is shown.
+    await endSession();
     return { ok: true, status: outcome.status };
   });
 export const signIn = createServerFn({ method: "POST" })

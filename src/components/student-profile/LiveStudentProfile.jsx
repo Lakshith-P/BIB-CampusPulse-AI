@@ -35,6 +35,7 @@ import {
 } from "@/components/student-profile/shared";
 import { Field, inputClass, useAction } from "@/components/ui-kit";
 import { ReadinessBreakdown } from "@/components/portal/ReadinessBreakdown";
+import { StaffInterviews } from "@/components/portal/StaffInterviews";
 import { addStudentNote, updateTargetRoles } from "@/lib/campus.functions";
 import { useCampus } from "@/lib/use-campus";
 import { useLeetcodeProfile } from "@/lib/use-leetcode";
@@ -87,7 +88,14 @@ export function LiveStudentProfile({ s, record, me, isAdmin, isFaculty, onChange
         {tab === "Attendance" && <Attendance s={s} />}
         {tab === "LMS" && <LiveLms s={s} />}
         {tab === "Skills" && <LiveSkills s={s} />}
-        {tab === "Placement" && <LivePlacement s={s} isOwner={isOwner} onChanged={onChanged} />}
+        {tab === "Placement" && (
+          <div className="space-y-4">
+            <LivePlacement s={s} isOwner={isOwner} onChanged={onChanged} />
+            {!isOwner && (isAdmin || isFaculty) && (
+              <StaffInterviews studentId={s.id} name={s.name} />
+            )}
+          </div>
+        )}
         {tab === "Engagement" && <LiveEngagement s={s} />}
         {tab === "Feedback" && (
           <LiveFeedback

@@ -186,6 +186,20 @@ export function StudentShell({ profile, myRow, rows, onSignOut, children }) {
             >
               <Menu className="size-5" />
             </button>
+            <Link
+              to="/portal"
+              aria-label={`${PRODUCT} home`}
+              className="flex shrink-0 items-center gap-2"
+            >
+              <img
+                src="/slqg-logo.png"
+                alt=""
+                width="36"
+                height="36"
+                className="size-9 object-contain"
+              />
+              <img src="/slqg-lettering.png" alt={PRODUCT} className="hidden h-5 w-auto sm:block" />
+            </Link>
             <GlobalSearch role="student" rows={rows} onSignOut={onSignOut} />
           </div>
           <div className="flex items-center gap-3">
