@@ -1,5 +1,5 @@
 import { decodeFile, encodeFile } from "./files.server.js";
-import { notify, requireOwnStudent } from "./access.server.js";
+import { notify, requireOwnStudent, staffStudent } from "./access.server.js";
 import { modelCaller } from "./ai-lessons.server.js";
 import {
   DIFFICULTIES,
@@ -324,6 +324,46 @@ export async function getInterviewResult(db, user, { id }) {
     role: rows[0].role,
     takenAt: new Date(rows[0].created_at).toISOString(),
     ...rows[0].result,
+  };
+}
+
+/**
+ * A teacher's view of a student's AI interviews: scores, and how many times the student left the
+ * interview screen. Only the student's assigned teacher (or an administrator) can see it.
+ */
+export async function listStudentInterviews(db, user, { studentId }) {
+  await staffStudent(db, user, studentId);
+  const { rows } = await db.query(
+    `SELECT id, role, difficulty, status, violations, ended_reason, result->'overall' AS overall, created_at
+       FROM interview_sessions WHERE student_id = $1 AND status <> 'started'
+      ORDER BY created_at DESC LIMIT 30`,
+    [studentId],
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    role: r.role,
+    difficulty: r.difficulty,
+    status: r.status,
+    violations: r.violations,
+    endedReason: r.ended_reason,
+    overall: r.overall === null ? null : Number(r.overall),
+    createdAt: new Date(r.created_at).toISOString(),
+  }));
+}
+
+export async function getStudentInterviewResult(db, user, { id }) {
+  const { rows } = await db.query(
+    "SELECT student_id, role, status, result, created_at FROM interview_sessions WHERE id = $1",
+    [id],
+  );
+  const s = rows[0];
+  if (!s || s.status === "started") throw new Error("That result was not found.");
+  await staffStudent(db, user, s.student_id);
+  return {
+    id,
+    role: s.role,
+    takenAt: new Date(s.created_at).toISOString(),
+    ...s.result,
   };
 }
 

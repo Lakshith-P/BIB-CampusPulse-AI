@@ -453,6 +453,18 @@ export const loadInterviewResult = createServerFn({ method: "POST" })
   .handler(({ data, context }) =>
     run(context.user, (db, user) => interview.getInterviewResult(db, user, data)),
   );
+export const loadStudentInterviews = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(z.object({ studentId: text(50, 1) }))
+  .handler(({ data, context }) =>
+    run(context.user, (db, user) => interview.listStudentInterviews(db, user, data)),
+  );
+export const loadStudentInterviewResult = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(id)
+  .handler(({ data, context }) =>
+    run(context.user, (db, user) => interview.getStudentInterviewResult(db, user, data)),
+  );
 export const removeInterview = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .validator(id)

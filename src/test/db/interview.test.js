@@ -272,3 +272,52 @@ describe("leaving the interview screen", () => {
     expect(result).toMatchObject({ terminated: false, violations: 1 });
   });
 });
+
+describe("a teacher's view of student interviews", () => {
+  const input = { role: "Tester", difficulty: "easy", types: ["hr"], count: 3 };
+  let other, finished, ended;
+  beforeAll(async () => {
+    other = await addUser(db, "other-t@x.edu", "Other Teacher", ["faculty"]);
+    const mk = () => iv.startInterview(db, ann, input, model(JSON.stringify(questions)));
+    finished = await mk();
+    await iv.submitInterview(
+      db,
+      ann,
+      { id: finished.id, answers: [{ index: 0, answer: "ok", code: "", language: "" }] },
+      model(JSON.stringify(grade([6]))),
+    );
+    ended = await mk();
+    for (let i = 0; i < 3; i++)
+      await iv.recordViolation(db, ann, { id: ended.id, reason: "tab-switch" });
+    await iv.submitInterview(
+      db,
+      ann,
+      { id: ended.id, answers: [{ index: 0, answer: "ok", code: "", language: "" }] },
+      model(JSON.stringify(grade([6]))),
+    );
+    await mk(); // started, never finished
+  });
+
+  it("lists finished and ended interviews with the number of warnings, newest first", async () => {
+    const list = await iv.listStudentInterviews(db, teacher, { studentId: "S-ANN" });
+    const mine = list.filter((x) => x.role === "Tester");
+    expect(mine.map((x) => [x.status, x.violations])).toEqual([
+      ["terminated", 3],
+      ["completed", 0],
+    ]);
+    expect(list.every((x) => x.status !== "started")).toBe(true);
+  });
+
+  it("shows the full result of one interview", async () => {
+    const r = await iv.getStudentInterviewResult(db, teacher, { id: ended.id });
+    expect(r).toMatchObject({ role: "Tester", terminated: true, violations: 3 });
+    expect(r.questions.length).toBeGreaterThan(0);
+  });
+
+  it("is only for the assigned teacher or an administrator, never for students or other teachers", async () => {
+    await expect(iv.listStudentInterviews(db, other, { studentId: "S-ANN" })).rejects.toThrow();
+    await expect(iv.getStudentInterviewResult(db, other, { id: finished.id })).rejects.toThrow();
+    await expect(iv.listStudentInterviews(db, ben, { studentId: "S-ANN" })).rejects.toThrow();
+    await expect(iv.getStudentInterviewResult(db, ben, { id: finished.id })).rejects.toThrow();
+  });
+});

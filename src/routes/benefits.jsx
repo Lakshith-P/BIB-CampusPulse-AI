@@ -57,6 +57,7 @@ function Benefits() {
                 "Monitor integrated-source coverage and data quality",
                 "Oversee support and accountable record changes",
               ],
+              workspace: "admin",
             },
           ].map((x) => (
             <article key={x.role} className="flex flex-col rounded-lg border bg-card p-7">
