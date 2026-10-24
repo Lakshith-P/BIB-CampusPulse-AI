@@ -168,7 +168,7 @@ function StudentOpportunities() {
               <OpportunityDetails o={o} />
               {o.link && (
                 <Button asChild size="sm" variant="outline" className="mt-3">
-                  <a href={o.link} target="_blank" rel="noopener noreferrer">
+                  <a href={o.link}>
                     <ExternalLink /> More information
                   </a>
                 </Button>

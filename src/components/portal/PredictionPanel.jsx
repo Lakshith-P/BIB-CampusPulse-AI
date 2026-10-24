@@ -684,8 +684,6 @@ export function PredictionCoach() {
                 <li key={s.id}>
                   <a
                     href={s.url}
-                    target="_blank"
-                    rel="noreferrer noopener"
                     className="inline-flex items-center gap-1 text-primary underline-offset-2 hover:underline"
                   >
                     {s.id} · {s.title} <ExternalLink className="size-3" />

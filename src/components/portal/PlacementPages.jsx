@@ -124,7 +124,7 @@ function DriveCard({ drive, refresh }) {
         )}
         {drive.link && (
           <Button asChild size="sm" variant="outline">
-            <a href={drive.link} target="_blank" rel="noopener noreferrer">
+            <a href={drive.link}>
               <ExternalLink /> Company page
             </a>
           </Button>

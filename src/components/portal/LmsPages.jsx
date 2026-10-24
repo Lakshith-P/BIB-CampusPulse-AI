@@ -104,7 +104,7 @@ function Material({ m, onToggle, busy }) {
       </div>
       {m.url && (
         <Button asChild size="sm" variant="outline">
-          <a href={m.url} target="_blank" rel="noopener noreferrer">
+          <a href={m.url}>
             <ExternalLink /> Open
           </a>
         </Button>

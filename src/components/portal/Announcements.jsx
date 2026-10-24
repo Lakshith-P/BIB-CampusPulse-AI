@@ -100,8 +100,6 @@ function UpdateCard({ u, canDelete, onDelete }) {
           {u.link_url ? (
             <a
               href={u.link_url}
-              target="_blank"
-              rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
             >
               More details <ExternalLink className="size-3.5" />
