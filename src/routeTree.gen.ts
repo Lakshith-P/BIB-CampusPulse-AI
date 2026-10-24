@@ -37,6 +37,7 @@ import { Route as AuthenticatedPortalMonitorRouteImport } from './routes/_authen
 import { Route as AuthenticatedPortalNotificationsRouteImport } from './routes/_authenticated/portal.notifications'
 import { Route as AuthenticatedPortalPeopleRouteImport } from './routes/_authenticated/portal.people'
 import { Route as AuthenticatedPortalPlacementRouteImport } from './routes/_authenticated/portal.placement'
+import { Route as AuthenticatedPortalPredictionsRouteImport } from './routes/_authenticated/portal.predictions'
 import { Route as AuthenticatedPortalProfileRouteImport } from './routes/_authenticated/portal.profile'
 import { Route as AuthenticatedPortalRecordsRouteImport } from './routes/_authenticated/portal.records'
 import { Route as AuthenticatedPortalResultsRouteImport } from './routes/_authenticated/portal.results'
@@ -204,6 +205,12 @@ const AuthenticatedPortalPlacementRoute =
     path: '/placement',
     getParentRoute: () => AuthenticatedPortalRoute,
   } as any)
+const AuthenticatedPortalPredictionsRoute =
+  AuthenticatedPortalPredictionsRouteImport.update({
+    id: '/predictions',
+    path: '/predictions',
+    getParentRoute: () => AuthenticatedPortalRoute,
+  } as any)
 const AuthenticatedPortalProfileRoute =
   AuthenticatedPortalProfileRouteImport.update({
     id: '/profile',
@@ -295,6 +302,7 @@ export interface FileRoutesByFullPath {
   '/portal/notifications': typeof AuthenticatedPortalNotificationsRoute
   '/portal/people': typeof AuthenticatedPortalPeopleRoute
   '/portal/placement': typeof AuthenticatedPortalPlacementRoute
+  '/portal/predictions': typeof AuthenticatedPortalPredictionsRoute
   '/portal/profile': typeof AuthenticatedPortalProfileRoute
   '/portal/records': typeof AuthenticatedPortalRecordsRoute
   '/portal/results': typeof AuthenticatedPortalResultsRoute
@@ -334,6 +342,7 @@ export interface FileRoutesByTo {
   '/portal/notifications': typeof AuthenticatedPortalNotificationsRoute
   '/portal/people': typeof AuthenticatedPortalPeopleRoute
   '/portal/placement': typeof AuthenticatedPortalPlacementRoute
+  '/portal/predictions': typeof AuthenticatedPortalPredictionsRoute
   '/portal/profile': typeof AuthenticatedPortalProfileRoute
   '/portal/records': typeof AuthenticatedPortalRecordsRoute
   '/portal/results': typeof AuthenticatedPortalResultsRoute
@@ -376,6 +385,7 @@ export interface FileRoutesById {
   '/_authenticated/portal/notifications': typeof AuthenticatedPortalNotificationsRoute
   '/_authenticated/portal/people': typeof AuthenticatedPortalPeopleRoute
   '/_authenticated/portal/placement': typeof AuthenticatedPortalPlacementRoute
+  '/_authenticated/portal/predictions': typeof AuthenticatedPortalPredictionsRoute
   '/_authenticated/portal/profile': typeof AuthenticatedPortalProfileRoute
   '/_authenticated/portal/records': typeof AuthenticatedPortalRecordsRoute
   '/_authenticated/portal/results': typeof AuthenticatedPortalResultsRoute
@@ -418,6 +428,7 @@ export interface FileRouteTypes {
     | '/portal/notifications'
     | '/portal/people'
     | '/portal/placement'
+    | '/portal/predictions'
     | '/portal/profile'
     | '/portal/records'
     | '/portal/results'
@@ -457,6 +468,7 @@ export interface FileRouteTypes {
     | '/portal/notifications'
     | '/portal/people'
     | '/portal/placement'
+    | '/portal/predictions'
     | '/portal/profile'
     | '/portal/records'
     | '/portal/results'
@@ -498,6 +510,7 @@ export interface FileRouteTypes {
     | '/_authenticated/portal/notifications'
     | '/_authenticated/portal/people'
     | '/_authenticated/portal/placement'
+    | '/_authenticated/portal/predictions'
     | '/_authenticated/portal/profile'
     | '/_authenticated/portal/records'
     | '/_authenticated/portal/results'
@@ -725,6 +738,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPortalPlacementRouteImport
       parentRoute: typeof AuthenticatedPortalRoute
     }
+    '/_authenticated/portal/predictions': {
+      id: '/_authenticated/portal/predictions'
+      path: '/predictions'
+      fullPath: '/portal/predictions'
+      preLoaderRoute: typeof AuthenticatedPortalPredictionsRouteImport
+      parentRoute: typeof AuthenticatedPortalRoute
+    }
     '/_authenticated/portal/profile': {
       id: '/_authenticated/portal/profile'
       path: '/profile'
@@ -823,6 +843,7 @@ interface AuthenticatedPortalRouteChildren {
   AuthenticatedPortalNotificationsRoute: typeof AuthenticatedPortalNotificationsRoute
   AuthenticatedPortalPeopleRoute: typeof AuthenticatedPortalPeopleRoute
   AuthenticatedPortalPlacementRoute: typeof AuthenticatedPortalPlacementRoute
+  AuthenticatedPortalPredictionsRoute: typeof AuthenticatedPortalPredictionsRoute
   AuthenticatedPortalProfileRoute: typeof AuthenticatedPortalProfileRoute
   AuthenticatedPortalRecordsRoute: typeof AuthenticatedPortalRecordsRoute
   AuthenticatedPortalResultsRoute: typeof AuthenticatedPortalResultsRoute
@@ -852,6 +873,7 @@ const AuthenticatedPortalRouteChildren: AuthenticatedPortalRouteChildren = {
   AuthenticatedPortalNotificationsRoute: AuthenticatedPortalNotificationsRoute,
   AuthenticatedPortalPeopleRoute: AuthenticatedPortalPeopleRoute,
   AuthenticatedPortalPlacementRoute: AuthenticatedPortalPlacementRoute,
+  AuthenticatedPortalPredictionsRoute: AuthenticatedPortalPredictionsRoute,
   AuthenticatedPortalProfileRoute: AuthenticatedPortalProfileRoute,
   AuthenticatedPortalRecordsRoute: AuthenticatedPortalRecordsRoute,
   AuthenticatedPortalResultsRoute: AuthenticatedPortalResultsRoute,

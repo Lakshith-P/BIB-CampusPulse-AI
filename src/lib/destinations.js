@@ -156,6 +156,11 @@ export const SEARCH_GROUPS = {
       "Support",
       [
         ["Support actions", "/portal/interventions", "intervention mentoring plan"],
+        [
+          "Predictions and risk",
+          "/portal/predictions",
+          "prediction placement result risk forecast alert agent watchlist model accuracy f1",
+        ],
         ["Follow-ups", "/portal/interventions", "due overdue next"],
         ["Attendance and risk monitor", "/portal/monitor", "attendance shortage low risk"],
       ],
@@ -195,6 +200,11 @@ export const SEARCH_GROUPS = {
         ["Student records", "/portal/records", "add marks attendance skills edit"],
         ["Import students from CSV", "/portal/records", "upload bulk spreadsheet"],
         ["Support actions", "/portal/interventions", "intervention follow-up"],
+        [
+          "Predictions and risk",
+          "/portal/predictions",
+          "prediction placement result risk forecast alert agent watchlist model accuracy f1",
+        ],
         ["Attendance and risk monitor", "/portal/monitor", "attendance shortage low risk"],
       ],
     ],
@@ -258,6 +268,7 @@ export const RAIL = {
     ["/portal/skills", "Skills", "skills"],
     ["/portal/feedback", "Feedback", "feedback"],
     ["/portal/interventions", "Support", "support"],
+    ["/portal/predictions", "Predictions", "predictions"],
   ],
   admin: [
     ["/portal", "Dashboard", "dashboard"],
@@ -273,6 +284,7 @@ export const RAIL = {
     ["/portal/skills", "Skills", "skills"],
     ["/portal/feedback", "Feedback", "feedback"],
     ["/portal/people", "People", "people"],
+    ["/portal/predictions", "Predictions", "predictions"],
   ],
 };
 
@@ -328,7 +340,10 @@ export const MENUS = {
     },
     {
       label: "Support",
-      items: [["/portal/interventions", "Support actions"]],
+      items: [
+        ["/portal/interventions", "Support actions"],
+        ["/portal/predictions", "Predictions and risk"],
+      ],
     },
     {
       label: "Placement",
@@ -361,6 +376,7 @@ export const MENUS = {
       items: [
         ["/portal/records", "Student records and CSV import"],
         ["/portal/interventions", "Support actions"],
+        ["/portal/predictions", "Predictions and risk"],
         ["/portal/monitor", "Attendance and risk"],
       ],
     },

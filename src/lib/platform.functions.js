@@ -17,6 +17,9 @@ import * as engagement from "@/backend/engagement.server";
 import * as skills from "@/backend/skills.server";
 import * as notifications from "@/backend/notifications.server";
 import * as messaging from "@/backend/messaging.server";
+import * as agentPlans from "@/backend/agent-plans.server";
+import * as predictions from "@/backend/predictions.server";
+import * as mlModels from "@/backend/ml-models.server";
 
 // Thin, authenticated wrappers. The permission checks live in the server modules, which run the
 // SQL inside one transaction per request; nothing here trusts the browser about who the caller is.
@@ -312,9 +315,7 @@ export const removeTimetableSlot = createServerFn({ method: "POST" })
 // ---------------------------------------------------------------- dashboard chat
 export const loadDashboardChat = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .handler(({ context }) =>
-    run(context.user, (db, user) => messaging.loadChatOverview(db, user)),
-  );
+  .handler(({ context }) => run(context.user, (db, user) => messaging.loadChatOverview(db, user)));
 export const loadDashboardChatMessages = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .validator(z.object({ type: z.enum(["section", "private"]), id: z.string().uuid() }))
@@ -707,4 +708,128 @@ export const loadAssessments = createServerFn({ method: "POST" })
   .validator(z.object({ studentId: text(50, 1).optional() }))
   .handler(({ data, context }) =>
     run(context.user, (db, user) => skills.listAssessments(db, user, data)),
+  );
+
+// ---------------------------------------------------------------- agent plans
+export const loadAgentPlans = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(z.object({ studentId: text(50, 1).optional(), role: text(80).optional() }))
+  .handler(({ data, context }) =>
+    run(context.user, (db, user) => agentPlans.getAgentPlans(db, user, data)),
+  );
+export const setAgentPlanItem = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(z.object({ planId: z.string().uuid(), itemId: text(30, 1), done: z.boolean() }))
+  .handler(({ data, context }) =>
+    run(context.user, (db, user) => agentPlans.setPlanItem(db, user, data)),
+  );
+
+// ---------------------------------------------------------------- predictions
+const subjectName = text(80, 1);
+export const loadStudentPrediction = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(z.object({ studentId: text(50, 1).optional() }))
+  .handler(({ data, context }) =>
+    run(context.user, (db, user) => predictions.getStudentPrediction(db, user, data)),
+  );
+export const loadPredictions = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(
+    z.object({
+      branch: text(40, 1).optional(),
+      gradYear: z.number().int().min(2000).max(2100).optional(),
+    }),
+  )
+  .handler(({ data, context }) =>
+    run(context.user, (db, user) => predictions.listPredictions(db, user, data)),
+  );
+export const loadPredictionInputs = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(z.object({ studentId: text(50, 1).optional() }))
+  .handler(({ data, context }) =>
+    run(context.user, (db, user) => predictions.listPredictionInputs(db, user, data)),
+  );
+export const saveCodingProfile = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(
+    z.object({
+      studentId: text(50, 1).optional(),
+      username: text(60).optional(),
+      easy: z.number().int().min(0).max(5000),
+      medium: z.number().int().min(0).max(5000),
+      hard: z.number().int().min(0).max(5000),
+      contestRating: z.number().int().min(0).max(4500).optional(),
+    }),
+  )
+  .handler(({ data, context }) =>
+    run(context.user, (db, user) => predictions.saveCodingProfile(db, user, data)),
+  );
+export const addExamScore = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(
+    z.object({
+      studentId: text(50, 1),
+      subject: subjectName,
+      kind: z.enum(["mid1", "mid2", "continuous"]),
+      title: text(80).optional(),
+      score: z.number().min(0).max(1000),
+      max: z.number().min(1).max(1000),
+      takenOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    }),
+  )
+  .handler(({ data, context }) =>
+    run(context.user, (db, user) => predictions.addExamScore(db, user, data)),
+  );
+export const deleteExamScore = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(z.object({ id: z.string().uuid() }))
+  .handler(({ data, context }) =>
+    run(context.user, (db, user) => predictions.deleteExamScore(db, user, data)),
+  );
+export const addTeacherRating = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(
+    z.object({
+      studentId: text(50, 1),
+      subject: text(80).optional(),
+      rating: z.number().int().min(1).max(5),
+      comment: text(500).optional(),
+    }),
+  )
+  .handler(({ data, context }) =>
+    run(context.user, (db, user) => predictions.addTeacherRating(db, user, data)),
+  );
+export const runPredictionAgent = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(
+    z.object({
+      branch: text(40, 1).optional(),
+      gradYear: z.number().int().min(2000).max(2100).optional(),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    limitByIp("prediction-agent", 20, 60 * 60 * 1000);
+    return run(context.user, (db, user) => predictions.runPredictionAgent(db, user, data));
+  });
+export const runPredictionCoach = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(z.object({ role: text(80, 3) }))
+  .handler(async ({ data, context }) => {
+    limitByIp("prediction-coach", 15, 60 * 60 * 1000);
+    return run(context.user, (db, user) => predictions.runPredictionCoach(db, user, data));
+  });
+export const loadModelReport = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .handler(({ context }) => run(context.user, (db, user) => mlModels.getModelReport(db, user)));
+export const trainModels = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .handler(async ({ context }) => {
+    limitByIp("train-models", 10, 60 * 60 * 1000);
+    return run(context.user, (db, user) => mlModels.trainModels(db, user));
+  });
+export const loadLearnedPredictions = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(z.object({ studentId: text(50, 1).optional() }))
+  .handler(({ data, context }) =>
+    run(context.user, (db, user) => mlModels.learnedPredictions(db, user, data)),
   );

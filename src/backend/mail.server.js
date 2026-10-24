@@ -11,7 +11,7 @@ let transport;
 export async function sendMail({ to, subject, text, html }) {
   transport ??= nodemailer.createTransport(process.env["SMTP_URL"]);
   await transport.sendMail({
-    from: process.env["MAIL_FROM"] || "BIB InsightIQ <no-reply@orbit.local>",
+    from: process.env["MAIL_FROM"] || "SLQG <no-reply@orbit.local>",
     to,
     subject,
     text,

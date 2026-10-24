@@ -39,6 +39,7 @@ import { MyRiskIdentification } from "@/components/portal/RiskIdentification";
 import { ScoreInsights } from "@/components/portal/ScoreInsights";
 import { liveAssignments, liveNotifications } from "@/lib/live-profile";
 import { classesNeededForTarget, componentScores, recommendations } from "@/lib/scoring";
+import { PredictionCoach, PredictionPanel } from "@/components/portal/PredictionPanel";
 import { useCampus, useCohortStanding } from "@/lib/use-campus";
 import { useLeetcodeProfile } from "@/lib/use-leetcode";
 import { useDrives, useTimetable } from "@/lib/use-platform";
@@ -1472,7 +1473,7 @@ export function StudentInsightsPage() {
     <RoleGate allow={["student"]}>
       <PageTitle
         title="Predictive Risk & AI"
-        sub="Rule-based risk flags, what needs your attention, and what is driving your Success Score."
+        sub="Predicted placement and results, your risk level, what to do about it, and what is driving your Success Score."
       />
       {!myRow ? (
         <EmptyState
@@ -1486,6 +1487,15 @@ export function StudentInsightsPage() {
               Needs your attention
             </h2>
             <AttentionList s={myRow.s} today={today} score={myRow.score} />
+          </div>
+          <div className="pl space-y-5">
+            <div>
+              <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-[#00205f]">
+                Predictions, risk and recommended actions
+              </h2>
+              <PredictionPanel />
+            </div>
+            <PredictionCoach />
           </div>
           <MyRiskIdentification s={myRow.s} />
           <ScoreInsights s={myRow.s} />

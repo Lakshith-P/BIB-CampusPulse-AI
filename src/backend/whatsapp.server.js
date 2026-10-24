@@ -69,7 +69,7 @@ const helpText = (user) =>
   ].join("\n");
 
 const WELCOME =
-  "Welcome to BIB InsightIQ on WhatsApp.\nSend *login* to sign in with your portal email and password and see your details.";
+  "Welcome to SLQG on WhatsApp.\nSend *login* to sign in with your portal email and password and see your details.";
 
 function studentSummary(row) {
   return [
@@ -351,7 +351,7 @@ export async function handleMessage(db, { from, body }, now = new Date()) {
     if (user)
       return `You are already signed in as ${user.displayName || user.email}. Send *logout* to sign out.`;
     await save(db, phone, { step: "email", failed: session?.failed_attempts ?? 0 }, now);
-    return "Send the email address of your BIB InsightIQ account.";
+    return "Send the email address of your SLQG account.";
   }
   if (lower === "logout" || lower === "sign out") {
     await db.query("DELETE FROM whatsapp_sessions WHERE phone = $1", [phone]);

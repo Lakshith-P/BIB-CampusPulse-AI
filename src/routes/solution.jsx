@@ -16,7 +16,7 @@ import {
 export const Route = createFileRoute("/solution")({
   head: () =>
     pageHead(
-      "Why BIB InsightIQ",
+      "Why SLQG",
       "Seven connected campus data sources, explainable student success scores and timely mentor support.",
     ),
   component: Solution,

@@ -189,7 +189,7 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
       try {
         await sendMail({
           to: data.email,
-          subject: "Reset your BIB InsightIQ password",
+          subject: "Reset your SLQG password",
           text: `Hello${user.display_name ? " " + user.display_name : ""},\n\nUse this link to choose a new password. It works once and expires in ${RESET_MINUTES} minutes:\n${link}\n\nIf you did not ask for this, ignore this email; your password has not changed.`,
           html: `<p>Hello${user.display_name ? " " + user.display_name : ""},</p><p><a href="${link}">Choose a new password</a>. The link works once and expires in ${RESET_MINUTES} minutes.</p><p>If you did not ask for this, ignore this email; your password has not changed.</p>`,
         });

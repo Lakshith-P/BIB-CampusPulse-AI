@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useAccount } from "@/lib/account";
 import { changePassword } from "@/lib/auth.functions";
 export const Route = createFileRoute("/reset-password")({
-  head: () => pageHead("Change Password", "Change your BIB InsightIQ account password."),
+  head: () => pageHead("Change Password", "Change your SLQG account password."),
   component: ChangePassword,
 });
 function ChangePassword() {

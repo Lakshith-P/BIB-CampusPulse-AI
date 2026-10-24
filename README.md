@@ -1,10 +1,10 @@
-# Orbit — Student Success Intelligence Platform
+# SLQG — Student Success Intelligence Platform
 
 Developed by **TEAM BIB (Biryani Intelligence Bureau)** for the **HacXLerate Smart Campus Analytics** challenge.
 
-![BIB InsightIQ home page](docs/screenshots/landing.png)
+![SLQG home page](docs/screenshots/landing.png)
 
-*Turning campus data into student success.*
+_Turning campus data into student success._
 
 ## Contents
 
@@ -28,7 +28,7 @@ Further documentation is in [`docs/`](docs/README.md): architecture, data model,
 
 ## Overview
 
-Orbit consolidates seven student data sources — academics, attendance, learning management system (LMS) activity, skills, engagement, placement readiness and feedback — under a single student identifier. From these sources it computes an explainable **Student Success Score**, identifies students who may require support together with the reasons, and enables mentors to record and track interventions.
+SLQG consolidates seven student data sources — academics, attendance, learning management system (LMS) activity, skills, engagement, placement readiness and feedback — under a single student identifier. From these sources it computes an explainable **Student Success Score**, identifies students who may require support together with the reasons, and enables mentors to record and track interventions.
 
 The platform addresses three questions for every student:
 
@@ -44,7 +44,7 @@ orbit
 Further documentation is in [`docs/`](docs/README.md): architecture, data model, server functions and the Success Score note.
 Student data lives in silos — grades in one system, attendance in another, LMS activity, skill assessments, and placement records scattered everywhere. By the time anyone connects the dots, a struggling student has already fallen behind.
 
-**BIB InsightIQ** unifies **seven campus data sources** under a single student identity and answers three questions instantly:
+**SLQG** unifies **seven campus data sources** under a single student identity and answers three questions instantly:
 
 1. **Who needs help?** — an explainable 0–100 Success Score with clear risk bands
 2. **Why are they at risk?** — dual, points-based **Academic Risk** and **Placement Risk** flags, each with a sorted driver list (signal → value → threshold → points)
@@ -66,7 +66,7 @@ Each student gets an 8-tab workspace: **Overview, Academics, Attendance, LMS, Sk
 
 - **Explainable score** — every component shows its weight and exact point contribution
 - **Risk badges** — Academic and Placement risk levels with points, plus "Why you are flagged" drivers
-- **Actionable notifications** — e.g. *"attend the next 8 classes to reach 85%"*, assignment deadlines, drive eligibility
+- **Actionable notifications** — e.g. _"attend the next 8 classes to reach 85%"_, assignment deadlines, drive eligibility
 - Attendance planner, unit-wise LMS content, weekly skill tests, resume check, mock interviews, and placement drive eligibility
 
 ![Student dashboard](docs/screenshots/student.png)
@@ -89,7 +89,6 @@ CSV import with validation and a cleaning report, so messy real-world exports (d
 
 ![Data import](docs/screenshots/data.png)
 
-
 main
 
 ## Features
@@ -104,7 +103,7 @@ main
 | Campus updates        | Placements, events, notices and posters posted by teachers and administrators, shown on a spotlight carousel, a "Happening" panel, the announcement strip and the updates page.                                          | `/portal/updates`                     |
 | Search                | A full-screen search (Ctrl or Cmd + K) that lists every section of the workspace and finds students by name or ID.                                                                                                       | Top bar                               |
 | Student records       | Teachers keep marks, attendance and skills of their students up to date; administrators also import students from CSV, assign teachers, manage roles and passwords, and read the audit log. Student lists export to CSV. | `/portal/students`, `/portal/records` |
-| Website assistant     | A conversational guide that answers only questions about Orbit. It has no access to private student records.                                                                                                             | All public pages                      |
+| Website assistant     | A conversational guide that answers only questions about SLQG. It has no access to private student records.                                                                                                              | All public pages                      |
 
 ---
 
@@ -167,7 +166,7 @@ The following rules apply to the prototype and do not constitute institutional p
 
 ### Academic and placement risk
 
-**Dual risk flags** — a points-based rule table in one config file (`src/lib/risk-flags.js`): each rule is *signal, threshold, points*. Missing inputs add no points and appear as **"Insufficient data"**.
+**Dual risk flags** — a points-based rule table in one config file (`src/lib/risk-flags.js`): each rule is _signal, threshold, points_. Missing inputs add no points and appear as **"Insufficient data"**.
 
 - **Academic Risk** — backlogs, low CGPA, SGPA drop, low attendance, subjects below 75, low LMS lessons/assignments → High ≥ 5 pts, Medium ≥ 2
 - **Placement Risk** — low readiness, weak aptitude/coding, weak resume, no mock interviews, incomplete assessments, no certifications/hackathons → High ≥ 6 pts, Medium ≥ 3
@@ -185,7 +184,7 @@ If either risk flag is **High**, the overall band cannot be **On Track**.
 | Language              | JavaScript                                                                                                              |
 | Database              | PostgreSQL through `node-postgres`; versioned SQL migrations in `db/migrations`                                         |
 | Authentication        | Email and password; passwords hashed with bcrypt; sessions issued as signed JSON Web Tokens (JWT) in an httpOnly cookie |
-| Assistant             | Vercel AI SDK with any OpenAI-compatible provider (Google Gemini by default), limited to Orbit topics                   |
+| Assistant             | Vercel AI SDK with any OpenAI-compatible provider (Google Gemini by default), limited to SLQG topics                    |
 | Build and hosting     | Nitro; deployable to Vercel without additional configuration, or runnable as a Node.js server                           |
 
 Authorization is enforced on the server for every request. Navigation shown in the interface is a convenience only and is never relied upon for access control.
@@ -434,6 +433,6 @@ Planned enhancements:
 - Notification delivery to students and mentors
 - Evidence review and approval workflows for engagement activities
 - Peer comparison with fairness safeguards
-orbit
-*Explainable insights. Human-led support. Fictional demo data.*
-main
+  orbit
+  _Explainable insights. Human-led support. Fictional demo data._
+  main

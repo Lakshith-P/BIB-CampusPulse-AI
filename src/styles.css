@@ -565,6 +565,25 @@ th.num {
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
 }
+/* Shared panels (predictions, models) take the CampusPulse blue inside the student workspace. */
+.cp-shell .pl {
+  --primary: #00338d;
+  --primary-foreground: #ffffff;
+  --ring: #0066cc;
+  --success: #16865b;
+  --warning: #d99216;
+  --destructive: #c83c4a;
+  --info: #0066cc;
+  --label: #00205f;
+  --border: #d9e1ec;
+  --rule: #d9e1ec;
+  --muted: #eef2f7;
+  --muted-foreground: #5b6675;
+}
+.cp-shell .pl .surface {
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px rgb(16 24 40 / 6%);
+}
 .cp-nav-active {
   background: #eef4ff;
   color: #00338d !important;

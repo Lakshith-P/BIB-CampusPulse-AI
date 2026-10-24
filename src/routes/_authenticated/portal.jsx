@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_authenticated/portal")({
   head: () =>
     pageHead(
       "My Workspace",
-      "Your authorized student records, scores and support plans, securely connected to your BIB InsightIQ account.",
+      "Your authorized student records, scores and support plans, securely connected to your SLQG account.",
     ),
   loader: ({ context }) => context.queryClient.ensureQueryData(campusOptions),
   pendingMs: 0,

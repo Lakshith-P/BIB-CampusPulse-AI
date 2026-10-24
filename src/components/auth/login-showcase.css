@@ -1,0 +1,742 @@
+/* The animated sign-in demo on the login page. Everything is scoped under .ls-root, so it cannot
+   affect the rest of the app. The phone and its screens follow the supplied SLQG design. */
+
+.ls-root {
+  --scene: #123c7a;
+  --scene-light: #5b9bff;
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(
+      ellipse at 50% 100%,
+      color-mix(in srgb, var(--scene-light) 22%, transparent),
+      transparent 62%
+    ),
+    linear-gradient(160deg, #061638 0%, #0a2556 55%, #0e2f68 100%);
+  font-family: Manrope, Inter, ui-sans-serif, system-ui, sans-serif;
+  transition: background 0.6s;
+}
+
+/* ---- backdrop: perspective grid and orbital rings ---- */
+.ls-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(#b9d4ff12 1px, transparent 1px),
+    linear-gradient(90deg, #b9d4ff12 1px, transparent 1px);
+  background-size: 64px 64px;
+  transform: perspective(500px) rotateX(12deg) scale(1.4);
+  -webkit-mask-image: linear-gradient(transparent, #000 70%);
+  mask-image: linear-gradient(transparent, #000 70%);
+}
+.ls-orb {
+  position: absolute;
+  border: 1px solid #8bb6f326;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 60px #8bb6f308,
+    0 0 0 120px #8bb6f304;
+}
+.ls-orb-a {
+  width: 520px;
+  height: 520px;
+  left: -180px;
+  top: -140px;
+}
+.ls-orb-b {
+  width: 460px;
+  height: 460px;
+  right: -200px;
+  bottom: -160px;
+}
+
+/* ---- header ---- */
+.ls-top {
+  position: absolute;
+  z-index: 3;
+  left: 28px;
+  right: 28px;
+  top: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.ls-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px 6px 8px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 6px 24px #02102e55;
+}
+.ls-brand img:first-child {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+.ls-wordmark {
+  height: 24px;
+  width: auto;
+}
+.ls-tagline {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #b5ceef;
+}
+
+/* ---- role selector ---- */
+.ls-rail {
+  position: absolute;
+  z-index: 4;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 7px;
+  border-radius: 30px;
+  background: #ffffff14;
+  border: 1px solid #ffffff26;
+  backdrop-filter: blur(8px);
+}
+.ls-rail button {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: none;
+  color: #a9c2e8;
+  font-size: 19px;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.ls-rail button:hover {
+  color: #fff;
+}
+.ls-rail button[aria-pressed="true"] {
+  color: #fff;
+  border-color: var(--scene-light);
+  background: color-mix(in srgb, var(--scene-light) 28%, transparent);
+}
+
+/* ---- stage: fixed-size content, scaled to fit ---- */
+.ls-stage {
+  position: absolute;
+  z-index: 2;
+  left: 68px;
+  right: 24px;
+  top: 78px;
+  bottom: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ls-fit {
+  flex: none;
+  display: grid;
+  grid-template-columns: 290px 260px;
+  gap: 44px;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center;
+}
+
+/* ---- copy beside the phone ---- */
+.ls-copy {
+  min-height: 330px;
+}
+.ls-micro {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  color: var(--scene-light);
+}
+.ls-copy h3 {
+  margin: 14px 0 12px;
+  font:
+    400 30px/1.15 Georgia,
+    "Times New Roman",
+    serif;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.ls-copy > p {
+  margin: 0;
+  max-width: 270px;
+  font-size: 12px;
+  line-height: 1.75;
+  color: #b9cde8;
+}
+.ls-copy ol {
+  list-style: none;
+  margin: 26px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.ls-copy li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.ls-copy li > span {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font:
+    12px/1 Georgia,
+    serif;
+  color: #fff;
+  background: var(--scene);
+  border: 1px solid var(--scene-light);
+}
+.ls-copy li h4 {
+  margin: 0 0 4px;
+  font:
+    15px/1.2 Georgia,
+    serif;
+  color: #fff;
+}
+.ls-copy li p {
+  margin: 0;
+  max-width: 210px;
+  font-size: 10px;
+  line-height: 1.6;
+  color: #9fb6d6;
+}
+
+/* ---- the phone ---- */
+.ls-device {
+  text-align: center;
+}
+.ls-mode {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  margin-bottom: 12px;
+  border-radius: 20px;
+  background: #ffffff14;
+  border: 1px solid #ffffff26;
+}
+.ls-mode button {
+  border: 0;
+  border-radius: 16px;
+  padding: 5px 15px;
+  background: none;
+  color: #b5ceef;
+  font-size: 10px;
+  cursor: pointer;
+}
+.ls-mode button[aria-pressed="true"] {
+  background: var(--scene);
+  color: #fff;
+  box-shadow: 0 0 0 1px var(--scene-light) inset;
+}
+.ls-phone {
+  position: relative;
+  width: 238px;
+  height: 500px;
+  margin: 0 auto;
+  overflow: hidden;
+  background: #fff;
+  color: #263651;
+  border: 6px solid #14171e;
+  outline: 1px solid #a8a9b2;
+  border-radius: 37px;
+  box-shadow:
+    0 24px 60px #02102e99,
+    0 0 70px color-mix(in srgb, var(--scene-light) 35%, transparent);
+}
+.ls-phone::after {
+  content: "";
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 4px;
+  width: 80px;
+  border-radius: 10px;
+  background: #172134;
+}
+.ls-island {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 76px;
+  height: 19px;
+  border-radius: 20px;
+  background: #11131a;
+}
+.ls-status {
+  display: flex;
+  justify-content: space-between;
+  padding: 9px 17px;
+  font-size: 8px;
+  font-weight: 700;
+  color: #0e1c36;
+}
+.ls-app {
+  height: calc(100% - 31px);
+  padding: 10px 12px 10px;
+  font-size: 9px;
+  line-height: 1.35;
+}
+.ls-phone-brand {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid #e8edf7;
+  color: #082d6b;
+}
+.ls-phone-brand img:first-child {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+.ls-phone-brand img:nth-child(2) {
+  height: 14px;
+  width: auto;
+}
+.ls-phone-brand > span {
+  margin-left: auto;
+  font-size: 13px;
+}
+
+/* ---- screens inside the phone ---- */
+.ls-screen {
+  position: relative;
+  height: 409px;
+  overflow: hidden;
+  text-align: left;
+  animation: ls-fade 0.18s ease-out;
+}
+.ls-login-head {
+  padding: 17px 0 8px;
+}
+.ls-login-head > span,
+.ls-page-head > span {
+  font-size: 5px;
+  letter-spacing: 1px;
+  color: #7890b0;
+}
+.ls-login-head h4 {
+  margin: 7px 0 5px;
+  font:
+    600 21px/1.2 Manrope,
+    Arial,
+    sans-serif;
+  letter-spacing: -0.7px;
+}
+.ls-login-head p {
+  margin: 0;
+  font-size: 7px;
+  color: #8a98ad;
+}
+.ls-badge {
+  margin: 9px 0 15px;
+  padding: 8px;
+  font-size: 7px;
+  color: var(--scene);
+  background: #f0f5fc;
+  border: 1px solid #e0e9f6;
+  border-radius: 7px;
+}
+.ls-input {
+  margin-bottom: 15px;
+}
+.ls-input label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 7px;
+  font-weight: 600;
+}
+.ls-input > div {
+  display: flex;
+  align-items: center;
+  height: 31px;
+  padding: 0 8px;
+  white-space: nowrap;
+  font-size: 8px;
+  color: #4e6481;
+  background: #fafcff;
+  border: 1px solid #dbe4f0;
+  border-radius: 6px;
+}
+.ls-input.is-typing > div {
+  border-color: var(--scene);
+  box-shadow: 0 0 0 2px #2e60a914;
+}
+.ls-input i {
+  display: none;
+  width: 1px;
+  height: 10px;
+  margin-left: 2px;
+  background: var(--scene);
+}
+.ls-input.is-typing i {
+  display: inline-block;
+  animation: ls-caret 0.7s steps(1) infinite;
+}
+.ls-help {
+  margin: 0 0 14px;
+  font-size: 6px;
+  color: #8393aa;
+}
+.ls-signin {
+  width: 100%;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--scene);
+  color: #fff;
+  font-size: 8px;
+  font-weight: 600;
+}
+.ls-spinner {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid #ffffff55;
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: ls-spin 0.65s linear infinite;
+}
+.ls-disclosure {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 5px;
+  color: #8c9ab0;
+}
+.ls-login-foot {
+  margin-top: 17px;
+  padding-top: 12px;
+  text-align: center;
+  font-size: 6px;
+  line-height: 1.8;
+  color: #8798af;
+  border-top: 1px solid #e3ebf6;
+}
+.ls-success {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding-bottom: 30px;
+  text-align: center;
+}
+.ls-success > span {
+  display: grid;
+  place-items: center;
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  font-size: 28px;
+  color: #217567;
+  background: #e2f1eb;
+}
+.ls-success h4 {
+  margin: 0;
+  font-size: 23px;
+  letter-spacing: -0.8px;
+}
+.ls-success p {
+  margin: 0;
+  font-size: 8px;
+  color: #7b8da8;
+}
+.ls-success strong {
+  font-size: 6px;
+  font-weight: 500;
+  color: var(--scene);
+}
+.ls-page-head {
+  min-height: 64px;
+  padding: 12px 0 10px;
+}
+.ls-page-head h4 {
+  margin: 5px 0;
+  font:
+    600 17px/1.2 Manrope,
+    Arial,
+    sans-serif;
+  letter-spacing: -0.6px;
+}
+.ls-page-head p {
+  margin: 0;
+  font-size: 6px;
+  line-height: 1.5;
+  color: #8a98ad;
+}
+.ls-page-head-tight {
+  min-height: 55px;
+  padding-top: 6px;
+}
+.ls-crumb {
+  padding-top: 8px;
+  font-size: 5px;
+  color: #94a4bb;
+}
+.ls-crumb span {
+  color: var(--scene);
+}
+.ls-metric {
+  position: relative;
+  margin-bottom: 12px;
+  padding: 11px;
+  border-radius: 11px;
+  background: var(--scene);
+  color: #fff;
+}
+.ls-metric > span {
+  display: block;
+  font-size: 6px;
+  opacity: 0.8;
+}
+.ls-metric > strong {
+  display: block;
+  margin: 7px 0;
+  font:
+    600 30px/1.2 Manrope,
+    Arial,
+    sans-serif;
+  letter-spacing: -1px;
+}
+.ls-metric strong small {
+  margin-left: 5px;
+  font-size: 6px;
+  font-weight: 400;
+  letter-spacing: 0;
+  opacity: 0.7;
+}
+.ls-metric > small {
+  font-size: 5px;
+  opacity: 0.8;
+}
+.ls-spark {
+  position: absolute;
+  right: 10px;
+  bottom: 17px;
+  font-size: 18px;
+  letter-spacing: 2px;
+  opacity: 0.5;
+}
+.ls-list-label {
+  margin: 9px 0 5px;
+  font-size: 6px;
+  font-weight: 650;
+}
+.ls-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 0;
+  border-bottom: 1px solid #ecf1f8;
+}
+.ls-row-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--scene);
+  background: #edf3fb;
+}
+.ls-row > div {
+  min-width: 0;
+}
+.ls-row strong {
+  display: block;
+  font-size: 7px;
+  font-weight: 600;
+}
+.ls-row small {
+  display: block;
+  margin-top: 2px;
+  font-size: 5px;
+  line-height: 1.5;
+  color: #8a99ad;
+}
+.ls-row > b {
+  margin-left: auto;
+  white-space: nowrap;
+  font-size: 7px;
+  color: var(--scene);
+}
+.ls-callout {
+  margin-top: 10px;
+  padding: 9px 8px;
+  font-size: 6px;
+  line-height: 1.6;
+  color: #7185a1;
+  background: #eff5fc;
+  border: 1px solid #e5edf8;
+  border-radius: 7px;
+}
+.ls-nav {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 9px 0 3px;
+  background: #fff;
+  border-top: 1px solid #edf2f8;
+}
+.ls-nav button {
+  min-width: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 2px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  font-size: 5px;
+  color: #879ab6;
+  cursor: pointer;
+}
+.ls-nav button > span {
+  font-size: 13px;
+}
+.ls-nav button[aria-pressed="true"] {
+  color: var(--scene);
+  background: #edf4fd;
+  font-weight: 700;
+}
+
+/* ---- status, timeline, controls ---- */
+.ls-caption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 14px;
+  margin-top: 12px;
+  font-size: 10px;
+  color: #b5ceef;
+}
+.ls-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--scene-light);
+}
+.ls-timeline {
+  width: 190px;
+  height: 2px;
+  margin: 9px auto;
+  background: #ffffff26;
+}
+.ls-timeline > span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--scene-light);
+  transform-origin: left;
+  transform: scaleX(0);
+}
+.ls-meta {
+  width: 238px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 7px;
+  letter-spacing: 0.04em;
+  color: #8fa8cc;
+}
+.ls-meta button {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px;
+  border: 0;
+  background: none;
+  font-size: 9px;
+  color: #b5ceef;
+  cursor: pointer;
+}
+.ls-play {
+  position: absolute;
+  z-index: 5;
+  left: 68px;
+  bottom: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 30px;
+  background: #ffffff1c;
+  border: 1px solid #ffffff30;
+  color: #fff;
+  font-size: 10px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+.ls-play:hover {
+  background: #ffffff2e;
+}
+.ls-foot {
+  position: absolute;
+  z-index: 2;
+  right: 28px;
+  bottom: 24px;
+  margin: 0;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: #8fa8cc;
+}
+
+.ls-root button:focus-visible {
+  outline: 2px solid #9ec5ff;
+  outline-offset: 2px;
+}
+
+@keyframes ls-caret {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes ls-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes ls-fade {
+  from {
+    opacity: 0.6;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ls-spinner,
+  .ls-input.is-typing i,
+  .ls-screen {
+    animation: none;
+  }
+}

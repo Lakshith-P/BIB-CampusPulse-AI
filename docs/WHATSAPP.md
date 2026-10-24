@@ -1,6 +1,6 @@
 # WhatsApp assistant (Twilio)
 
-Students, teachers and administrators can message the BIB InsightIQ WhatsApp number, sign in
+Students, teachers and administrators can message the SLQG WhatsApp number, sign in
 inside the chat, and ask for their details. It uses the same data and the same permission rules
 as the website.
 
@@ -30,9 +30,9 @@ reminds people to delete the message; treat this channel as lower security than 
 
 ## Commands
 
-| Who | Command | Answer |
-| --- | --- | --- |
-| Student | `score`, `attendance`, `marks`, `timetable`, `assignments` | their own record only |
-| Teacher | `students`, `risk`, `low`, `student S-101`, `timetable` | only students assigned to them |
-| Administrator | the teacher commands | every student |
-| Everyone | `help`, `logout` | |
+| Who           | Command                                                    | Answer                         |
+| ------------- | ---------------------------------------------------------- | ------------------------------ |
+| Student       | `score`, `attendance`, `marks`, `timetable`, `assignments` | their own record only          |
+| Teacher       | `students`, `risk`, `low`, `student S-101`, `timetable`    | only students assigned to them |
+| Administrator | the teacher commands                                       | every student                  |
+| Everyone      | `help`, `logout`                                           |                                |
