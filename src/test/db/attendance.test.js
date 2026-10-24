@@ -31,11 +31,14 @@ const base = { subject: "Maths", date: "2026-10-20", period: 1 };
 const totals = async (id) => (await recordOf(db, id)).subjects[0];
 
 describe("marking attendance", () => {
-  it("lists only the teacher's own students, everyone present by default", async () => {
+  it("lists only assigned students and does not update totals before saving", async () => {
     const r = await attendance.loadRoster(db, teacher, base);
     expect(r.marked).toBe(false);
     expect(r.students.map((s) => s.id)).toEqual(["S-ANN", "S-BEN"]);
     expect(r.students.every((s) => s.present)).toBe(true);
+    expect(await totals("S-ANN")).toMatchObject({ classesHeld: 10, classesAttended: 8 });
+    expect(await totals("S-BEN")).toMatchObject({ classesHeld: 10, classesAttended: 10 });
+    expect(await totals("S-CARA")).toMatchObject({ classesHeld: 10, classesAttended: 5 });
   });
 
   it("updates held/attended totals and notifies the absent student", async () => {
@@ -48,6 +51,7 @@ describe("marking attendance", () => {
     expect(r).toMatchObject({ present: 1, absent: 1 });
     expect(await totals("S-ANN")).toMatchObject({ classesHeld: 11, classesAttended: 8 });
     expect(await totals("S-BEN")).toMatchObject({ classesHeld: 11, classesAttended: 11 });
+    expect(await totals("S-CARA")).toMatchObject({ classesHeld: 10, classesAttended: 5 });
     const n = await db.query("SELECT title FROM notifications WHERE user_id = $1", [ann.id]);
     expect(n.rows[0].title).toMatch(/absent in Maths/);
   });
@@ -70,25 +74,48 @@ describe("marking attendance", () => {
     const r = await attendance.loadRoster(db, teacher, base);
     expect(r.marked).toBe(true);
     expect(r.students.find((s) => s.id === "S-BEN").present).toBe(false);
-    expect(await attendance.recentSessions(db, teacher, { subject: "Maths" })).toHaveLength(1);
+    expect(await attendance.recentSessions(db, teacher, { subject: "Maths" })).toMatchObject([
+      { held_on: base.date, period: base.period, present: 1, absent: 1 },
+    ]);
   });
 
-  it("keeps other teachers' students, students and future dates out", async () => {
+  it("limits each teacher to assigned students, and rejects unrelated subjects", async () => {
+    expect(await attendance.attendanceSubjects(db, other)).toEqual(["Maths"]);
+    const otherRoster = await attendance.loadRoster(db, other, { ...base, period: 2 });
+    expect(otherRoster.students.map((s) => s.id)).toEqual(["S-CARA"]);
     await expect(
       attendance.markAttendance(
         db,
         teacher,
-        { ...base, marks: [{ studentId: "S-CARA", present: false }] },
+        { ...base, period: 2, marks: [{ studentId: "S-CARA", present: false }] },
         TODAY,
       ),
     ).rejects.toThrow(/not in your class/);
+    const saved = await attendance.markAttendance(
+      db,
+      other,
+      { ...base, period: 2, marks: [{ studentId: "S-CARA", present: false }] },
+      TODAY,
+    );
+    expect(saved).toMatchObject({ present: 0, absent: 1 });
+    expect(await totals("S-CARA")).toMatchObject({ classesHeld: 11, classesAttended: 5 });
+    const history = await attendance.loadRoster(db, other, { ...base, period: 2 });
+    expect(history.marked).toBe(true);
+    expect(history.students[0].present).toBe(false);
+    expect(await attendance.recentSessions(db, teacher, { subject: "Maths" })).toHaveLength(1);
+    expect(await attendance.recentSessions(db, other, { subject: "Maths" })).toMatchObject([
+      { held_on: base.date, period: 2, present: 0, absent: 1 },
+    ]);
+    await expect(
+      attendance.loadRoster(db, teacher, { ...base, subject: "History" }),
+    ).rejects.toThrow(/assigned to you/);
     await expect(
       attendance.markAttendance(db, ann, { ...base, marks: [] }, TODAY),
     ).rejects.toThrow();
     await expect(
       attendance.markAttendance(db, teacher, { ...base, date: "2026-10-22", marks: [] }, TODAY),
     ).rejects.toThrow(/future/);
-    expect(await totals("S-CARA")).toMatchObject({ classesHeld: 10, classesAttended: 5 });
+    expect(await totals("S-CARA")).toMatchObject({ classesHeld: 11, classesAttended: 5 });
   });
 
   it("lets an administrator mark everyone and a student see only their own log", async () => {

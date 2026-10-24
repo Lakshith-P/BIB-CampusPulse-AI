@@ -23,6 +23,7 @@ import { Route as AuthenticatedPortalIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedPortalAssignRouteImport } from './routes/_authenticated/portal.assign'
 import { Route as AuthenticatedPortalAttendanceRouteImport } from './routes/_authenticated/portal.attendance'
 import { Route as AuthenticatedPortalAuditRouteImport } from './routes/_authenticated/portal.audit'
+import { Route as AuthenticatedPortalChatRouteImport } from './routes/_authenticated/portal.chat'
 import { Route as AuthenticatedPortalComplaintsRouteImport } from './routes/_authenticated/portal.complaints'
 import { Route as AuthenticatedPortalEngagementRouteImport } from './routes/_authenticated/portal.engagement'
 import { Route as AuthenticatedPortalFeedbackRouteImport } from './routes/_authenticated/portal.feedback'
@@ -119,6 +120,11 @@ const AuthenticatedPortalAuditRoute =
     path: '/audit',
     getParentRoute: () => AuthenticatedPortalRoute,
   } as any)
+const AuthenticatedPortalChatRoute = AuthenticatedPortalChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => AuthenticatedPortalRoute,
+} as any)
 const AuthenticatedPortalComplaintsRoute =
   AuthenticatedPortalComplaintsRouteImport.update({
     id: '/complaints',
@@ -261,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/portal/assign': typeof AuthenticatedPortalAssignRoute
   '/portal/attendance': typeof AuthenticatedPortalAttendanceRoute
   '/portal/audit': typeof AuthenticatedPortalAuditRoute
+  '/portal/chat': typeof AuthenticatedPortalChatRoute
   '/portal/complaints': typeof AuthenticatedPortalComplaintsRoute
   '/portal/engagement': typeof AuthenticatedPortalEngagementRoute
   '/portal/feedback': typeof AuthenticatedPortalFeedbackRoute
@@ -297,6 +304,7 @@ export interface FileRoutesByTo {
   '/portal/assign': typeof AuthenticatedPortalAssignRoute
   '/portal/attendance': typeof AuthenticatedPortalAttendanceRoute
   '/portal/audit': typeof AuthenticatedPortalAuditRoute
+  '/portal/chat': typeof AuthenticatedPortalChatRoute
   '/portal/complaints': typeof AuthenticatedPortalComplaintsRoute
   '/portal/engagement': typeof AuthenticatedPortalEngagementRoute
   '/portal/feedback': typeof AuthenticatedPortalFeedbackRoute
@@ -336,6 +344,7 @@ export interface FileRoutesById {
   '/_authenticated/portal/assign': typeof AuthenticatedPortalAssignRoute
   '/_authenticated/portal/attendance': typeof AuthenticatedPortalAttendanceRoute
   '/_authenticated/portal/audit': typeof AuthenticatedPortalAuditRoute
+  '/_authenticated/portal/chat': typeof AuthenticatedPortalChatRoute
   '/_authenticated/portal/complaints': typeof AuthenticatedPortalComplaintsRoute
   '/_authenticated/portal/engagement': typeof AuthenticatedPortalEngagementRoute
   '/_authenticated/portal/feedback': typeof AuthenticatedPortalFeedbackRoute
@@ -375,6 +384,7 @@ export interface FileRouteTypes {
     | '/portal/assign'
     | '/portal/attendance'
     | '/portal/audit'
+    | '/portal/chat'
     | '/portal/complaints'
     | '/portal/engagement'
     | '/portal/feedback'
@@ -411,6 +421,7 @@ export interface FileRouteTypes {
     | '/portal/assign'
     | '/portal/attendance'
     | '/portal/audit'
+    | '/portal/chat'
     | '/portal/complaints'
     | '/portal/engagement'
     | '/portal/feedback'
@@ -449,6 +460,7 @@ export interface FileRouteTypes {
     | '/_authenticated/portal/assign'
     | '/_authenticated/portal/attendance'
     | '/_authenticated/portal/audit'
+    | '/_authenticated/portal/chat'
     | '/_authenticated/portal/complaints'
     | '/_authenticated/portal/engagement'
     | '/_authenticated/portal/feedback'
@@ -587,6 +599,13 @@ declare module '@tanstack/react-router' {
       path: '/audit'
       fullPath: '/portal/audit'
       preLoaderRoute: typeof AuthenticatedPortalAuditRouteImport
+      parentRoute: typeof AuthenticatedPortalRoute
+    }
+    '/_authenticated/portal/chat': {
+      id: '/_authenticated/portal/chat'
+      path: '/chat'
+      fullPath: '/portal/chat'
+      preLoaderRoute: typeof AuthenticatedPortalChatRouteImport
       parentRoute: typeof AuthenticatedPortalRoute
     }
     '/_authenticated/portal/complaints': {
@@ -750,6 +769,7 @@ interface AuthenticatedPortalRouteChildren {
   AuthenticatedPortalAssignRoute: typeof AuthenticatedPortalAssignRoute
   AuthenticatedPortalAttendanceRoute: typeof AuthenticatedPortalAttendanceRoute
   AuthenticatedPortalAuditRoute: typeof AuthenticatedPortalAuditRoute
+  AuthenticatedPortalChatRoute: typeof AuthenticatedPortalChatRoute
   AuthenticatedPortalComplaintsRoute: typeof AuthenticatedPortalComplaintsRoute
   AuthenticatedPortalEngagementRoute: typeof AuthenticatedPortalEngagementRoute
   AuthenticatedPortalFeedbackRoute: typeof AuthenticatedPortalFeedbackRoute
@@ -776,6 +796,7 @@ const AuthenticatedPortalRouteChildren: AuthenticatedPortalRouteChildren = {
   AuthenticatedPortalAssignRoute: AuthenticatedPortalAssignRoute,
   AuthenticatedPortalAttendanceRoute: AuthenticatedPortalAttendanceRoute,
   AuthenticatedPortalAuditRoute: AuthenticatedPortalAuditRoute,
+  AuthenticatedPortalChatRoute: AuthenticatedPortalChatRoute,
   AuthenticatedPortalComplaintsRoute: AuthenticatedPortalComplaintsRoute,
   AuthenticatedPortalEngagementRoute: AuthenticatedPortalEngagementRoute,
   AuthenticatedPortalFeedbackRoute: AuthenticatedPortalFeedbackRoute,

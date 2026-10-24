@@ -15,6 +15,7 @@ import {
 } from "@/components/ui-kit";
 import {
   buildTimetable,
+  loadAttendanceSubjects,
   loadAttendanceRoster,
   loadMyAttendance,
   loadRecentSessions,
@@ -30,13 +31,16 @@ const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 
 // ---------------------------------------------------------------- mark attendance (staff)
 export function MarkAttendance() {
-  const timetable = useTimetable();
   const qc = useQueryClient();
+  const subjectsQuery = useQuery({
+    queryKey: ["attendance-subjects"],
+    queryFn: () => loadAttendanceSubjects(),
+  });
   const [subject, setSubject] = useState("");
   const [date, setDate] = useState(todayIso());
   const [period, setPeriod] = useState(1);
   const [present, setPresent] = useState({});
-  const subjects = timetable.data?.subjects ?? [];
+  const subjects = subjectsQuery.data ?? [];
   const current = subject || subjects[0] || "";
   const key = ["attendance-roster", current, date, period];
   const roster = useQuery({
@@ -62,20 +66,21 @@ export function MarkAttendance() {
     ]);
   });
 
-  if (timetable.isLoading) return <PageSkeleton rows={2} />;
-  if (timetable.error) return <ErrorState error={timetable.error} onRetry={timetable.refetch} />;
+  if (subjectsQuery.isLoading) return <PageSkeleton rows={2} />;
+  if (subjectsQuery.error)
+    return <ErrorState error={subjectsQuery.error} onRetry={subjectsQuery.refetch} />;
   if (!subjects.length)
     return (
       <EmptyState
         title="No subjects to mark"
-        hint="Subjects appear here once students assigned to you have them on their record."
+        hint="Subjects appear here once students have them on their record."
       />
     );
   const students = roster.data?.students ?? [];
   const absentCount = students.filter((s) => present[s.id] === false).length;
   return (
     <div className="space-y-4">
-      <SectionTitle sub="Tick who is absent. Everyone starts as present, and saving updates each student's attendance percentage.">
+      <SectionTitle sub="Choose a date and period to review saved marks. Changes update student attendance only after you save. Everyone starts as present; tick who is absent.">
         Mark attendance
       </SectionTitle>
       <div className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-3">
@@ -119,7 +124,7 @@ export function MarkAttendance() {
       ) : !students.length ? (
         <EmptyState
           title="No students in this class"
-          hint="Only students assigned to you are listed."
+          hint="No students are currently enrolled in this subject."
         />
       ) : (
         <form

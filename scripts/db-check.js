@@ -20,6 +20,10 @@ try {
     "campus_interventions",
     "contact_messages",
     "campus_audit",
+    "chat_section_rooms",
+    "chat_section_messages",
+    "private_chat_requests",
+    "private_chat_messages",
   ];
   const missing = needed.filter((t) => !tables.includes(t));
   if (missing.length) {
