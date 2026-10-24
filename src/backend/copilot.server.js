@@ -432,12 +432,21 @@ Rules:
 
 /** A short, honest reason the model call failed, without provider internals. */
 const modelFailure = (error) => {
-  const status = error?.statusCode ?? error?.lastError?.statusCode;
+  const last = error?.lastError ?? error;
+  const status = last?.statusCode ?? error?.statusCode;
+  // The provider's own reason (never the key) helps an administrator fix a bad setup quickly.
+  const reason = String(last?.message ?? "")
+    .replace(/\s+/g, " ")
+    .slice(0, 160);
+  const detail =
+    status || reason ? ` (${[status && `HTTP ${status}`, reason].filter(Boolean).join(": ")})` : "";
   if (status === 429)
-    return "The AI provider's usage limit has been reached. Please try again later or ask an administrator to check the LLM quota.";
-  if (status === 401 || status === 403)
-    return "The AI provider rejected the configured key. Ask an administrator to check LLM_API_KEY.";
-  return "The Copilot could not reach the AI provider. Please try again in a moment.";
+    return `The AI provider's usage limit has been reached. Try again later or check the LLM quota${detail}.`;
+  if (status === 401 || status === 403 || /api key/i.test(reason))
+    return `The AI provider rejected the configured key. Check LLM_API_KEY / GROK_API_KEY on the server${detail}.`;
+  if (status === 404)
+    return `The configured AI model was not found. Check LLM_MODEL / GROK_MODEL on the server${detail}.`;
+  return `The Copilot could not get an answer from the AI provider${detail}. Please try again in a moment.`;
 };
 
 const history = (messages) =>
