@@ -613,3 +613,10 @@ html {
   scroll-padding-top: 5rem;
   -webkit-overflow-scrolling: touch;
 }
+
+.copilot-flash {
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 45%, transparent);
+}
+.copilot-answer ul {
+  margin-block: 0.5rem;
+}

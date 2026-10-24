@@ -43,7 +43,11 @@ export const SEARCH_GROUPS = {
       [
         ["Dashboard", "/portal", "overview home score band alerts"],
         ["Notifications", "/portal/notifications", "alerts unread bell reminders"],
-        ["Announcements", "/portal/updates", "announcement notice event poster news happening campus update"],
+        [
+          "Announcements",
+          "/portal/updates",
+          "announcement notice event poster news happening campus update",
+        ],
         ["Section and private chats", "/portal/chat", "group messages chat teacher student"],
         ["Notices and posters", "/portal/updates", "board circular"],
       ],
@@ -245,6 +249,7 @@ export const RAIL = {
     ["/portal/students", "Students", "students"],
     ["/portal/profile", "Profile", "profile"],
     ["/portal/results", "Academic", "academic"],
+    ["/portal/copilot", "Copilot", "copilot"],
     ["/portal/attendance", "Attendance", "attendance"],
     ["/portal/chat", "Chats", "chat"],
     ["/portal/lms", "LMS", "lms"],
@@ -259,6 +264,7 @@ export const RAIL = {
     ["/portal/students", "Students", "students"],
     ["/portal/profile", "Profile", "profile"],
     ["/portal/results", "Academic", "academic"],
+    ["/portal/copilot", "Copilot", "copilot"],
     ["/portal/attendance", "Attendance", "attendance"],
     ["/portal/chat", "Chats", "chat"],
     ["/portal/lms", "LMS", "lms"],
@@ -315,6 +321,7 @@ export const MENUS = {
       items: [
         ["/portal/students", "My students"],
         ["/portal/results", "Class results"],
+        ["/portal/copilot", "Analytics Copilot"],
         ["/portal/monitor", "Attendance and risk"],
         ["/portal/chat", "Section and private chats"],
       ],
@@ -360,6 +367,7 @@ export const MENUS = {
     {
       label: "Insights",
       items: [
+        ["/portal/copilot", "Analytics Copilot"],
         ["/portal/results", "Campus results"],
         ["/portal/placement", "Placement overview"],
       ],
