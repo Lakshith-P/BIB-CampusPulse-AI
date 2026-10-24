@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { EmptyState, SectionTitle, StatCard } from "@/components/widgets";
 import { PageTitle } from "@/components/portal/PortalShell";
-import { PostAnnouncement, AnnouncementsFeed } from "@/components/portal/Announcements";
+import { AnnouncementsFeed } from "@/components/portal/Announcements";
 import { averages } from "@/lib/campus-derive";
 import { successScore } from "@/lib/scoring";
 import { useCampus } from "@/lib/use-campus";
@@ -55,9 +55,7 @@ export function PlacementOverview() {
       <PageTitle
         title="Placement overview"
         sub={isAdmin ? "Placement readiness across campus" : "Placement readiness of your students"}
-      >
-        <PostAnnouncement defaultCategory="placement" />
-      </PageTitle>
+      />
       {rows.length === 0 ? (
         <EmptyState title="No students yet" hint="Readiness appears once students are assigned." />
       ) : (

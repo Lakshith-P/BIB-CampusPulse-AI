@@ -1,10 +1,10 @@
 import { createHmac, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { SignJWT, jwtVerify } from "jose";
 
-// A self-hosted text captcha. The server draws a distorted image and hands back a signed token
+// A self-hosted text captcha (case-sensitive: capitals, small letters, digits and symbols). The server draws a distorted image and hands back a signed token
 // that holds only a keyed hash of the answer, so nothing needs to be stored and the answer is
 // never sent to the browser. Each token works once and expires after five minutes.
-const ALPHABET = "ACDEFGHJKLMNPQRTUVWXY34679"; // no look-alikes (0/O, 1/I, 5/S, 2/Z, 8/B)
+const ALPHABET = "ACDEFGHJKLMNPRTUVWXYabdefghjmnqrty34679#@%?"; // capitals, small letters, digits and symbols; look-alikes (0/O, 1/I/l, 5/S, 2/Z, 8/B, and c/s/v/w/x/z/o/p/k/u in both cases) left out
 const TTL_SECONDS = 300;
 const used = new Map(); // token id -> expiry, so a solved captcha cannot be replayed
 
@@ -13,11 +13,10 @@ function secret() {
   if (!s || s.length < 32) throw new Error("JWT_SECRET must be set to at least 32 characters.");
   return s;
 }
-const hash = (answer) =>
-  createHmac("sha256", secret()).update(`captcha:${answer}`).digest("hex");
+const hash = (answer) => createHmac("sha256", secret()).update(`captcha:${answer}`).digest("hex");
 
 function drawSvg(code) {
-  const w = 190;
+  const w = 230;
   const h = 64;
   const rnd = (a, b) => randomInt(a, b + 1);
   const colors = ["#1f6f5c", "#2b5aa8", "#8a3b8f", "#a8541f", "#2c2c2c"];
@@ -37,7 +36,7 @@ function drawSvg(code) {
 }
 
 export async function createCaptcha() {
-  const code = Array.from({ length: 5 }, () => ALPHABET[randomInt(ALPHABET.length)]).join("");
+  const code = Array.from({ length: 6 }, () => ALPHABET[randomInt(ALPHABET.length)]).join("");
   const token = await new SignJWT({ h: hash(code) })
     .setProtectedHeader({ alg: "HS256" })
     .setAudience("captcha")

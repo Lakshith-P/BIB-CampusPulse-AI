@@ -33,7 +33,7 @@ export function CaptchaField({ captcha, reload }) {
           <img
             src={captcha.image}
             alt="Verification text"
-            width={190}
+            width={230}
             height={64}
             className="h-11 w-auto rounded-lg"
           />

@@ -17,8 +17,8 @@ import { lazy, Suspense, useEffect, useState } from "react";
 const CampusAssistant = lazy(() =>
   import("@/components/CampusAssistant").then((m) => ({ default: m.CampusAssistant })),
 );
-// Pluto is not shown on the sign-in page; it appears once the person is inside.
-const NO_ASSISTANT = ["/auth"];
+// Pluto is not shown on the landing page or the sign-in page.
+const NO_ASSISTANT = ["/", "/auth"];
 function LateAssistant() {
   const path = useRouterState({ select: (state) => state.location.pathname });
   const [ready, setReady] = useState(false);
@@ -26,7 +26,7 @@ function LateAssistant() {
     const t = setTimeout(() => setReady(true), 1500);
     return () => clearTimeout(t);
   }, []);
-  if (NO_ASSISTANT.some((p) => path === p || path.startsWith(p + "/"))) return null;
+  if (NO_ASSISTANT.some((p) => path === p || (p !== "/" && path.startsWith(p + "/")))) return null;
   return ready ? (
     <Suspense fallback={null}>
       <CampusAssistant />

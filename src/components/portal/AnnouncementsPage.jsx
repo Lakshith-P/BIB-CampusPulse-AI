@@ -1,19 +1,28 @@
 import { useState } from "react";
 import { PageTitle } from "@/components/portal/PortalShell";
-import { CATEGORY, PostAnnouncement, AnnouncementsFeed } from "@/components/portal/Announcements";
+import {
+  CATEGORY,
+  PostAnnouncementButton,
+  PostAnnouncementForm,
+  AnnouncementsFeed,
+} from "@/components/portal/Announcements";
 import { useCampus } from "@/lib/use-campus";
 
 export function AnnouncementsPage() {
   const { role } = useCampus();
   const [cat, setCat] = useState("all");
+  const [posting, setPosting] = useState(false);
   return (
     <div>
       <PageTitle
         title="Announcements"
         sub="Placements, events, notices and posters from the university"
       >
-        {role !== "student" && <PostAnnouncement />}
+        {role !== "student" && !posting && (
+          <PostAnnouncementButton onClick={() => setPosting(true)} />
+        )}
       </PageTitle>
+      {role !== "student" && posting && <PostAnnouncementForm onClose={() => setPosting(false)} />}
       <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="Filter announcements">
         {[["all", "All"], ...Object.entries(CATEGORY).map(([k, c]) => [k, c.label + "s"])].map(
           ([key, text]) => (

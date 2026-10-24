@@ -166,27 +166,30 @@ export function AnnouncementsFeed({ categories, limit, empty, seeAll = false }) 
   );
 }
 
-/** Form for teachers and administrators to publish a placement, event, notice or poster. */
-export function PostAnnouncement({ defaultCategory = "notice" }) {
+/** The button that opens the post form. */
+export function PostAnnouncementButton({ onClick }) {
+  return (
+    <Button onClick={onClick}>
+      <Plus /> Post an announcement
+    </Button>
+  );
+}
+
+/** Form for teachers and administrators to publish a placement, event, notice or poster. It is
+ *  laid out across the whole page, below the page title. */
+export function PostAnnouncementForm({ defaultCategory = "notice", onClose }) {
   const qc = useQueryClient();
   const save = useServerFn(saveUpdate);
-  const [open, setOpen] = useState(false);
   const post = useMutation({
     mutationFn: (data) => save({ data }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: updatesQuery.queryKey });
-      setOpen(false);
+      onClose();
     },
   });
-  if (!open)
-    return (
-      <Button onClick={() => setOpen(true)}>
-        <Plus /> Post an announcement
-      </Button>
-    );
   return (
     <form
-      className="mb-6 grid gap-3 surface p-4 md:grid-cols-2"
+      className="mb-6 grid w-full gap-4 surface p-5 md:grid-cols-2 lg:grid-cols-4"
       onSubmit={(e) => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
@@ -224,9 +227,9 @@ export function PostAnnouncement({ defaultCategory = "notice" }) {
         Date
         <Input name="eventDate" type="date" className="mt-1" />
       </label>
-      <label className="text-sm md:col-span-2">
+      <label className="text-sm md:col-span-2 lg:col-span-4">
         Details
-        <Textarea name="body" rows={3} maxLength={2000} className="mt-1" />
+        <Textarea name="body" rows={5} maxLength={2000} className="mt-1" />
       </label>
       <label className="text-sm">
         Poster image link (https)
@@ -237,15 +240,15 @@ export function PostAnnouncement({ defaultCategory = "notice" }) {
         <Input name="linkUrl" type="url" placeholder="https://…" className="mt-1" />
       </label>
       {post.isError && (
-        <p role="alert" className="text-sm text-destructive md:col-span-2">
+        <p role="alert" className="text-sm text-destructive md:col-span-2 lg:col-span-4">
           {post.error.message}
         </p>
       )}
-      <div className="flex gap-2 md:col-span-2">
+      <div className="flex gap-2 md:col-span-2 lg:col-span-4">
         <Button type="submit" disabled={post.isPending}>
           Publish
         </Button>
-        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+        <Button type="button" variant="ghost" onClick={onClose}>
           Cancel
         </Button>
       </div>

@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Megaphone, MessageSquare, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CATEGORY, PostAnnouncement, useAnnouncements } from "@/components/portal/Announcements";
+import { CATEGORY, useAnnouncements } from "@/components/portal/Announcements";
 import { listContactMessages } from "@/lib/campus.functions";
 import { liveAssignments } from "@/lib/live-profile";
 import { useCampus } from "@/lib/use-campus";
@@ -297,7 +297,6 @@ export function OverviewHub() {
           footer="* Latest from your university"
           action={
             <div className="flex items-center gap-1.5">
-              <PostAnnouncement />
               <Button asChild size="sm" variant="outline">
                 <Link to="/portal/updates">All updates</Link>
               </Button>
