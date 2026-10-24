@@ -328,11 +328,25 @@ export const sendDashboardChatMessage = createServerFn({ method: "POST" })
     z.object({
       type: z.enum(["section", "private"]),
       id: z.string().uuid(),
-      body: text(2000, 1),
+      body: text(2000),
+      file: fileSchema.optional(),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    if (data.file) limitByIp("chat-upload", 40, 60 * 60 * 1000);
+    return run(context.user, (db, user) => messaging.sendChatMessage(db, user, data));
+  });
+export const downloadDashboardChatFile = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(
+    z.object({
+      type: z.enum(["section", "private"]),
+      id: z.string().uuid(),
+      messageId: z.string().uuid(),
     }),
   )
   .handler(({ data, context }) =>
-    run(context.user, (db, user) => messaging.sendChatMessage(db, user, data)),
+    run(context.user, (db, user) => messaging.downloadChatFile(db, user, data)),
   );
 export const requestPrivateChat = createServerFn({ method: "POST" })
   .middleware([requireAuth])

@@ -1,53 +1,9 @@
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useAccount } from "@/lib/account";
-import { DEFAULT_WEIGHTS, riskBand } from "@/lib/types";
 
 const LOGO = "/slqg-logo.png";
 const LETTERING = "/slqg-lettering.png";
-
-// Score components in the order the bars are drawn; the weights are the app's own.
-const COMPONENTS = [
-  ["academics", "Academics"],
-  ["attendance", "Attendance"],
-  ["lms", "LMS"],
-  ["engagement", "Engagement"],
-  ["skills", "Skills"],
-  ["placement", "Placement"],
-];
-
-const SCENARIOS = [
-  {
-    name: "Aarav · Year 3",
-    initial: "A",
-    values: [82, 68, 75, 70, 66, 60],
-    title: "Strong academics. An attendance gap.",
-    reason:
-      "Attendance is 68%, below the illustrative 75% threshold. Placement readiness is 60%, so the below-60% flag does not fire.",
-    next: "Discuss the attendance gap and agree on a recovery plan.",
-    plan: "Meet with Aarav to understand the attendance gap, verify the record together and agree on an achievable recovery plan.",
-  },
-  {
-    name: "Meera · Year 3",
-    initial: "M",
-    values: [85, 88, 80, 72, 55, 48],
-    title: "A strong semester. A readiness gap.",
-    reason:
-      "Placement readiness is 48%, below the illustrative 60% threshold. Keep placement support separate from academic performance.",
-    next: "Review the skills gap and agree on a practice schedule.",
-    plan: "Discuss Meera’s placement goals, review the readiness checklist together and agree on a manageable skills practice schedule.",
-  },
-  {
-    name: "Riya · Year 3",
-    initial: "R",
-    values: [88, 92, 85, 80, 84, 82],
-    title: "Steady progress across the picture.",
-    reason:
-      "Neither of the illustrative attendance and placement rules fires. This does not mean every possible student need has been assessed.",
-    next: "Celebrate progress and discuss the student’s next goal.",
-    plan: "Check in with Riya about current goals, recognise steady progress and ask what additional opportunities or support would be useful.",
-  },
-];
 
 const ROLES = [
   {
@@ -175,13 +131,6 @@ const lines = (parts) =>
     </Fragment>
   ));
 
-const scoreOf = (values) =>
-  Math.round(values.reduce((sum, v, i) => sum + v * (DEFAULT_WEIGHTS[COMPONENTS[i][0]] / 100), 0));
-const statusLabel = (score) => {
-  const band = riskBand(score);
-  return band[0] + band.slice(1).toLowerCase();
-};
-
 /** Left/Right/Home/End move between tabs in a tablist, as in the reference. */
 function onTabKeys(e, count, current, select) {
   let next;
@@ -298,9 +247,6 @@ function Showcase() {
             <span className="micro">{s.kicker}</span>
             <h3>{lines(s.title)}</h3>
             <p>{s.description}</p>
-            <a className="text-link" href="#explore">
-              Explore the experience ↗
-            </a>
           </div>
           <div className="device-holder">
             <div className="phone">
@@ -421,218 +367,6 @@ function Showcase() {
         </div>
       </div>
     </div>
-  );
-}
-
-function Studio() {
-  const [current, setCurrent] = useState(0);
-  const [formula, setFormula] = useState(false);
-  const dialog = useRef(null);
-  const s = SCENARIOS[current];
-  const score = scoreOf(s.values);
-  const onTrack = score >= 80;
-
-  const closeOnBackdrop = useCallback((e) => {
-    const d = dialog.current;
-    if (e.target !== d) return;
-    const r = d.getBoundingClientRect();
-    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)
-      d.close();
-  }, []);
-
-  return (
-    <section id="explore" className="demo-section">
-      <div className="wrap">
-        <div className="section-top">
-          <div className="eyebrow">02 / TRY THE SIGNAL-TO-SUPPORT STUDIO</div>
-          <span className="demo-badge">ILLUSTRATIVE DATA · NO LIVE RECORDS</span>
-        </div>
-        <div className="intro-grid">
-          <h2>
-            A number opens the door.
-            <br />
-            <em>The explanation matters.</em>
-          </h2>
-          <p>
-            Choose a student scenario. Explore the score, understand the signals, then see what a
-            thoughtful next step could look like.
-          </p>
-        </div>
-        <div className="studio">
-          <div className="studio-bar">
-            <div>
-              <img className="mini-logo" src={LOGO} alt="" width={24} height={24} /> Success
-              workspace <span className="sep">/</span> Student overview
-            </div>
-            <span className="live-dot">Interactive preview</span>
-          </div>
-          <div
-            className="scenario-tabs"
-            role="tablist"
-            aria-label="Student scenarios"
-            onKeyDown={(e) => onTabKeys(e, SCENARIOS.length, current, setCurrent)}
-          >
-            {["Attendance gap", "Placement readiness", "On track"].map((label, i) => (
-              <button
-                key={label}
-                type="button"
-                role="tab"
-                aria-selected={current === i}
-                id={`scenario-${i}`}
-                aria-controls="scenario-panel"
-                tabIndex={current === i ? 0 : -1}
-                onClick={() => setCurrent(i)}
-              >
-                0{i + 1} <span>{label}</span>
-              </button>
-            ))}
-          </div>
-          <div
-            id="scenario-panel"
-            role="tabpanel"
-            aria-labelledby={`scenario-${current}`}
-            className="studio-body"
-          >
-            <div className="score-column">
-              <div className="student-heading">
-                <span className="avatar">{s.initial}</span>
-                <div>
-                  <h3>{s.name}</h3>
-                  <span>Fictional student · CSE</span>
-                </div>
-              </div>
-              <div
-                className="score-ring"
-                style={{
-                  background: `conic-gradient(${onTrack ? "#738775" : "#572639"} ${score}%,#eae1dd 0)`,
-                }}
-              >
-                <div>
-                  <strong>{score}</strong>
-                  <span>SUCCESS SCORE / 100</span>
-                </div>
-              </div>
-              <span className="status" style={{ background: onTrack ? "#e2e9df" : "#eee5cf" }}>
-                {statusLabel(score)}
-              </span>
-              <p className="score-note">
-                A conversation starter.
-                <br />
-                Never a decision about a student.
-              </p>
-              <button
-                type="button"
-                className="formula-toggle"
-                aria-expanded={formula}
-                aria-controls="formula"
-                onClick={() => setFormula((f) => !f)}
-              >
-                How is this calculated? <span>{formula ? "−" : "+"}</span>
-              </button>
-              <div id="formula" hidden={!formula}>
-                {COMPONENTS.map(([k, label]) => `${label} ${DEFAULT_WEIGHTS[k]}%`).join(" · ")}. Six
-                components; feedback adds context, not a score. This demo uses complete illustrative
-                data.
-              </div>
-            </div>
-            <div className="signals-column">
-              <div className="micro">THE CONTEXT BEHIND THE SCORE</div>
-              <h3>{s.title}</h3>
-              <div className="bars">
-                {s.values.map((v, j) => (
-                  <div
-                    key={COMPONENTS[j][0]}
-                    className={`bar-row${(j === 1 && v < 75) || (j === 5 && v < 60) ? " flag" : ""}`}
-                  >
-                    <span>{COMPONENTS[j][1]}</span>
-                    <div className="bar-track" aria-hidden="true">
-                      <div className="bar-fill" style={{ width: `${v}%` }} />
-                    </div>
-                    <b>{v}</b>
-                  </div>
-                ))}
-              </div>
-              <div className="reason">
-                <span>↳</span>
-                <div>
-                  <strong>Why this signal appeared</strong>
-                  <p>{s.reason}</p>
-                </div>
-              </div>
-              <div className="next-step">
-                <div>
-                  <span className="micro">SUGGESTED HUMAN NEXT STEP</span>
-                  <p>{s.next}</p>
-                </div>
-                <button
-                  type="button"
-                  className="btn small"
-                  onClick={() => dialog.current?.showModal()}
-                >
-                  Preview support plan ↗
-                </button>
-              </div>
-            </div>
-          </div>
-          <div className="studio-bottom">
-            <span>◈ Explainable rules, not an AI prediction</span>
-            <span>Example only · no changes to a real student record</span>
-          </div>
-        </div>
-        <div className="score-bands">
-          <span>
-            <i className="green" />
-            80+ On track
-          </span>
-          <span>
-            <i className="gold" />
-            65–79 Monitor
-          </span>
-          <span>
-            <i className="orange" />
-            50–64 Needs attention
-          </span>
-          <span>
-            <i className="red" />
-            Below 50 High priority
-          </span>
-        </div>
-      </div>
-      <dialog ref={dialog} aria-labelledby="plan-title" onClick={closeOnBackdrop}>
-        <button
-          type="button"
-          className="close"
-          aria-label="Close support plan"
-          onClick={() => dialog.current.close()}
-        >
-          ×
-        </button>
-        <div className="eyebrow">ILLUSTRATIVE WORKFLOW</div>
-        <h2 id="plan-title">
-          A small step.
-          <br />A clear follow-through.
-        </h2>
-        <p>{s.plan}</p>
-        <dl>
-          <div>
-            <dt>Proposed owner</dt>
-            <dd>Assigned faculty mentor</dd>
-          </div>
-          <div>
-            <dt>Follow-up</dt>
-            <dd>Within one week of the conversation</dd>
-          </div>
-          <div>
-            <dt>Review</dt>
-            <dd>Discuss progress with the student and record the outcome</dd>
-          </div>
-        </dl>
-        <p className="muted">This is a preview. No intervention has been created or sent.</p>
-        <button type="button" className="btn close-plan" onClick={() => dialog.current.close()}>
-          Back to the demo ↗
-        </button>
-      </dialog>
-    </section>
   );
 }
 
@@ -759,9 +493,6 @@ export function SlqgLanding() {
           <Link className="login" to={workspaceTo}>
             {user ? "My account ↗" : "Log in ↗"}
           </Link>
-          <a className="btn small" href="#explore">
-            Explore demo <span>↗</span>
-          </a>
         </div>
         <button
           type="button"
@@ -805,9 +536,6 @@ export function SlqgLanding() {
             <div className="actions">
               <a className="btn" href="#platform">
                 Discover SLQG <span>↓</span>
-              </a>
-              <a className="hero-secondary" href="#explore">
-                Try the interactive demo ↗
               </a>
             </div>
             <div className="scroll-cue">
@@ -855,7 +583,6 @@ export function SlqgLanding() {
           </p>
         </div>
 
-        <Studio />
         <Workspaces workspaceTo={workspaceTo} />
 
         <section className="journey wrap">
@@ -975,7 +702,6 @@ export function SlqgLanding() {
             <br />
             Built by TEAM BIB · HacXLerate.
           </p>
-          <a href="#explore">Explore the demo ↗</a>
           <Link to="/contact">Contact the team ↗</Link>
         </div>
         <div className="footer-bottom">

@@ -1,39 +1,6 @@
 // Where a person can land after signing in, and the features the search bar can jump to.
 // These only choose a page to open; the server still decides what each person may see.
 
-export const LANDING = {
-  student: [
-    { to: "/portal", label: "Overview (default)" },
-    { to: "/portal/results", label: "Academic results" },
-    { to: "/portal/placement", label: "Placement" },
-    { to: "/portal/attendance", label: "Attendance" },
-    { to: "/portal/chat", label: "Chats" },
-    { to: "/portal/learning", label: "Learning path" },
-    { to: "/portal/updates", label: "Announcements" },
-  ],
-  faculty: [
-    { to: "/portal", label: "Overview (default)" },
-    { to: "/portal/students", label: "My students" },
-    { to: "/portal/results", label: "Class results" },
-    { to: "/portal/placement", label: "Placement overview" },
-    { to: "/portal/interventions", label: "Interventions" },
-    { to: "/portal/updates", label: "Announcements" },
-    { to: "/portal/chat", label: "Chats" },
-  ],
-  admin: [
-    { to: "/portal", label: "Overview (default)" },
-    { to: "/portal/students", label: "All students" },
-    { to: "/portal/results", label: "Campus results" },
-    { to: "/portal/placement", label: "Placement overview" },
-    { to: "/portal/assign", label: "Assign students" },
-    { to: "/portal/updates", label: "Announcements" },
-    { to: "/portal/chat", label: "Chats" },
-  ],
-};
-
-export const landingFor = (workspace, value) =>
-  (LANDING[workspace] ?? LANDING.student).some((o) => o.to === value) ? value : "/portal";
-
 // Everything the search panel lists, grouped like a menu. Each entry is [label, page, extra
 // words people might type]. Every page of a workspace appears in at least one group.
 export const SEARCH_GROUPS = {

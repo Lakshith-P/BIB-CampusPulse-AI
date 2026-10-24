@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -14,7 +14,6 @@ import { pageHead } from "@/lib/metadata";
 import { requestPasswordReset, signIn, signUp } from "@/lib/auth.functions";
 import { CaptchaField, useCaptcha } from "@/components/CaptchaField";
 import { useAccount } from "@/lib/account";
-import { LANDING, landingFor } from "@/lib/destinations";
 import { LoginShowcase } from "@/components/auth/LoginShowcase";
 
 export const Route = createFileRoute("/auth")({
@@ -66,15 +65,6 @@ function Auth() {
   const navigate = useNavigate();
   const { user, refresh } = useAccount();
   const { captcha, reload: loadCaptcha } = useCaptcha(setError);
-  const [landing, setLanding] = useState("/portal");
-  // Remember the last choice for each workspace in this browser.
-  useEffect(() => {
-    try {
-      setLanding(landingFor(workspace, localStorage.getItem(`orbit-landing-${workspace}`)));
-    } catch {
-      setLanding("/portal");
-    }
-  }, [workspace]);
   const signingUp = mode === "signup";
 
   async function submit(e) {
@@ -104,12 +94,7 @@ function Auth() {
         await signIn({ data: { email, password, workspace, ...proof } });
       }
       await refresh();
-      try {
-        localStorage.setItem(`orbit-landing-${workspace}`, landing);
-      } catch {
-        /* the choice just is not remembered */
-      }
-      await navigate({ to: landingFor(workspace, landing) });
+      await navigate({ to: "/portal" });
     } catch (err) {
       setError(friendly(err));
       void loadCaptcha();
@@ -356,21 +341,6 @@ function Auth() {
                   {show ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
                 </button>
               </div>
-
-              <label className="flex items-center gap-3 text-sm font-medium">
-                <span className="shrink-0">Open after login</span>
-                <select
-                  value={landing}
-                  onChange={(e) => setLanding(e.target.value)}
-                  className="h-[clamp(2.5rem,6vh,3.5rem)] min-w-0 flex-1 !rounded-xl !border-0 !bg-muted px-4 text-sm"
-                >
-                  {LANDING[workspace].map((o) => (
-                    <option key={o.to} value={o.to}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
 
               {captchaBox}
 

@@ -4,6 +4,7 @@ import { requireAuth } from "@/backend/auth-middleware";
 import { hashPassword, limitByIp } from "@/backend/auth.server";
 import { randomBytes } from "node:crypto";
 import { query, withTransaction } from "@/backend/db.server";
+import { grantAccountRole, revokeAccountRole } from "@/backend/accounts.server";
 import { backfillStudentRecords, cohortStanding } from "@/backend/student-record.server";
 import { studentSchema } from "@/lib/student-validation";
 import { emptyStudent } from "@/lib/student-defaults";
@@ -155,11 +156,20 @@ export const listAccounts = createServerFn({ method: "POST" })
     requireAdmin(context.user);
     const { rows } = await query(
       `SELECT u.id, u.email, u.display_name,
-              COALESCE(array_agg(r.role::text) FILTER (WHERE r.role IS NOT NULL), ARRAY[]::text[]) AS roles
+              COALESCE(array_agg(r.role::text) FILTER (WHERE r.role IS NOT NULL), ARRAY[]::text[]) AS roles,
+              EXISTS (SELECT 1 FROM contact_messages m
+                       WHERE m.user_id = u.id AND m.message LIKE 'Teacher access requested%') AS teacher_request
          FROM users u LEFT JOIN user_roles r ON r.user_id = u.id
         GROUP BY u.id ORDER BY u.email`,
     );
-    return rows.map((r) => ({ id: r.id, email: r.email, name: r.display_name, roles: r.roles }));
+    return rows.map((r) => ({
+      id: r.id,
+      email: r.email,
+      name: r.display_name,
+      roles: r.roles,
+      // Signed up in the Teacher workspace and not approved yet.
+      teacherRequest: r.teacher_request && !r.roles.includes("faculty"),
+    }));
   });
 
 export const setAccountRole = createServerFn({ method: "POST" })
@@ -174,19 +184,14 @@ export const setAccountRole = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     requireAdmin(context.user);
     if (data.grant) {
-      await query("INSERT INTO user_roles(user_id, role) VALUES($1,$2) ON CONFLICT DO NOTHING", [
-        data.userId,
-        data.role,
-      ]);
+      // Becoming a teacher replaces the student role; see accounts.server.js.
+      await withTransaction((db) => grantAccountRole(db, data.userId, data.role));
     } else {
       // Never let the last administrator (or yourself) be locked out.
       if (data.role === "admin" && data.userId === context.user.id) {
         throw new Error("You cannot remove your own administrator access.");
       }
-      await query("DELETE FROM user_roles WHERE user_id = $1 AND role = $2", [
-        data.userId,
-        data.role,
-      ]);
+      await withTransaction((db) => revokeAccountRole(db, data.userId, data.role));
     }
     return { saved: true };
   });
