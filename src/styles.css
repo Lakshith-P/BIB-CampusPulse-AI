@@ -607,3 +607,9 @@ th.num {
     border-bottom-color: #666 !important;
   }
 }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+  -webkit-overflow-scrolling: touch;
+}
