@@ -8,10 +8,14 @@ import {
   Users,
   ScanLine,
   ClipboardCheck,
+  Eye,
   ShieldCheck,
 } from "lucide-react";
 import { DEFAULT_WEIGHTS } from "@/lib/types";
 import { SOURCES } from "./solution";
+// One editorial scale for every section head, so the serif is used with optical restraint.
+const sectionHeading =
+  "font-display text-[2rem] font-semibold leading-[1.12] tracking-[-0.025em] sm:text-[2.5rem]";
 export const Route = createFileRoute("/")({
   head: () =>
     pageHead(
@@ -24,17 +28,21 @@ function Home() {
   return (
     <PublicLayout>
       <main>
-        <section className="relative overflow-hidden border-b bg-[radial-gradient(60rem_28rem_at_85%_-10%,var(--rose-pale),transparent)]">
+        <section className="paper-grain relative overflow-hidden border-b border-rule">
           <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 py-16 lg:grid-cols-2 lg:px-8 lg:py-24">
             <div>
-              <p className="eyebrow flex items-center gap-2">
-                <span className="size-2 rounded-full bg-primary" />
-                BIB INSIGHTIQ · STUDENT SUCCESS INTELLIGENCE
-              </p>
-              <h1 className="mt-5 font-display text-4xl font-extrabold leading-[1.1] text-foreground sm:text-5xl lg:text-6xl">
-                Turn Campus Data Into <span className="text-primary">Student Success.</span>
+              <p className="eyebrow">BIB InsightIQ · Student success intelligence</p>
+              <h1 className="hero-heading mt-6 text-foreground">
+                Turn campus data into{" "}
+                <em className="relative not-italic">
+                  student success.
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-0 -bottom-1 h-[3px] bg-ochre sm:-bottom-2"
+                  />
+                </em>
               </h1>
-              <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+              <p className="mt-8 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
                 Seven connected student data sources become one explainable Success Score, clear
                 risk reasons and a practical next step for every student, so mentors can act before
                 a small gap becomes a bigger challenge.
@@ -51,8 +59,8 @@ function Home() {
                   </Link>
                 </Button>
               </div>
-              <p className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
-                <ShieldCheck className="size-4 text-primary" />
+              <p className="mt-7 flex items-center gap-2 border-t border-rule pt-5 text-xs text-muted-foreground">
+                <ShieldCheck className="size-4 text-ochre-ink" />
                 Explainable insights. Human-led support. Private by design.
               </p>
             </div>
@@ -60,67 +68,42 @@ function Home() {
               aria-label="Illustrative preview of the Student Success Score"
               className="relative"
             >
-              <div className="surface relative z-10 p-5 shadow-lg">
-                <div className="flex items-center gap-5">
-                  <svg viewBox="0 0 100 100" className="size-24 shrink-0 -rotate-90" aria-hidden>
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="42"
-                      fill="none"
-                      stroke="var(--border)"
-                      strokeWidth="9"
-                    />
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="42"
-                      fill="none"
-                      stroke="var(--primary)"
-                      strokeWidth="9"
-                      strokeLinecap="round"
-                      strokeDasharray="264"
-                      strokeDashoffset="68"
-                    />
-                  </svg>
-                  <div>
-                    <p className="text-xs font-semibold uppercase text-label">Success Score</p>
-                    <p className="font-display text-4xl font-bold tabular-nums">74 / 100</p>
-                    <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-warning/15 px-2 py-0.5 text-xs font-semibold text-warning">
-                      Monitor
-                    </span>
-                  </div>
+              <div className="surface relative z-10 bg-card p-6 sm:p-7">
+                <p className="stat-label">
+                  <span>Success Score</span>
+                </p>
+                <div className="stat-figure-row">
+                  <span className="stat-figure !text-[clamp(3.25rem,2rem+6vw,4.5rem)]">74</span>
+                  <span className="font-numeric text-lg font-medium text-label">/ 100</span>
+                  <span className="ml-auto inline-flex items-center gap-1.5 self-center rounded-full bg-risk-monitor-pale px-2.5 py-0.5 text-xs font-semibold text-risk-monitor">
+                    <Eye className="size-3" aria-hidden /> Monitor
+                  </span>
                 </div>
-                <div className="mt-5 space-y-3">
+                <dl className="mt-6 divide-y divide-rule">
                   {[
                     ["Academics", 82],
                     ["Attendance", 71],
                     ["LMS", 64],
-                    ["Placement", 58],
+                    ["Placement readiness", 58],
                   ].map(([k, v]) => (
-                    <div key={k}>
-                      <div className="flex justify-between text-xs">
-                        <span>{k}</span>
-                        <span className="tabular-nums text-muted-foreground">{v}</span>
-                      </div>
-                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-primary"
-                          style={{ width: `${v}%` }}
-                        />
+                    <div
+                      key={k}
+                      className="grid grid-cols-[1fr_auto_5rem] items-center gap-3 py-2.5"
+                    >
+                      <dt className="text-sm text-foreground">{k}</dt>
+                      <dd className="font-numeric text-sm font-semibold tabular-nums">{v}</dd>
+                      <div aria-hidden className="h-1.5 bg-secondary">
+                        <div className="h-full bg-ink" style={{ width: `${v}%` }} />
                       </div>
                     </div>
                   ))}
-                </div>
-                <p className="mt-4 rounded-lg bg-accent p-3 text-xs text-accent-foreground">
-                  Why flagged: attendance under 75% in 1 subject, placement readiness below 60%.
+                </dl>
+                <p className="mt-5 border-l-2 border-ochre bg-ochre-pale px-3 py-2.5 text-xs leading-relaxed text-accent-foreground">
+                  <b className="font-semibold">Why flagged:</b> attendance under 75% in 1 subject,
+                  placement readiness below 60%.
                 </p>
               </div>
-              <div
-                aria-hidden
-                className="absolute -bottom-4 -right-3 h-full w-full rounded-[14px] border bg-rose-pale"
-              />
-              <figcaption className="relative z-10 mt-3 text-xs text-muted-foreground">
+              <figcaption className="relative z-10 mt-3 text-xs text-label">
                 Illustrative preview, not a live student record.
               </figcaption>
             </figure>
@@ -128,7 +111,7 @@ function Home() {
         </section>
         <section className="mx-auto max-w-7xl px-5 py-16 lg:px-8" aria-labelledby="problem">
           <p className="eyebrow">THE CAMPUS PROBLEM</p>
-          <h2 id="problem" className="mt-3 max-w-3xl font-display text-3xl font-bold sm:text-4xl">
+          <h2 id="problem" className={`mt-4 max-w-3xl ${sectionHeading}`}>
             One student. Seven systems. Nobody sees the whole picture.
           </h2>
           <p className="mt-4 max-w-2xl text-muted-foreground">
@@ -153,7 +136,7 @@ function Home() {
           <div className="mx-auto grid max-w-7xl items-center gap-10 px-5 py-16 lg:grid-cols-2 lg:px-8">
             <div>
               <p className="eyebrow">THE SOLUTION</p>
-              <h2 id="solution" className="mt-3 font-display text-3xl font-bold sm:text-4xl">
+              <h2 id="solution" className={`mt-4 ${sectionHeading}`}>
                 A unified student intelligence platform
               </h2>
               <p className="mt-4 text-muted-foreground">
@@ -212,7 +195,7 @@ function Home() {
 
         <section className="mx-auto max-w-7xl px-5 py-16 lg:px-8" aria-labelledby="domains">
           <p className="eyebrow">SEVEN CONNECTED DATA DOMAINS</p>
-          <h2 id="domains" className="mt-3 font-display text-3xl font-bold sm:text-4xl">
+          <h2 id="domains" className={`mt-4 ${sectionHeading}`}>
             Each domain has its own page, filters and rules
           </h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -233,7 +216,7 @@ function Home() {
           <div className="mx-auto grid max-w-7xl gap-10 px-5 py-16 lg:grid-cols-2 lg:px-8">
             <div>
               <p className="eyebrow">EXPLAINABLE STUDENT SUCCESS SCORE</p>
-              <h2 id="score" className="mt-3 font-display text-3xl font-bold sm:text-4xl">
+              <h2 id="score" className={`mt-4 ${sectionHeading}`}>
                 A score that starts a conversation
               </h2>
               <p className="mt-4 text-muted-foreground">
@@ -242,38 +225,39 @@ function Home() {
                 as missing and is never counted as zero. The score is rule-based, not an AI
                 prediction.
               </p>
-              <ul className="mt-5 grid grid-cols-2 gap-2 text-sm">
+              <ul className="mt-6 divide-y divide-rule border-y border-rule text-sm">
                 {[
-                  ["80+", "On Track"],
-                  ["65–79", "Monitor"],
-                  ["50–64", "Needs Attention"],
-                  ["Below 50", "High Priority"],
-                ].map(([range, name]) => (
-                  <li key={name} className="rounded-lg border p-2">
-                    <b className="tabular-nums">{range}</b> · {name}
+                  ["80+", "On Track", "text-risk-track"],
+                  ["65–79", "Monitor", "text-risk-monitor"],
+                  ["50–64", "Needs Attention", "text-risk-attention"],
+                  ["Below 50", "High Priority", "text-risk-critical"],
+                ].map(([range, name, tone]) => (
+                  <li key={name} className="flex items-baseline justify-between gap-4 py-2.5">
+                    <span className="font-numeric font-semibold tabular-nums">{range}</span>
+                    <span className={`font-semibold ${tone}`}>{name}</span>
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="surface space-y-3 p-5">
-              <p className="text-xs font-semibold uppercase text-label">Default weights</p>
-              {Object.entries(DEFAULT_WEIGHTS).map(([k, w]) => (
-                <div key={k}>
-                  <div className="flex justify-between text-sm">
+            <div className="surface p-6">
+              <p className="rule-head">Default weights</p>
+              <div className="mt-4 divide-y divide-rule">
+                {Object.entries(DEFAULT_WEIGHTS).map(([k, w]) => (
+                  <div
+                    key={k}
+                    className="grid grid-cols-[1fr_auto_6rem] items-center gap-3 py-2.5 text-sm"
+                  >
                     <span className="capitalize">
                       {k === "placement" ? "placement readiness" : k}
                     </span>
-                    <span className="tabular-nums">{w}%</span>
+                    <span className="font-numeric font-semibold tabular-nums">{w}%</span>
+                    <div aria-hidden className="h-1.5 bg-secondary">
+                      <div className="h-full bg-ochre" style={{ width: `${w * 3}%` }} />
+                    </div>
                   </div>
-                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{ width: `${w * 3}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-              <p className="text-xs text-muted-foreground">
+                ))}
+              </div>
+              <p className="mt-4 text-xs text-muted-foreground">
                 Academic risk and placement risk are two separate flags with their own rules.
               </p>
             </div>
@@ -282,7 +266,7 @@ function Home() {
 
         <section className="mx-auto max-w-7xl px-5 py-16 lg:px-8" aria-labelledby="risk">
           <p className="eyebrow">EARLY RISK IDENTIFICATION AND INTERVENTION</p>
-          <h2 id="risk" className="mt-3 font-display text-3xl font-bold sm:text-4xl">
+          <h2 id="risk" className={`mt-4 ${sectionHeading}`}>
             From signal to support, with a record of what happened
           </h2>
           <ol className="mt-8 grid gap-4 md:grid-cols-5">
@@ -296,12 +280,12 @@ function Home() {
               ["Follow up", "Overdue follow-ups raise notifications."],
               ["Review", "Outcomes are recorded so progress is visible."],
             ].map(([t, d], i) => (
-              <li key={t} className="surface p-4">
-                <span className="font-display text-2xl font-bold tabular-nums text-primary">
-                  {i + 1}
+              <li key={t} className="border-t-2 border-ink pt-3.5">
+                <span className="font-display text-3xl font-semibold tabular-nums text-ochre-ink">
+                  {String(i + 1).padStart(2, "0")}
                 </span>
-                <h3 className="mt-1 font-semibold">{t}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{d}</p>
+                <h3 className="mt-2 font-semibold">{t}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{d}</p>
               </li>
             ))}
           </ol>
@@ -310,7 +294,7 @@ function Home() {
         <section className="border-y bg-card" aria-labelledby="workspaces">
           <div className="mx-auto max-w-7xl px-5 py-16 lg:px-8">
             <p className="eyebrow">THREE WORKSPACES</p>
-            <h2 id="workspaces" className="mt-3 font-display text-3xl font-bold sm:text-4xl">
+            <h2 id="workspaces" className={`mt-4 ${sectionHeading}`}>
               The right view for each person
             </h2>
             <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -341,7 +325,7 @@ function Home() {
           <div className="grid gap-10 lg:grid-cols-2">
             <div>
               <p className="eyebrow">PRIVACY, PERMISSIONS AND RESPONSIBLE ANALYTICS</p>
-              <h2 id="privacy" className="mt-3 font-display text-3xl font-bold sm:text-4xl">
+              <h2 id="privacy" className={`mt-4 ${sectionHeading}`}>
                 Private by design, advisory by intent
               </h2>
             </div>
@@ -365,7 +349,7 @@ function Home() {
         <section className="border-t bg-accent/50" aria-labelledby="cta">
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-8 px-5 py-14 lg:px-8">
             <div>
-              <h2 id="cta" className="font-display text-3xl font-bold">
+              <h2 id="cta" className={sectionHeading}>
                 See your campus through BIB InsightIQ.
               </h2>
               <p className="mt-2 text-muted-foreground">

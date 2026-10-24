@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { BandBadge, EmptyState, ScoreRing, SectionTitle, StatCard } from "@/components/widgets";
-import { Academics } from "@/components/student-profile/shared";
 import { OverviewHub } from "@/components/portal/OverviewHub";
 import { ScoreInsights } from "@/components/portal/ScoreInsights";
 import {
@@ -18,12 +17,12 @@ import { BAND_ORDER, averages, byAttention, isAtRisk, lowAttendance } from "@/li
 import { liveAssignments, liveNotifications } from "@/lib/live-profile";
 import { useCampus } from "@/lib/use-campus";
 
-const card = "surface p-4";
+const card = "surface p-5";
 const BAND_BAR = {
-  "On Track": "bg-success",
-  Monitor: "bg-info",
-  "Needs Attention": "bg-warning",
-  "High Priority": "bg-destructive",
+  "On Track": "bg-risk-track",
+  Monitor: "bg-risk-monitor",
+  "Needs Attention": "bg-risk-attention",
+  "High Priority": "bg-risk-critical",
 };
 
 // "Prof. Iyer" should be greeted as Iyer, not "Prof."
@@ -45,8 +44,8 @@ function AcademicStats({ rows }) {
   const f = (v, suffix = "") => (v === null ? "—" : v.toFixed(1) + suffix);
   return (
     <>
-      <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-5">
-        <StatCard label="Avg success score" value={f(a.avgScore)} sub="/100" />
+      <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-5">
+        <StatCard label="Avg success score" value={f(a.avgScore)} sub="out of 100" />
         <StatCard label="Avg CGPA" value={f(a.avgCgpa)} />
         <StatCard
           label="Avg attendance"
@@ -94,18 +93,20 @@ function StudentHome() {
         title={`Welcome back, ${first}`}
         sub={`${s.id} · ${s.branch} · Semester ${s.semester}`}
       >
-        <div className="flex items-center gap-4 rounded-2xl border border-white/15 bg-white/10 p-3 pr-5 backdrop-blur">
-          <span className="rounded-full bg-black/25 p-1 text-white">
-            <ScoreRing score={myRow.score} size={84} />
-          </span>
+        <div className="flex items-center gap-5 border-t border-white/30 pt-3">
+          <ScoreRing score={myRow.score} size={84} />
           <div>
-            <p className="text-[11px] uppercase tracking-wider text-white/70">Success score</p>
-            <p className="font-display text-xl font-bold">{myRow.band ?? "No data yet"}</p>
+            <p className="text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-white/65">
+              Success score
+            </p>
+            <p className="mt-1 font-numeric text-xl font-semibold tracking-[-0.02em]">
+              {myRow.band ?? "No data yet"}
+            </p>
           </div>
         </div>
       </Banner>
       <OverviewHub />
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4">
         <StatCard label="CGPA" value={myRow.cgpa === null ? "—" : myRow.cgpa.toFixed(2)} />
         <StatCard
           label="Attendance"
@@ -119,9 +120,9 @@ function StudentHome() {
           tone={myRow.urgent ? "danger" : alerts.length ? "warning" : "success"}
         />
       </div>
-      <div className="mt-4 gap-4 lg:columns-2 [&>*]:mb-4 [&>*]:break-inside-avoid">
+      <div className="mt-5 gap-4 lg:columns-2 [&>*]:mb-4 [&>*]:break-inside-avoid">
         <div className={card}>
-          <SectionTitle sub="What to look at first">Needs your attention</SectionTitle>
+          <SectionTitle>Needs your attention</SectionTitle>
           {alerts.length === 0 && (
             <p className="text-sm text-success">
               {myRow.score === null
@@ -129,63 +130,66 @@ function StudentHome() {
                 : "You are on track everywhere."}
             </p>
           )}
-          <div className="space-y-2">
+          <div className="divide-y divide-rule">
             {alerts.slice(0, 4).map((n, i) => (
               <div
                 key={i}
-                className={`rounded-xl border-l-4 bg-muted/40 p-3 text-sm ${
+                className={`flex gap-2.5 border-l-2 py-2.5 pl-3 text-sm ${
                   n.tone === "danger" ? "border-l-destructive" : "border-l-warning"
                 }`}
               >
-                <span className="mb-1 inline-block rounded-md bg-card px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  {n.area}
-                </span>
-                <p className="font-medium">{n.text}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{n.tip}</p>
+                <div className="min-w-0">
+                  <p className="font-medium leading-snug">
+                    <span className="mr-1.5 text-[11px] font-semibold uppercase tracking-wide text-label">
+                      {n.area}
+                    </span>
+                    {n.text}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{n.tip}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
-        <div className="space-y-4">
-          <div className={card}>
-            <SectionTitle sub="Your mentor and the next follow-up">Mentor</SectionTitle>
+        <div className={card}>
+          <SectionTitle>Coming up</SectionTitle>
+          <p className="text-sm">
             {myRow.mentorId ? (
-              <p className="text-sm">
-                <b>{myRow.mentorName}</b>
+              <>
+                Mentor <b>{myRow.mentorName}</b>
                 {myRow.mentorEmail && (
                   <span className="text-muted-foreground"> · {myRow.mentorEmail}</span>
                 )}
-              </p>
+              </>
             ) : (
-              <p className="text-sm text-muted-foreground">No mentor assigned yet.</p>
+              <span className="text-muted-foreground">No mentor assigned yet.</span>
             )}
-            {next && (
-              <p className="mt-2 text-sm">
-                Next follow-up <b>{next.follow_up_date}</b>: {next.action}
-              </p>
-            )}
-          </div>
-          <div className={card}>
-            <SectionTitle sub="Not yet submitted">Upcoming deadlines</SectionTitle>
+          </p>
+          {next && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              Next follow-up <b className="text-foreground">{next.follow_up_date}</b>: {next.action}
+            </p>
+          )}
+          <div className="mt-3 divide-y divide-rule border-t border-rule">
             {deadlines.length === 0 && (
-              <p className="text-sm text-muted-foreground">
+              <p className="py-2 text-sm text-muted-foreground">
                 {s.lms.length ? "No pending assignments." : "No LMS data recorded yet."}
               </p>
             )}
             {deadlines.map((a) => (
               <div
                 key={a.subject + a.title}
-                className="flex items-center justify-between gap-3 border-t py-2.5 text-sm"
+                className="flex items-center justify-between gap-3 py-2 text-sm"
               >
-                <span>
+                <span className="min-w-0 truncate">
                   <span className="font-medium">{a.title}</span>
-                  <span className="block text-xs text-muted-foreground">{a.subject}</span>
+                  <span className="ml-1.5 text-xs text-muted-foreground">· {a.subject}</span>
                 </span>
                 <span
-                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
+                  className={`shrink-0 text-xs font-semibold ${
                     a.daysLeft !== null && a.daysLeft <= 2
-                      ? "bg-destructive/10 text-destructive"
-                      : "bg-muted text-muted-foreground"
+                      ? "text-destructive"
+                      : "text-muted-foreground"
                   }`}
                 >
                   {a.deadline || "no date"}
@@ -195,14 +199,11 @@ function StudentHome() {
           </div>
         </div>
       </div>
-      <div className="mt-4">
+      <div className="mt-5">
         <MyRiskIdentification s={s} />
       </div>
-      <div className="mt-6">
+      <div className="mt-5">
         <ScoreInsights s={s} />
-      </div>
-      <div className="mt-6">
-        <Academics s={s} />
       </div>
     </div>
   );
@@ -295,7 +296,7 @@ function FacultyHome() {
         <BannerStat label="Follow-ups" value={String(summary.openInterventions)} />
       </Banner>
       <OverviewHub />
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-5">
         <StatCard label="My students" value={String(summary.total)} />
         <StatCard
           label="Need help"
@@ -371,7 +372,7 @@ function AdminHome() {
         <BannerStat label="Need help" value={String(summary.atRisk)} />
       </Banner>
       <OverviewHub />
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4">
         <StatCard
           label="Students"
           value={String(summary.total)}

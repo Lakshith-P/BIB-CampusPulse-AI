@@ -194,11 +194,11 @@ function Auth() {
       className="grid min-h-dvh lg:h-dvh lg:grid-cols-2 lg:overflow-hidden"
     >
       <section
-        className="relative hidden overflow-hidden bg-black lg:block"
+        className="relative hidden overflow-hidden bg-ink lg:block"
         aria-label="BIB InsightIQ"
       >
         <img src={campus} alt="" className="absolute inset-0 size-full object-cover" />
-        <div className="absolute inset-0 bg-black/25" />
+        <div className="absolute inset-0 bg-ink/30" />
         <div
           className="absolute inset-0 bg-gradient-to-br from-[var(--role-from)] via-[var(--role-via)] to-[var(--role-to)] opacity-95 [clip-path:polygon(0_12%,66%_12%,52%_86%,0_86%)]"
           aria-hidden

@@ -98,7 +98,7 @@ export function SyllabusView({ subject, units, syllabus }) {
     <article className="surface p-4 md:p-6" aria-label={`${subject} syllabus`}>
       <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-3">
         <div>
-          <h3 className="font-display text-xl font-bold tracking-tight">{header.heading}</h3>
+          <h3 className="font-numeric text-xl font-bold tracking-tight">{header.heading}</h3>
           <p className="mt-1 text-sm tabular-nums text-muted-foreground">
             L: {header.lectures} &nbsp; T: {header.tutorials} &nbsp; P: {header.practicals}{" "}
             &nbsp;·&nbsp; Credits: {header.credits}

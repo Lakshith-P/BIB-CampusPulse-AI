@@ -375,7 +375,7 @@ export function MyAttendanceLog({ subjects }) {
         Attendance history
       </SectionTitle>
       {marked > 0 && (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-x-6 gap-y-5">
           <StatCard label="Classes marked" value={String(marked)} />
           <StatCard label="Present" value={String(log.data.present)} tone="success" />
           <StatCard
@@ -554,7 +554,7 @@ export function TimetableCoverage() {
         Timetable per student
       </SectionTitle>
       {isAdmin && <GenerateWeek onDone={refresh} />}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-x-6 gap-y-5">
         <StatCard label="Students" value={String(data.length)} />
         <StatCard
           label="No timetable at all"

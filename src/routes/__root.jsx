@@ -106,9 +106,13 @@ export const Route = createRootRouteWithContext()({
         href: appCss,
       },
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      // Ink & Ochre pairing: Fraunces sets the editorial display voice, Inter Tight does
+      // every functional job — portal tables, labels, controls and all numerals.
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Inter+Tight:wght@400..700&display=swap",
       },
     ],
   }),

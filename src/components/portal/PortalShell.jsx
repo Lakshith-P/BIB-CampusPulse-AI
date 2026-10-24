@@ -143,7 +143,7 @@ function LoadingBar() {
       aria-hidden
       className={`fixed inset-x-0 top-0 z-[60] h-0.5 overflow-hidden transition-opacity ${busy ? "opacity-100" : "opacity-0"}`}
     >
-      <div className="portal-loading-bar h-full w-1/3 bg-primary" />
+      <div className="portal-loading-bar h-full w-1/3 bg-ochre" />
     </div>
   );
 }
@@ -165,15 +165,15 @@ function AnnouncementStrip() {
   if (!items.length || hidden) return null;
   const latest = items[i % items.length];
   return (
-    <div className="flex items-center gap-3 border-b border-primary/30 bg-primary/15 px-4 py-2 text-sm print:hidden">
-      <Megaphone className="size-4 shrink-0 text-primary" />
+    <div className="flex items-center gap-3 border-b border-ochre/35 bg-ochre-pale px-4 py-2 text-sm print:hidden">
+      <Megaphone className="size-4 shrink-0 text-ochre-ink" />
       <p
         key={latest.id}
         aria-live="polite"
         className="announcement-slide min-w-0 flex-1 truncate text-center"
       >
         <span className="font-semibold">{CATEGORY[latest.category].label}:</span> {latest.title} —{" "}
-        <Link to="/portal/updates" className="font-semibold text-primary underline">
+        <Link to="/portal/updates" className="font-semibold text-ochre-ink underline">
           click here to view the details
         </Link>
       </p>
@@ -182,7 +182,7 @@ function AnnouncementStrip() {
           {items.map((u, n) => (
             <span
               key={u.id}
-              className={`size-1.5 rounded-full ${n === i ? "bg-primary" : "bg-primary/30"}`}
+              className={`size-1.5 rounded-full ${n === i ? "bg-ochre" : "bg-ochre/35"}`}
             />
           ))}
         </span>
@@ -241,12 +241,12 @@ export function PortalShell({ children }) {
   const line1 = myRow ? `${myRow.s.id} | Sem ${myRow.s.semester}` : ROLE_LABEL[role];
   const line2 = myRow ? myRow.s.branch : profile.email;
   const menuBtn =
-    "flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[state=open]:bg-muted data-[state=open]:text-foreground";
+    "flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground data-[state=open]:bg-secondary data-[state=open]:text-foreground";
   return (
     <div data-role={role} className="min-h-screen">
       <LoadingBar />
       <AnnouncementStrip />
-      <header className="sticky top-0 z-30 border-b bg-card/95 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-rule bg-card/95 backdrop-blur">
         <div className="flex h-16 items-center gap-3 px-4">
           <Button
             variant="ghost"
@@ -314,15 +314,17 @@ export function PortalShell({ children }) {
         <button
           type="button"
           aria-label="Close menu"
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-ink/55 lg:hidden"
           onClick={() => setOpen(false)}
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-gradient-to-b from-[var(--role-side-from)] to-[var(--role-side-to)] text-white transition-transform lg:hidden ${open ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-ink text-hero-foreground transition-transform lg:hidden ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
-          <span className="font-display text-lg font-bold">{ROLE_LABEL[role]}</span>
+        <div className="flex h-16 items-center justify-between border-b border-white/12 px-4">
+          <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-white/70">
+            {ROLE_LABEL[role]}
+          </span>
           <button type="button" aria-label="Close menu" onClick={() => setOpen(false)}>
             <X className="size-5" />
           </button>
@@ -334,20 +336,22 @@ export function PortalShell({ children }) {
               to={item.to}
               onClick={() => setOpen(false)}
               activeOptions={{ exact: Boolean(item.exact) }}
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/75 transition-colors hover:bg-white/10 hover:text-white"
-              activeProps={{ className: "!bg-white/15 !text-white font-semibold" }}
+              className="flex items-center gap-3 border-l-2 border-transparent px-3 py-2.5 text-sm text-white/75 transition-colors hover:bg-white/8 hover:text-white"
+              activeProps={{
+                className: "!border-ochre !bg-white/10 !text-white font-semibold",
+              }}
             >
               <item.icon className="size-[18px]" />
               {item.label}
             </Link>
           ))}
         </nav>
-        <div className="border-t border-white/10 p-3">
+        <div className="border-t border-white/12 p-3">
           <ThemeToggle />
           <button
             type="button"
             onClick={logout}
-            className="mt-2 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/80 hover:bg-white/10 hover:text-white"
+            className="mt-2 flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-white/80 hover:bg-white/10 hover:text-white"
           >
             <LogOut className="size-[18px]" /> Sign out
           </button>
@@ -357,7 +361,7 @@ export function PortalShell({ children }) {
       <div className="flex">
         <aside
           aria-label="Shortcuts"
-          className={`sticky top-16 hidden h-[calc(100vh-4rem)] shrink-0 flex-col overflow-y-auto bg-gradient-to-b from-[var(--role-side-from)] to-[var(--role-side-to)] text-white transition-[width] duration-200 print:hidden lg:flex ${rail ? "w-24" : "w-0"}`}
+          className={`sticky top-16 hidden h-[calc(100vh-4rem)] shrink-0 flex-col overflow-y-auto border-r border-ink-strong bg-ink text-hero-foreground transition-[width] duration-200 print:hidden lg:flex ${rail ? "w-24" : "w-0"}`}
         >
           {RAIL[role].map(([to, label, icon]) => {
             const Icon = RAIL_ICON[icon];
@@ -366,9 +370,9 @@ export function PortalShell({ children }) {
                 key={to}
                 to={to}
                 activeOptions={{ exact: to === "/portal" }}
-                className="flex flex-col items-center gap-1.5 border-b border-white/10 px-1 py-4 text-center text-[12px] font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                className="flex flex-col items-center gap-1.5 border-b border-white/10 border-l-[3px] border-l-transparent px-1 py-4 text-center text-[12px] font-medium text-white/75 transition-colors hover:bg-white/8 hover:text-white"
                 activeProps={{
-                  className: "!bg-white/15 !text-white shadow-[inset_3px_0_0_var(--primary)]",
+                  className: "!border-l-ochre !bg-white/10 !text-white font-semibold",
                 }}
               >
                 <Icon className="size-6" />
@@ -383,13 +387,19 @@ export function PortalShell({ children }) {
               type="button"
               onClick={toggleRail}
               aria-label={rail ? "Hide shortcuts" : "Show shortcuts"}
-              className="hidden size-8 items-center justify-center rounded-md border bg-card hover:text-foreground lg:flex"
+              className="hidden size-8 items-center justify-center rounded-md border border-rule bg-card transition-colors hover:border-ochre hover:bg-ochre-pale hover:text-foreground lg:flex"
             >
               {rail ? <ChevronLeft className="size-4" /> : <ChevronRight className="size-4" />}
             </button>
-            <span>{ROLE_LABEL[role]} workspace</span>
-            <span aria-hidden>/</span>
-            <span className="font-medium text-foreground">{current.label}</span>
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-label">
+              {ROLE_LABEL[role]} workspace
+            </span>
+            <span aria-hidden className="text-rule-strong">
+              /
+            </span>
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-foreground">
+              {current.label}
+            </span>
           </div>
           <main key={pathname} className="portal-page min-w-0 p-4 sm:p-6">
             {children}
@@ -405,7 +415,7 @@ export function RoleGate({ allow, children }) {
   const { role } = useCampus();
   if (allow.includes(role)) return children;
   return (
-    <div className="rounded-xl border border-dashed p-8 text-center">
+    <div className="rounded-lg border border-dashed border-rule-strong bg-secondary/40 p-8 text-center">
       <p className="font-medium">This page is not part of your workspace.</p>
       <Button asChild variant="outline" className="mt-4">
         <Link to="/portal">Go to Overview</Link>
@@ -422,14 +432,17 @@ export function Banner({ title, sub, children }) {
     month: "long",
   });
   return (
-    <div className="relative mb-6 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[var(--role-from)] via-[var(--role-via)] to-[var(--role-to)] p-6 text-white sm:p-8">
+    <div className="relative mb-6 overflow-hidden rounded-lg bg-ink p-6 text-hero-foreground sm:p-8">
+      <span aria-hidden className="absolute inset-x-0 top-0 h-[3px] bg-ochre" />
       <div className="relative flex flex-wrap items-center justify-between gap-6">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-widest text-white/70">{date}</p>
-          <h1 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-white/65">
+            {date}
+          </p>
+          <h1 className="mt-2.5 font-display text-[1.875rem] font-semibold leading-[1.1] tracking-[-0.025em] sm:text-[2.375rem]">
             {title}
           </h1>
-          {sub && <p className="mt-2 text-sm text-white/75">{sub}</p>}
+          {sub && <p className="mt-2.5 text-sm text-hero-muted">{sub}</p>}
         </div>
         {children && <div className="flex flex-wrap items-center gap-3">{children}</div>}
       </div>
@@ -440,19 +453,27 @@ export function Banner({ title, sub, children }) {
 /** A frosted tile for headline numbers inside the Banner. */
 export function BannerStat({ label, value }) {
   return (
-    <div className="min-w-24 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
-      <p className="font-display text-2xl font-bold tabular-nums">{value}</p>
-      <p className="text-[11px] uppercase tracking-wider text-white/70">{label}</p>
+    <div className="min-w-24 border-t border-white/30 pt-2.5">
+      <p className="text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-white/65">
+        {label}
+      </p>
+      <p className="mt-1 font-numeric text-[1.75rem] font-semibold leading-none tracking-[-0.035em] tabular-nums">
+        {value}
+      </p>
     </div>
   );
 }
 
 export function PageTitle({ title, sub, children }) {
   return (
-    <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-rule pb-4">
       <div>
-        <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
-        {sub && <p className="mt-1 text-sm text-muted-foreground">{sub}</p>}
+        <h1 className="font-display text-[1.625rem] font-semibold leading-[1.12] tracking-[-0.025em] sm:text-[2rem]">
+          {title}
+        </h1>
+        {sub && (
+          <p className="mt-1.5 max-w-prose text-sm leading-relaxed text-muted-foreground">{sub}</p>
+        )}
       </div>
       {children}
     </div>

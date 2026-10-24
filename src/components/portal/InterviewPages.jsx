@@ -336,7 +336,7 @@ function InterviewRoom({ interview, onDone, onExit }) {
             : "Camera not available — you can still continue"}
         </div>
       )}
-      <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white">
+      <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-ink/75 px-2 py-0.5 text-xs text-white">
         <Camera className="size-3" aria-hidden /> You
       </span>
     </div>

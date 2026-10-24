@@ -54,7 +54,7 @@ export function SkillProgress({ studentId, canEdit = false }) {
               className={`surface p-3 text-left ${selected ? "ring-2 ring-ring" : ""}`}
             >
               <p className="text-xs font-semibold uppercase text-label">{cap(k)}</p>
-              <p className="mt-1 font-display text-2xl font-bold tabular-nums">
+              <p className="mt-1 font-numeric text-2xl font-bold tabular-nums">
                 {c.current === null ? "—" : Math.round(c.current)}
               </p>
               <p className="flex items-center gap-1 text-xs text-muted-foreground">

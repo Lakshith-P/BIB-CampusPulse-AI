@@ -95,7 +95,7 @@ function StudentDashboards({ s }) {
     .map(([key, value]) => ({ name: LABELS[key], value, weight: DEFAULT_WEIGHTS[key] }));
   return (
     <Frame sub="Your own record, as the campus report reads it">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-5">
         <StatCard label="Success score" value={fmt(r.score, 0)} sub="/100" />
         <StatCard label="CGPA" value={s.cgpa > 0 ? s.cgpa.toFixed(2) : "—"} />
         <StatCard
@@ -243,7 +243,7 @@ function StaffDashboards({ rows, isAdmin }) {
   }));
   return (
     <Frame sub={isAdmin ? "Every student on the campus record" : "The students assigned to you"}>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-5">
         <StatCard label="Students" value={String(rows.length)} />
         <StatCard label="Avg success score" value={fmt(a.avgScore, 1)} sub="/100" />
         <StatCard label="Avg CGPA" value={fmt(a.avgCgpa, 2)} />

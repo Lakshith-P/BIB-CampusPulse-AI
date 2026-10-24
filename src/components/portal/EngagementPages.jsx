@@ -160,7 +160,7 @@ function StudentOpportunities() {
           {list.map((o) => (
             <article key={o.id} className="surface p-4" aria-label={o.title}>
               <div className="flex flex-wrap items-start justify-between gap-2">
-                <h3 className="font-display text-lg font-semibold">{o.title}</h3>
+                <h3 className="font-numeric text-lg font-semibold">{o.title}</h3>
                 <StatusPill tone={o.open ? "success" : "neutral"}>
                   {o.open ? "Open" : "Closed"}
                 </StatusPill>
@@ -379,7 +379,7 @@ function StaffOpportunities() {
             {data.map((o) => (
               <article key={o.id} className="surface p-4">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-display text-lg font-semibold">{o.title}</h3>
+                  <h3 className="font-numeric text-lg font-semibold">{o.title}</h3>
                   <StatusPill tone={o.open ? "success" : "neutral"}>
                     {o.type} · {o.open ? "open" : "closed"}
                   </StatusPill>

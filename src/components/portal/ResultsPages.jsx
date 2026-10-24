@@ -63,7 +63,7 @@ function StudentResults() {
           <Printer /> Print or save as PDF
         </Button>
       </PageTitle>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4">
         <StatCard label="CGPA" value={s.cgpa > 0 ? s.cgpa.toFixed(2) : "—"} sub="out of 10" />
         <StatCard label="Latest SGPA" value={latest === undefined ? "—" : latest.toFixed(2)} />
         <StatCard
@@ -153,7 +153,7 @@ function StudentResults() {
                   <tr key={x.subject} className="border-t">
                     <td className="p-3 font-medium">{x.subject}</td>
                     <td className="tabular-nums">{x.marks}</td>
-                    <td className="font-display font-bold">{gradeOf(x.marks)}</td>
+                    <td className="font-numeric font-bold">{gradeOf(x.marks)}</td>
                     <td className={x.marks >= PASS_MARK ? "text-success" : "text-destructive"}>
                       {x.marks >= PASS_MARK ? "Pass" : "Re-exam needed"}
                     </td>
@@ -209,7 +209,7 @@ function SgpaWorkings({ s }) {
               <tr key={r.subject} className="border-t">
                 <td className="p-2 font-medium">{r.subject}</td>
                 <td className="p-2 tabular-nums">{r.marks}</td>
-                <td className="p-2 font-display font-bold">{r.letter}</td>
+                <td className="p-2 font-numeric font-bold">{r.letter}</td>
                 <td className="p-2 tabular-nums">{r.points}</td>
                 <td className="p-2 tabular-nums">{r.credits}</td>
                 <td className="p-2 tabular-nums">{r.points * r.credits}</td>
@@ -342,7 +342,7 @@ function ClassResults() {
         <EmptyState title="No students yet" hint="Results appear once students are assigned." />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4">
             <StatCard label="Average CGPA" value={avg === null ? "—" : avg.toFixed(2)} />
             <StatCard
               label="Highest CGPA"
@@ -393,7 +393,7 @@ function ClassResults() {
                       {r.branch} · Sem {r.semester}
                     </span>
                   </span>
-                  <span className="font-display font-bold tabular-nums">{r.cgpa.toFixed(2)}</span>
+                  <span className="font-numeric font-bold tabular-nums">{r.cgpa.toFixed(2)}</span>
                 </div>
               ))}
             </div>

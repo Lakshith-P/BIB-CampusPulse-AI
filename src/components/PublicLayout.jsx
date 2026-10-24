@@ -14,32 +14,42 @@ export function Brand() {
   return (
     <Link to="/" className="flex shrink-0 items-center gap-2.5">
       <span className="brand-mark">
-        <Orbit className="size-6" />
+        <Orbit className="size-[22px]" />
       </span>
-      <span className="font-display text-xl font-bold">
-        <span className="text-primary">BIB InsightIQ</span>
-      </span>
+      <span className="brand-word">BIB InsightIQ</span>
     </Link>
   );
 }
+
+/** Website nav item. The active page is marked by an ochre rule under the label. */
+function NavLink({ to, text, onNavigate }) {
+  return (
+    <Link
+      to={to}
+      onClick={onNavigate}
+      className="group relative py-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+      activeProps={{ className: "!text-foreground" }}
+    >
+      {text}
+      <span
+        aria-hidden
+        className="absolute -bottom-0.5 left-0 h-[2px] w-0 bg-ochre transition-all group-hover:w-full group-data-[status=active]:w-full"
+      />
+    </Link>
+  );
+}
+
 export function PublicLayout({ children }) {
   const [open, setOpen] = useState(false);
   const { user } = useAccount();
   return (
     <div className="public-site min-h-screen bg-background">
-      <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 lg:px-8">
+      <header className="sticky top-0 z-30 border-b border-rule bg-background/92 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3.5 lg:px-8">
           <Brand />
           <nav className="hidden items-center gap-7 lg:flex" aria-label="Website">
             {links.map((l) => (
-              <Link
-                key={l.to}
-                to={l.to}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-                activeProps={{ className: "text-primary" }}
-              >
-                {l.text}
-              </Link>
+              <NavLink key={l.to} to={l.to} text={l.text} />
             ))}
           </nav>
           <div className="flex items-center gap-2">
@@ -59,12 +69,17 @@ export function PublicLayout({ children }) {
           </div>
         </div>
         {open && (
-          <nav
-            className="flex flex-col gap-3 border-t px-5 py-4 lg:hidden"
-            aria-label="Mobile website"
-          >
+          <nav className="flex flex-col border-t border-rule lg:hidden" aria-label="Mobile website">
             {links.map((l) => (
-              <Link key={l.to} to={l.to} onClick={() => setOpen(false)} className="text-sm">
+              <Link
+                key={l.to}
+                to={l.to}
+                onClick={() => setOpen(false)}
+                className="border-b border-rule px-5 py-3.5 text-sm font-medium text-muted-foreground"
+                activeProps={{
+                  className: "!text-foreground shadow-[inset_3px_0_0_var(--ochre)] bg-ochre-pale",
+                }}
+              >
                 {l.text}
               </Link>
             ))}
@@ -72,42 +87,71 @@ export function PublicLayout({ children }) {
         )}
       </header>
       {children}
-      <footer className="border-t bg-muted/40">
-        <div className="mx-auto grid max-w-7xl gap-8 px-5 py-12 md:grid-cols-[2fr_1fr_1fr] lg:px-8">
-          <div>
+      <footer className="paper-grain border-t border-rule bg-secondary/50">
+        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 md:grid-cols-[1.6fr_1fr_1fr] lg:px-8">
+          <div className="max-w-sm">
             <Brand />
-            <p className="mt-4 max-w-sm text-sm text-muted-foreground">
+            <p className="mt-5 font-display text-xl font-medium leading-snug tracking-tight text-foreground">
               Turning campus data into student success.
             </p>
-            <p className="mt-3 text-xs text-muted-foreground">
+            <p className="mt-4 text-xs leading-relaxed text-label">
               TEAM BIB · Biryani Intelligence Bureau
               <br />
               HacXLerate · Smart Campus Analytics
             </p>
           </div>
-          <div className="space-y-3 text-sm">
-            <p className="font-semibold">Discover</p>
-            <Link to="/solution" className="block text-muted-foreground">
-              Why BIB InsightIQ
-            </Link>
-            <Link to="/benefits" className="block text-muted-foreground">
-              Campus benefits
-            </Link>
-          </div>
-          <div className="space-y-3 text-sm">
-            <p className="font-semibold">Stay connected</p>
-            <Link to="/contact" className="block text-muted-foreground">
-              Connect with TEAM BIB
-            </Link>
-            <Link to="/privacy" className="block text-muted-foreground">
-              Privacy & responsible use
-            </Link>
-            <Link to="/auth" className="block text-muted-foreground">
-              Access your account
-            </Link>
-          </div>
+          <nav aria-label="Discover">
+            <p className="rule-head">Discover</p>
+            <ul className="mt-4 space-y-2.5 text-sm">
+              <li>
+                <Link
+                  to="/solution"
+                  className="text-muted-foreground transition-colors hover:text-ochre-ink"
+                >
+                  Why BIB InsightIQ
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/benefits"
+                  className="text-muted-foreground transition-colors hover:text-ochre-ink"
+                >
+                  Campus benefits
+                </Link>
+              </li>
+            </ul>
+          </nav>
+          <nav aria-label="Stay connected">
+            <p className="rule-head">Stay connected</p>
+            <ul className="mt-4 space-y-2.5 text-sm">
+              <li>
+                <Link
+                  to="/contact"
+                  className="text-muted-foreground transition-colors hover:text-ochre-ink"
+                >
+                  Connect with TEAM BIB
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/privacy"
+                  className="text-muted-foreground transition-colors hover:text-ochre-ink"
+                >
+                  Privacy & responsible use
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/auth"
+                  className="font-medium text-foreground transition-colors hover:text-ochre-ink"
+                >
+                  Access your account
+                </Link>
+              </li>
+            </ul>
+          </nav>
         </div>
-        <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-2 border-t px-5 py-5 text-xs text-muted-foreground">
+        <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-2 border-t border-rule px-5 py-5 text-xs text-label lg:px-8">
           <span>© 2026 TEAM BIB. Built for better student outcomes.</span>
           <span>Not connected to a live university system</span>
         </div>

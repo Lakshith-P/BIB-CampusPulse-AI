@@ -90,7 +90,7 @@ export function CampusInsights({ rows }) {
   if (rows.length === 0) return null;
   return (
     <div className="mt-6">
-      <h2 className="mb-3 font-display text-lg font-semibold">Insights</h2>
+      <h2 className="mb-3 font-numeric text-lg font-semibold">Insights</h2>
       <div className="grid gap-4 lg:grid-cols-2">
         <div className={card}>
           <SectionTitle sub="Students per status band">Score distribution</SectionTitle>

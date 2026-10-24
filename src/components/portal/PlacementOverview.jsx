@@ -62,7 +62,7 @@ export function PlacementOverview() {
         <EmptyState title="No students yet" hint="Readiness appears once students are assigned." />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4">
             <StatCard
               label="Placement readiness"
               value={avg === null ? "—" : `${avg.toFixed(1)}%`}
@@ -141,7 +141,10 @@ export function PlacementOverview() {
         <SectionTitle sub="Drives and openings posted for students">
           Current placements
         </SectionTitle>
-        <AnnouncementsFeed categories={["placement"]} empty="Post a drive to show it to every student." />
+        <AnnouncementsFeed
+          categories={["placement"]}
+          empty="Post a drive to show it to every student."
+        />
       </section>
     </>
   );

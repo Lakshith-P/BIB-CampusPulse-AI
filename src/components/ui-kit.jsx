@@ -25,9 +25,9 @@ export const useToast = () => useContext(ToastContext);
 
 const TOAST_ICON = { success: CheckCircle2, error: XCircle, info: Info };
 const TOAST_TONE = {
-  success: "border-success/40 text-success",
-  error: "border-destructive/40 text-destructive",
-  info: "border-info/40 text-info",
+  success: "border-l-[3px] border-l-risk-track text-risk-track",
+  error: "border-l-[3px] border-l-risk-critical text-risk-critical",
+  info: "border-l-[3px] border-l-info text-info",
 };
 
 /** Short confirmations for completed actions. Announced politely to screen readers. */
@@ -58,7 +58,7 @@ export function ToastProvider({ children }) {
             <div
               key={t.id}
               className={cn(
-                "pointer-events-auto flex items-start gap-3 rounded-xl border bg-card p-3 text-sm shadow-lg animate-in fade-in slide-in-from-bottom-2",
+                "surface-raised pointer-events-auto flex items-start gap-3 p-3 text-sm animate-in fade-in slide-in-from-bottom-2",
                 TOAST_TONE[t.tone],
               )}
             >
@@ -114,21 +114,37 @@ export function useAction(after) {
 
 // ---------------------------------------------------------------- loading
 export function Skeleton({ className }) {
-  return <div aria-hidden className={cn("animate-pulse rounded-md bg-muted", className)} />;
+  return (
+    <div
+      aria-hidden
+      className={cn("animate-pulse rounded-sm bg-secondary ring-1 ring-rule", className)}
+    />
+  );
 }
 
 export function PageSkeleton({ rows = 4 }) {
   return (
-    <div role="status" aria-label="Loading" className="space-y-4">
-      <Skeleton className="h-8 w-56" />
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+    <div role="status" aria-label="Loading" className="space-y-5">
+      <Skeleton className="h-9 w-56" />
+      {/* The loading shape mirrors the real page: a row of ruled figures, then ledger rows. */}
+      <div className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4">
         {Array.from({ length: 4 }, (_, i) => (
-          <Skeleton key={i} className="h-24" />
+          <div key={i} className="stat-tile">
+            <Skeleton className="h-2.5 w-20" />
+            <div className="stat-figure-row">
+              <Skeleton className="h-8 w-24" />
+            </div>
+          </div>
         ))}
       </div>
-      {Array.from({ length: rows }, (_, i) => (
-        <Skeleton key={i} className="h-12" />
-      ))}
+      <div className="surface divide-y divide-rule">
+        {Array.from({ length: rows }, (_, i) => (
+          <div key={i} className="flex items-center gap-4 px-4 py-3.5">
+            <Skeleton className="h-3 w-1/3" />
+            <Skeleton className="ml-auto h-3 w-16" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -138,11 +154,13 @@ export function ErrorState({ error, onRetry }) {
   return (
     <div
       role="alert"
-      className="rounded-xl border border-destructive/40 bg-destructive/5 p-6 text-center"
+      className="rounded-lg border border-risk-critical/35 border-l-[3px] border-l-risk-critical bg-risk-critical-pale/60 px-6 py-7 text-center"
     >
-      <AlertTriangle className="mx-auto size-6 text-destructive" />
-      <p className="mt-2 font-medium">This could not be loaded</p>
-      <p className="mt-1 text-sm text-muted-foreground">{messageOf(error)}</p>
+      <AlertTriangle className="mx-auto size-6 text-risk-critical" />
+      <p className="mt-2.5 font-semibold">This could not be loaded</p>
+      <p className="mx-auto mt-1.5 max-w-prose text-sm leading-relaxed text-muted-foreground">
+        {messageOf(error)}
+      </p>
       {onRetry && (
         <Button type="button" variant="outline" className="mt-4" onClick={onRetry}>
           Try again
@@ -295,12 +313,13 @@ export function DownloadButton({ label, onFetch }) {
 }
 
 // ---------------------------------------------------------------- status labels
+// Status pills sit on the risk ramp, never on the brand ink or the ochre accent.
 const LEVELS = {
-  success: ["bg-success/15 text-success", CheckCircle2],
-  warning: ["bg-warning/15 text-warning", AlertTriangle],
-  danger: ["bg-destructive/15 text-destructive", XCircle],
-  info: ["bg-info/15 text-info", Info],
-  neutral: ["bg-neutral/15 text-neutral", Info],
+  success: ["bg-risk-track-pale text-risk-track", CheckCircle2],
+  warning: ["bg-risk-monitor-pale text-risk-monitor", AlertTriangle],
+  danger: ["bg-risk-critical-pale text-risk-critical", XCircle],
+  info: ["bg-info/10 text-info", Info],
+  neutral: ["bg-secondary text-neutral", Info],
 };
 
 /** A status pill: always a text label plus an icon, never colour alone. */
@@ -320,12 +339,14 @@ export function StatusPill({ tone = "neutral", children }) {
 }
 
 export const inputClass =
-  "w-full rounded-md border bg-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "w-full rounded-md border border-input bg-card px-3 py-2 text-sm transition-colors placeholder:text-label hover:border-border-hover focus-visible:border-ochre focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35";
 
 export function Field({ label, hint, children }) {
   return (
-    <label className="block space-y-1 text-sm">
-      <span className="font-medium">{label}</span>
+    <label className="block space-y-1.5 text-sm">
+      <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-label">
+        {label}
+      </span>
       {children}
       {hint && <span className="block text-xs text-muted-foreground">{hint}</span>}
     </label>

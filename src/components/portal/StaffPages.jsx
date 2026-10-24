@@ -132,7 +132,7 @@ export function InterventionsPage() {
           value={status}
           onChange={(e) => setStatus(e.target.value)}
           aria-label="Filter interventions"
-          className="rounded-md border bg-background p-2 text-sm"
+          className="text-sm"
         >
           <option value="active">Open and in progress</option>
           <option value="open">Open</option>

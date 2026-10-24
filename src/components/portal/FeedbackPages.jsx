@@ -294,7 +294,7 @@ function SubjectReview({ subject, review, onDone }) {
       }}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="font-display text-lg font-semibold">{subject}</h3>
+        <h3 className="font-numeric text-lg font-semibold">{subject}</h3>
         {review ? (
           <StatusPill tone="success">
             Reviewed {new Date(review.updated_at).toLocaleDateString()} · {review.average} / 5

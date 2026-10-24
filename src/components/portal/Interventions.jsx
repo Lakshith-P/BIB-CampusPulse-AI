@@ -9,7 +9,7 @@ import { SectionTitle } from "@/components/widgets";
 import { changeCampusIntervention, saveCampusIntervention } from "@/lib/campus.functions";
 import { useCampus } from "@/lib/use-campus";
 
-const selectClass = "rounded-md border bg-background p-2 text-sm";
+const selectClass = "text-sm";
 const STATUS = { open: "Open", "in-progress": "In progress", resolved: "Resolved" };
 const PRIORITY_CLASS = {
   high: "bg-destructive/15 text-destructive",

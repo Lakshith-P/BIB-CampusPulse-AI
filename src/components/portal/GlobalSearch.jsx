@@ -116,7 +116,7 @@ export function GlobalSearch({ role, rows, onSignOut }) {
     </li>
   );
   const Heading = ({ children }) => (
-    <h3 className="mb-2 flex items-center gap-3 border-b pb-2 font-display text-lg font-semibold">
+    <h3 className="mb-2 flex items-center gap-3 border-b pb-2 font-numeric text-lg font-semibold">
       <span aria-hidden className="size-2.5 rounded-[3px] border border-muted-foreground/60" />
       {children}
     </h3>
@@ -140,7 +140,7 @@ export function GlobalSearch({ role, rows, onSignOut }) {
       </button>
       {open && (
         <div
-          className="fixed inset-0 z-[70] bg-black/50"
+          className="fixed inset-0 z-[70] bg-ink/55"
           onMouseDown={(e) => e.target === e.currentTarget && setOpen(false)}
           role="dialog"
           aria-modal="true"
@@ -148,7 +148,7 @@ export function GlobalSearch({ role, rows, onSignOut }) {
         >
           <div className="max-h-[92vh] overflow-y-auto bg-card px-5 pb-8 pt-6 shadow-2xl sm:px-10">
             <div className="mb-6 flex flex-wrap items-center gap-4">
-              <h2 className="font-display text-4xl font-bold text-muted-foreground">Search</h2>
+              <h2 className="font-numeric text-4xl font-bold text-muted-foreground">Search</h2>
               <form onSubmit={submit} className="relative min-w-64 flex-1 sm:max-w-xl">
                 <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
                 <input

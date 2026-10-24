@@ -183,7 +183,7 @@ export function Academics({ s }) {
           <p className="text-sm text-muted-foreground">No subject marks recorded yet.</p>
         )}
         {s.subjects.map((x) => (
-          <div key={x.subject} className="mb-3">
+          <div key={x.subject} className="mb-2.5">
             <div className="flex justify-between text-sm">
               <span>{x.subject}</span>
               <span className={x.marks < 60 ? "text-destructive" : ""}>
@@ -201,13 +201,14 @@ export function Academics({ s }) {
               value={x.marks}
               {...(x.marks < 60 ? { tone: "var(--destructive)" } : {})}
             />
-            {x.marks < 70 && (
-              <p className="mt-1 text-xs text-muted-foreground">
-                Tip: revisit the weakest LMS unit for {x.subject} and attend the faculty doubt hour.
-              </p>
-            )}
           </div>
         ))}
+        {s.subjects.some((x) => x.marks < 70) && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Tip: for subjects below 70, revisit the weakest LMS unit and attend the faculty doubt
+            hour.
+          </p>
+        )}
       </div>
     </div>
   );

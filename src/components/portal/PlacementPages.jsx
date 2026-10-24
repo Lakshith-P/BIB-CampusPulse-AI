@@ -81,7 +81,7 @@ function DriveCard({ drive, refresh }) {
     <article className="surface p-4" aria-label={`${drive.company}, ${drive.roleTitle}`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h3 className="font-display text-lg font-semibold">{drive.company}</h3>
+          <h3 className="font-numeric text-lg font-semibold">{drive.company}</h3>
           <p className="text-sm text-muted-foreground">
             {drive.roleTitle}
             {drive.package && ` · ${drive.package}`}
@@ -602,7 +602,7 @@ export function StaffDrives() {
               <article key={d.id} className="surface p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h3 className="font-display text-lg font-semibold">{d.company}</h3>
+                    <h3 className="font-numeric text-lg font-semibold">{d.company}</h3>
                     <p className="text-sm text-muted-foreground">
                       {d.roleTitle} · apply by {d.deadline}
                     </p>

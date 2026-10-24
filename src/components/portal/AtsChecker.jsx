@@ -157,7 +157,7 @@ export function AtsChecker({ s }) {
         </p>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4">
             <StatCard
               label="ATS score"
               value={`${report.score}`}

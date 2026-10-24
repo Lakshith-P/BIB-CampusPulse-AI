@@ -33,7 +33,7 @@ function Tile({ label, value, sub, open, onClick }) {
           aria-hidden
         />
       </div>
-      <p className="mt-2 font-display text-3xl font-bold leading-none tabular-nums">{value}</p>
+      <p className="mt-2 font-numeric text-3xl font-bold leading-none tabular-nums">{value}</p>
       <p className="mt-2 text-xs text-muted-foreground">{sub}</p>
     </button>
   );
@@ -321,7 +321,7 @@ export function ReadinessBreakdown({ s, canOpen = true }) {
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {t.label}
               </span>
-              <p className="mt-2 font-display text-3xl font-bold leading-none tabular-nums">
+              <p className="mt-2 font-numeric text-3xl font-bold leading-none tabular-nums">
                 {t.value}
               </p>
             </div>

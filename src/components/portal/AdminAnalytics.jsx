@@ -47,7 +47,7 @@ const METRICS = [
   ["lms", "LMS %", 1],
   ["placement", "Placement readiness", 0],
 ];
-const selectClass = "rounded-md border bg-card px-3 py-1.5 text-sm";
+const selectClass = "text-sm";
 const fmt = (v, d = 0, suffix = "") =>
   v === null || v === undefined ? "—" : v.toFixed(d) + suffix;
 
@@ -159,7 +159,7 @@ export function AdminAnalytics() {
         <EmptyState title="No students match these filters" hint="Clear a filter to see more." />
       ) : (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-5">
             <StatCard
               label="Students in view"
               value={String(shown.length)}
@@ -447,7 +447,7 @@ export function AdminAnalytics() {
               <SectionTitle sub="Support actions for the students in view">
                 Intervention progress
               </SectionTitle>
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-5">
                 <StatCard label="Support actions" value={String(support.total)} />
                 <StatCard label="Open" value={String(support.open)} />
                 <StatCard label="In progress" value={String(support.inProgress)} />

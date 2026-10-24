@@ -3,12 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Megaphone, MessageSquare, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  CATEGORY,
-  PostAnnouncement,
-  AnnouncementsFeed,
-  useAnnouncements,
-} from "@/components/portal/Announcements";
+import { CATEGORY, PostAnnouncement, useAnnouncements } from "@/components/portal/Announcements";
 import { listContactMessages } from "@/lib/campus.functions";
 import { liveAssignments } from "@/lib/live-profile";
 import { useCampus } from "@/lib/use-campus";
@@ -16,42 +11,46 @@ import { useCampus } from "@/lib/use-campus";
 const fmt = (iso) =>
   new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 
-/** Quick-link pills. `badge` is a count shown in a small red dot, `tone` picks the pill colour. */
+/**
+ * Quick links read as a line of ruled labels rather than a wall of filled pills. The primary
+ * set is ink, the rest are hairline-ruled; `badge` is an unread count.
+ */
 function QuickLinkPills({ items }) {
   return (
-    <div className="mb-6 flex flex-wrap gap-2.5">
+    <nav aria-label="Quick links" className="mb-7 flex flex-wrap gap-2">
       {items.map(([label, to, tone, badge]) => (
         <Link
           key={label}
           to={to}
-          className={`relative rounded-full px-5 py-2.5 text-sm font-semibold transition-colors ${
+          className={`relative rounded-md px-3.5 py-2 text-sm font-semibold transition-colors ${
             tone === "primary"
-              ? "bg-primary text-primary-foreground hover:opacity-90"
-              : "bg-info text-info-foreground hover:opacity-90"
+              ? "bg-ink text-primary-foreground hover:bg-ink-strong"
+              : "border border-rule bg-card text-foreground hover:border-ochre hover:bg-ochre-pale"
           }`}
         >
           {label}
           {badge > 0 && (
-            <span className="absolute -right-1.5 -top-2 flex min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[11px] font-bold text-destructive-foreground">
+            <span className="absolute -right-1.5 -top-2 flex min-w-5 items-center justify-center rounded-full bg-risk-critical px-1 font-numeric text-[11px] font-bold tabular-nums text-destructive-foreground">
               {badge > 9 ? "9+" : badge}
             </span>
           )}
         </Link>
       ))}
-    </div>
+    </nav>
   );
 }
 
-/** A card with a pill-shaped tab on its top edge and a footer bar, like a notice board panel. */
+/** A flat ruled panel: small-caps head on a hairline, content, then a quiet footer rule. */
 function Panel({ icon: Icon, title, footer, action, children, className = "" }) {
   return (
-    <section className={`surface relative flex flex-col pt-7 ${className}`}>
-      <span className="absolute -top-4 left-5 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-1.5 text-sm font-bold text-primary-foreground shadow">
-        <Icon className="size-4" /> {title}
-      </span>
-      <div className="min-h-64 flex-1 px-5 pb-4">{children}</div>
-      <div className="flex items-center justify-between gap-3 border-t px-5 py-3 text-xs text-muted-foreground">
-        <span>{footer}</span>
+    <section className={`surface flex flex-col ${className}`}>
+      <h3 className="rule-head border-b border-rule px-5 py-3.5">
+        <Icon className="size-3.5 shrink-0 text-ochre-ink" aria-hidden />
+        <span className="shrink-0">{title}</span>
+      </h3>
+      <div className="min-h-56 flex-1 px-5 py-4">{children}</div>
+      <div className="flex items-center justify-between gap-3 border-t border-rule px-5 py-3 text-xs text-label">
+        <span className="min-w-0 truncate">{footer}</span>
         {action}
       </div>
     </section>
@@ -70,8 +69,8 @@ function Spotlight({ updates }) {
   }, [paused, slides.length]);
   if (slides.length === 0)
     return (
-      <div className="flex h-full min-h-64 flex-col items-center justify-center rounded-xl bg-muted/50 p-6 text-center">
-        <Sparkles className="mb-2 size-8 text-primary" />
+      <div className="flex h-full min-h-56 flex-col items-center justify-center rounded-md border border-dashed border-rule-strong bg-secondary/40 p-6 text-center">
+        <Sparkles className="mb-2 size-7 text-ochre" />
         <p className="font-medium">Nothing in the spotlight yet</p>
         <p className="mt-1 text-sm text-muted-foreground">
           Posters, drives and events posted by your university appear here.
@@ -87,22 +86,25 @@ function Spotlight({ updates }) {
       onFocusCapture={() => setPaused(true)}
       onBlurCapture={() => setPaused(false)}
     >
-      <div key={u.id} className="spotlight-slide relative overflow-hidden rounded-xl border">
+      <div
+        key={u.id}
+        className="spotlight-slide relative overflow-hidden rounded-md border border-rule"
+      >
         {u.image_url ? (
           <img
             src={u.image_url}
             alt={`${u.title} poster`}
             referrerPolicy="no-referrer"
-            className="h-64 w-full bg-muted object-cover"
+            className="h-56 w-full bg-muted object-cover"
             onError={(e) => (e.currentTarget.style.display = "none")}
           />
         ) : (
-          <div className="flex h-64 flex-col justify-end bg-gradient-to-br from-[var(--role-from)] via-[var(--role-via)] to-[var(--role-to)] p-6 text-white">
-            <span className="mb-2 w-fit rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
+          <div className="flex h-56 flex-col justify-end bg-ink p-6 text-hero-foreground">
+            <span className="mb-2.5 w-fit border-l-2 border-ochre pl-2.5 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-white/80">
               {c.label}
               {u.event_date ? ` · ${fmt(u.event_date)}` : ""}
             </span>
-            <p className="font-display text-2xl font-bold leading-snug">
+            <p className="font-display text-2xl font-semibold leading-snug tracking-[-0.02em]">
               {u.company ? `${u.company} · ` : ""}
               {u.title}
             </p>
@@ -115,7 +117,7 @@ function Spotlight({ updates }) {
               type="button"
               aria-label="Previous"
               onClick={() => setI((i - 1 + slides.length) % slides.length)}
-              className="absolute left-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white hover:bg-black/60"
+              className="absolute left-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-ink/70 text-white transition-colors hover:bg-ink"
             >
               <ChevronLeft className="size-4" />
             </button>
@@ -123,7 +125,7 @@ function Spotlight({ updates }) {
               type="button"
               aria-label="Next"
               onClick={() => setI((i + 1) % slides.length)}
-              className="absolute right-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white hover:bg-black/60"
+              className="absolute right-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-ink/70 text-white transition-colors hover:bg-ink"
             >
               <ChevronRight className="size-4" />
             </button>
@@ -141,7 +143,7 @@ function Spotlight({ updates }) {
               aria-selected={n === i}
               aria-label={`Slide ${n + 1}`}
               onClick={() => setI(n)}
-              className={`size-2.5 rounded-full ${n === i ? "bg-primary" : "bg-muted-foreground/40"}`}
+              className={`size-2 rounded-full transition-colors ${n === i ? "bg-ochre" : "bg-rule-strong"}`}
             />
           ))}
         </div>
@@ -156,8 +158,8 @@ function Happening({ updates }) {
   return (
     <ul className="space-y-4 pt-1">
       {updates.slice(0, 4).map((u) => (
-        <li key={u.id} className="border-l-4 border-primary pl-3">
-          <p className="text-xs text-muted-foreground">
+        <li key={u.id} className="border-l-2 border-ochre pl-3">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-label">
             {CATEGORY[u.category].label} · {fmt(u.created_at)}
           </p>
           <p className="font-semibold leading-snug">
@@ -262,30 +264,44 @@ export function OverviewHub() {
     faculty: ["/portal/interventions", "All Follow-ups", "Your open follow-ups"],
     admin: ["/portal/messages", "All Messages", "Sent from the contact page"],
   }[role];
+  // Students already have "Announcements" and "Feedback" as quick links with their own
+  // unread badges, so Happening and My Messages would just repeat them — only Spotlight,
+  // the one visually distinct panel, earns a place on a student's own overview. Faculty and
+  // admin manage many students at once and have no such per-item badge, so they keep all three.
+  if (role === "student")
+    return (
+      <>
+        <QuickLinkPills items={links} />
+        <Panel
+          icon={Sparkles}
+          title="Spotlight"
+          footer="* Placements, events and notices from your university"
+          action={
+            <Button asChild size="sm" variant="outline">
+              <Link to="/portal/updates">All updates</Link>
+            </Button>
+          }
+          className="mb-6"
+        >
+          <Spotlight updates={updates} />
+        </Panel>
+      </>
+    );
   return (
     <>
-      <section className="mb-8">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="font-display text-xl font-bold">Announcements</h2>
-            <p className="text-sm text-muted-foreground">
-              Placements, events, notices and posters from the university
-            </p>
-          </div>
-          {role !== "student" && <PostAnnouncement />}
-        </div>
-        <AnnouncementsFeed limit={3} seeAll empty="Nothing has been posted yet." />
-      </section>
       <QuickLinkPills items={links} />
-      <div className="mb-8 mt-8 grid gap-8 lg:grid-cols-[1.5fr_1fr_1fr]">
+      <div className="mb-6 grid gap-5 lg:grid-cols-[1.5fr_1fr_1fr]">
         <Panel
           icon={Sparkles}
           title="Spotlight"
           footer="* Latest from your university"
           action={
-            <Button asChild size="sm" variant="outline">
-              <Link to="/portal/updates">All updates</Link>
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <PostAnnouncement />
+              <Button asChild size="sm" variant="outline">
+                <Link to="/portal/updates">All updates</Link>
+              </Button>
+            </div>
           }
         >
           <Spotlight updates={updates} />

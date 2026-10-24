@@ -73,7 +73,7 @@ export function LearningPath({ s }) {
           return (
             <section key={c.name} className={card}>
               <div className="flex items-start justify-between gap-3">
-                <h3 className="font-display text-lg font-semibold">{c.name}</h3>
+                <h3 className="font-numeric text-lg font-semibold">{c.name}</h3>
                 <div className="text-right text-xs text-muted-foreground">
                   {c.sub && <p>Marks {c.sub.marks}/100</p>}
                   <p>Attendance {pct(c.att)}</p>

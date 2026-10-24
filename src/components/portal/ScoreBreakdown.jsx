@@ -112,15 +112,15 @@ export function ScoreBreakdown({ s, title = "Success Score breakdown", you = "th
       <SectionTitle sub="Calculated from configured weights and rules. It is not an AI prediction.">
         {title}
       </SectionTitle>
-      <div className="grid gap-6 lg:grid-cols-[auto_1fr]">
-        <div className="flex flex-col items-center gap-2 text-center">
+      <div className="grid gap-8 lg:grid-cols-[auto_1fr]">
+        <div className="flex flex-col items-center gap-2.5 text-center">
           <ScoreRing score={r.score} size={148} />
-          <p className="font-display text-lg font-bold tabular-nums">
+          <p className="font-numeric text-lg font-semibold tabular-nums">
             {r.score === null ? "No score yet" : `${Math.round(r.score)} / 100`}
           </p>
           <BandBadge score={r.score} />
           {band && band !== r.band && (
-            <p className="max-w-48 text-xs text-warning">
+            <p className="max-w-48 text-xs text-risk-monitor">
               Shown as {band}: a High risk flag prevents "On Track".
             </p>
           )}
@@ -130,8 +130,8 @@ export function ScoreBreakdown({ s, title = "Success Score breakdown", you = "th
         </div>
 
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase text-label">
-            Select an indicator to see what sits behind it
+          <p className="rule-head mb-3">
+            <span className="shrink-0">Select an indicator to see what sits behind it</span>
           </p>
           <ul className="space-y-2">
             {Object.entries(LABELS).map(([key, label]) => {
@@ -146,7 +146,7 @@ export function ScoreBreakdown({ s, title = "Success Score breakdown", you = "th
                     aria-pressed={open}
                     aria-controls="score-detail"
                     onClick={() => setSelected(key)}
-                    className={`w-full rounded-lg border p-2 text-left transition-colors hover:border-[var(--border-hover)] ${open ? "border-primary bg-accent/50" : ""}`}
+                    className={`w-full rounded-md border border-rule p-2.5 text-left transition-colors hover:border-ochre hover:bg-ochre-pale/60 ${open ? "!border-ochre bg-ochre-pale" : "bg-card"}`}
                   >
                     <div className="flex items-center justify-between gap-2 text-sm">
                       <span className="font-medium">
@@ -159,7 +159,7 @@ export function ScoreBreakdown({ s, title = "Success Score breakdown", you = "th
                         </span>
                       </span>
                       {missing ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-warning">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-risk-monitor">
                           <CircleHelp className="size-3.5" aria-hidden /> Not recorded
                         </span>
                       ) : (
@@ -188,18 +188,22 @@ export function ScoreBreakdown({ s, title = "Success Score breakdown", you = "th
         </div>
       </div>
 
-      <div id="score-detail" className="mt-5 rounded-lg border bg-muted/30 p-3" aria-live="polite">
+      <div
+        id="score-detail"
+        className="mt-6 rounded-md border border-rule bg-secondary/50 p-4"
+        aria-live="polite"
+      >
         <p className="mb-2 text-sm font-semibold">
           {LABELS[chosen]}: supporting data
           {r.components[chosen] === null && (
-            <span className="ml-2 text-xs font-normal text-warning">nothing recorded yet</span>
+            <span className="ml-2 text-xs font-normal text-risk-monitor">nothing recorded yet</span>
           )}
         </p>
         <dl className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
           {support(chosen, s).map(([k, v], i) => (
-            <div key={k + i} className="flex justify-between gap-3 border-b border-border/50 py-1">
+            <div key={k + i} className="flex justify-between gap-3 border-b border-rule py-1.5">
               <dt className="text-muted-foreground">{k}</dt>
-              <dd className="font-medium tabular-nums">{v}</dd>
+              <dd className="font-semibold tabular-nums">{v}</dd>
             </div>
           ))}
         </dl>
@@ -207,7 +211,9 @@ export function ScoreBreakdown({ s, title = "Success Score breakdown", you = "th
 
       <div className="mt-5 grid gap-4 text-sm sm:grid-cols-2">
         <div>
-          <p className="mb-1 font-medium text-success">Helping {you}</p>
+          <p className="rule-head mb-2 !text-risk-track">
+            <span className="shrink-0">Helping {you}</span>
+          </p>
           {r.positives.length ? (
             r.positives.map((p) => <p key={p}>+ {p}</p>)
           ) : (
@@ -215,7 +221,9 @@ export function ScoreBreakdown({ s, title = "Success Score breakdown", you = "th
           )}
         </div>
         <div>
-          <p className="mb-1 font-medium text-destructive">Working against {you}</p>
+          <p className="rule-head mb-2 !text-risk-critical">
+            <span className="shrink-0">Working against {you}</span>
+          </p>
           {r.negatives.length ? (
             r.negatives.map((p) => <p key={p}>− {p}</p>)
           ) : (
@@ -224,7 +232,7 @@ export function ScoreBreakdown({ s, title = "Success Score breakdown", you = "th
         </div>
       </div>
 
-      <div className="mt-5 grid gap-6 border-t pt-4 sm:grid-cols-2">
+      <div className="mt-6 grid gap-6 border-t border-rule pt-5 sm:grid-cols-2">
         <FlagDrivers title="Academic risk" flag={acad} />
         <FlagDrivers title="Placement risk" flag={place} />
       </div>
@@ -234,8 +242,10 @@ export function ScoreBreakdown({ s, title = "Success Score breakdown", you = "th
         <FlagBadge label="Placement" flag={place} />
       </p>
 
-      <div className="mt-4 border-t pt-4">
-        <p className="mb-1 text-sm font-medium">Recommended next steps</p>
+      <div className="mt-5 border-t border-rule pt-5">
+        <p className="rule-head mb-2.5">
+          <span className="shrink-0">Recommended next steps</span>
+        </p>
         <ul className="list-inside list-disc space-y-1 text-sm">
           {recommendations(s).map((x) => (
             <li key={x}>{x}</li>

@@ -175,7 +175,7 @@ function StudentUnit({ u, subject, syllabus, refresh, filter }) {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <p className="text-xs font-semibold uppercase text-label">Unit {u.unit}</p>
-          <h3 className="font-display text-lg font-semibold">{u.title}</h3>
+          <h3 className="font-numeric text-lg font-semibold">{u.title}</h3>
           {u.topics && <p className="mt-1 text-sm text-muted-foreground">Syllabus: {u.topics}</p>}
         </div>
         {u.materials.length > 0 && (
@@ -261,7 +261,7 @@ function StudentLms() {
   ];
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4">
         <StatCard label="Logins this week" value={String(data.activity.week)} />
         <StatCard label="Logins in 30 days" value={String(data.activity.month)} />
         <StatCard
@@ -719,7 +719,7 @@ function StaffManage() {
       />
       {current.units.map((u) => (
         <details key={u.unit} className="surface p-4" open={u.unit === 1}>
-          <summary className="cursor-pointer font-display text-lg font-semibold">
+          <summary className="cursor-pointer font-numeric text-lg font-semibold">
             Unit {u.unit}: {u.title}{" "}
             <span className="text-sm font-normal text-muted-foreground">
               · {u.materials.length} material(s) ·{" "}

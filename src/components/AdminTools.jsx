@@ -19,7 +19,7 @@ import { studentSchema } from "@/lib/student-validation";
 import { emptyStudent } from "@/lib/student-defaults";
 import { CSV_TEMPLATE, parseStudentCsv } from "@/lib/csv";
 
-const selectClass = "mt-2 w-full rounded-md border bg-background p-2 text-sm";
+const selectClass = "mt-2 w-full text-sm";
 const SKILLS = ["coding", "aptitude", "analytical", "verbal", "communication"];
 const label = (p) => (p.name ? `${p.name} — ${p.email}` : p.email);
 
@@ -450,7 +450,7 @@ export function AdminTools({ students, records, selectedId = "", onSaved, tabs =
                     disabled={busy || facultyPeople.length === 0}
                     onChange={(e) => assignOne(p, e.target.value)}
                     aria-label={`Teacher for ${p.email}`}
-                    className="rounded-md border bg-background p-2 text-sm"
+                    className="text-sm"
                   >
                     <option value="">{teacherOf.has(p.id) ? "No teacher" : "Not assigned"}</option>
                     {facultyPeople.map((t) => (

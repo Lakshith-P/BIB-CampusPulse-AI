@@ -81,7 +81,7 @@ export function AcademicsEditor({ s, onSaved }) {
         className="flex w-full items-center justify-between gap-3 p-4 text-left"
       >
         <span>
-          <span className="block font-display text-lg font-semibold">
+          <span className="block font-numeric text-lg font-semibold">
             Update marks and attendance
           </span>
           <span className="text-sm text-muted-foreground">

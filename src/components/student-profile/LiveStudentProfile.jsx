@@ -32,7 +32,7 @@ import {
   Overview,
   card,
 } from "@/components/student-profile/shared";
-import { Field, useAction } from "@/components/ui-kit";
+import { Field, inputClass, useAction } from "@/components/ui-kit";
 import { ReadinessBreakdown } from "@/components/portal/ReadinessBreakdown";
 import { addStudentNote, updateTargetRoles } from "@/lib/campus.functions";
 import { useCampus } from "@/lib/use-campus";
@@ -116,7 +116,7 @@ export function StudentHeader({ s, isOwner }) {
         <p className="text-xs uppercase tracking-wide text-muted-foreground">
           {isOwner ? "Welcome back" : "Student profile"}
         </p>
-        <h2 className="font-display text-2xl font-bold">{s.name}</h2>
+        <h2 className="font-numeric text-2xl font-bold">{s.name}</h2>
         <p className="text-sm text-muted-foreground">
           {s.id} · {s.branch} · Semester {s.semester} · Graduating {s.gradYear}
         </p>
@@ -507,7 +507,7 @@ function NoteForm({ kind, recordId, onChanged, placeholder, button, withAbout })
           maxLength={100}
           placeholder="About which class or teacher? (optional)"
           aria-label="About"
-          className="w-full rounded-md border bg-background p-2 text-sm"
+          className={inputClass}
         />
       )}
       <Textarea

@@ -18,11 +18,29 @@ import { EmptyState } from "@/components/widgets";
 import { deleteUpdate, listUpdates, saveUpdate } from "@/lib/updates.functions";
 import { useCampus } from "@/lib/use-campus";
 
+// Category chips are quiet by design: the icon and the word carry the meaning, so colour is
+// left free to mean risk. Each chip is a hairline-ruled tint rather than a filled pill.
 export const CATEGORY = {
-  placement: { label: "Placement", icon: Briefcase, tone: "bg-emerald-400/15 text-emerald-300" },
-  event: { label: "Event", icon: CalendarDays, tone: "bg-sky-400/15 text-sky-300" },
-  notice: { label: "Notice", icon: Megaphone, tone: "bg-amber-400/15 text-amber-300" },
-  poster: { label: "Poster", icon: ImageIcon, tone: "bg-violet-400/15 text-violet-300" },
+  placement: {
+    label: "Placement",
+    icon: Briefcase,
+    tone: "border border-ochre/45 bg-ochre-pale text-ochre-ink",
+  },
+  event: {
+    label: "Event",
+    icon: CalendarDays,
+    tone: "border border-info/35 bg-info/8 text-info",
+  },
+  notice: {
+    label: "Notice",
+    icon: Megaphone,
+    tone: "border border-rule-strong bg-secondary text-neutral",
+  },
+  poster: {
+    label: "Poster",
+    icon: ImageIcon,
+    tone: "border border-ink/25 bg-ink/6 text-ink",
+  },
 };
 
 // Polled so an announcement made by staff reaches open student dashboards without a reload.
@@ -71,7 +89,7 @@ function UpdateCard({ u, canDelete, onDelete }) {
             Posted {fmt(u.created_at)}
           </span>
         </div>
-        <h3 className="mt-2 font-display text-base font-semibold">
+        <h3 className="mt-2 font-numeric text-base font-semibold">
           {u.company && <span className="text-primary">{u.company} · </span>}
           {u.title}
         </h3>
@@ -188,11 +206,7 @@ export function PostAnnouncement({ defaultCategory = "notice" }) {
     >
       <label className="text-sm">
         Type
-        <select
-          name="category"
-          defaultValue={defaultCategory}
-          className="mt-1 w-full rounded-md border bg-background p-2 text-sm"
-        >
+        <select name="category" defaultValue={defaultCategory} className="mt-1 w-full text-sm">
           {Object.entries(CATEGORY).map(([k, c]) => (
             <option key={k} value={k}>
               {c.label}

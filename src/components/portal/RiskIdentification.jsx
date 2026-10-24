@@ -3,7 +3,7 @@ import { ArrowRight, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SectionTitle } from "@/components/widgets";
 import { FlagBadge } from "@/components/student-profile/shared";
-import { academicRisk, placementRisk, FLAG_LEVELS } from "@/lib/risk-flags";
+import { academicRisk, placementRisk } from "@/lib/risk-flags";
 
 // Risk identification on the dashboard: which rules fired, the value behind each one and the
 // threshold it crossed. Everything here is the configured rule set — never a prediction — and a
@@ -22,27 +22,23 @@ const ACTION = {
 };
 
 function Flag({ kind, title, flag }) {
-  const levels = FLAG_LEVELS[kind];
   const [to, label] = ACTION[kind];
   return (
-    <div className={`rounded-xl border border-l-4 bg-muted/30 p-3 ${LEVEL_TONE[flag.level]}`}>
+    <div className={`border-l-2 pl-3 ${LEVEL_TONE[flag.level]}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="font-medium">{title}</p>
         <FlagBadge label="" flag={flag} />
       </div>
-      <p className="mt-0.5 text-xs text-muted-foreground">
-        High at {levels.high} points, Medium at {levels.medium}.
-      </p>
       {flag.drivers.length === 0 ? (
-        <p className="mt-2 text-sm text-success">
+        <p className="mt-1.5 text-sm text-success">
           {flag.level === "Insufficient data"
             ? "Nothing is recorded for these signals yet."
             : "No risk signal has triggered."}
         </p>
       ) : (
-        <ul className="mt-2 space-y-1 text-sm">
+        <ul className="mt-1.5 divide-y divide-rule text-sm">
           {flag.drivers.map((d) => (
-            <li key={d.signal} className="flex justify-between gap-2 border-t pt-1">
+            <li key={d.signal} className="flex justify-between gap-2 py-1">
               <span>
                 {d.signal}{" "}
                 <span className="text-xs text-muted-foreground">
@@ -55,13 +51,13 @@ function Flag({ kind, title, flag }) {
         </ul>
       )}
       {flag.insufficient.length > 0 && (
-        <p className="mt-2 text-xs text-muted-foreground">
+        <p className="mt-1.5 text-xs text-muted-foreground">
           Not counted, nothing recorded: {flag.insufficient.join(", ")}
         </p>
       )}
       <Link
         to={to}
-        className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+        className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
       >
         {label} <ArrowRight className="size-3" />
       </Link>
@@ -73,12 +69,12 @@ function Flag({ kind, title, flag }) {
 export function MyRiskIdentification({ s }) {
   return (
     <section className={card} aria-label="Risk identification">
-      <SectionTitle sub="The rules that are watching your record, and which of them have fired">
+      <SectionTitle>
         <span className="inline-flex items-center gap-2">
           <ShieldAlert className="size-4 text-primary" /> Risk identification
         </span>
       </SectionTitle>
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <Flag kind="academic" title="Academic risk" flag={academicRisk(s)} />
         <Flag kind="placement" title="Placement risk" flag={placementRisk(s)} />
       </div>

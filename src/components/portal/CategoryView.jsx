@@ -159,7 +159,7 @@ export const CATEGORIES = {
 };
 
 const mean = (v) => (v.length ? v.reduce((a, c) => a + c, 0) / v.length : null);
-const selectClass = "rounded-md border bg-background p-2 text-sm";
+const selectClass = "text-sm";
 
 function CategoryBody({ category, embedded = false }) {
   const cfg = CATEGORIES[category];
@@ -214,7 +214,7 @@ function CategoryBody({ category, embedded = false }) {
         <EmptyState title="No students yet" hint="Import students from the Students page." />
       ) : (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4">
             <StatCard label="Students shown" value={String(shown.length)} />
             <StatCard
               label={cfg.main.label}
@@ -249,7 +249,7 @@ function CategoryBody({ category, embedded = false }) {
             <SectionTitle sub={`${cfg.main.label} for each year of study`}>
               Year by year
             </SectionTitle>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4">
               {byYear.map((b) => (
                 <div key={b.y} className="rounded-lg border p-3 text-sm">
                   <p className="text-muted-foreground">Year {b.y}</p>

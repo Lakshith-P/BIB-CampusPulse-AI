@@ -7,17 +7,19 @@ import { BandBadge, SectionTitle } from "@/components/widgets";
 import { studentsToCsv } from "@/lib/csv";
 import { BAND_ORDER, byAttention, lowAttendance } from "@/lib/campus-derive";
 
-const selectClass = "rounded-md border bg-background p-2 text-sm";
+const selectClass = "text-sm";
 const LIMIT = 200;
 const LEVELS = ["Low", "Medium", "High"];
 const LEVEL_CLASS = {
-  High: "bg-destructive/15 text-destructive",
-  Medium: "bg-warning/15 text-warning",
-  Low: "bg-success/15 text-success",
+  High: "bg-risk-critical-pale text-risk-critical",
+  Medium: "bg-risk-monitor-pale text-risk-monitor",
+  Low: "bg-risk-track-pale text-risk-track",
 };
 function LevelPill({ level, points }) {
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${LEVEL_CLASS[level]}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${LEVEL_CLASS[level]}`}
+    >
       {level}
       {points !== undefined && ` · ${points}`}
     </span>
@@ -252,21 +254,21 @@ export function StudentTable({ rows, showMentor = false, initialFilter = "" }) {
           <Download /> Export CSV
         </Button>
       </div>
-      <div className="overflow-x-auto surface">
+      <div className="surface overflow-x-auto">
         <table className="w-full whitespace-nowrap text-sm">
-          <thead className="border-b text-left text-xs text-muted-foreground">
+          <thead className="text-left">
             <tr>
               <th className="p-3" aria-label="Compare"></th>
               <th>Student</th>
               <th>Status</th>
-              <th>Score</th>
-              <th>CGPA</th>
-              <th>Attendance</th>
-              <th>LMS</th>
+              <th className="num">Score</th>
+              <th className="num">CGPA</th>
+              <th className="num">Attendance</th>
+              <th className="num">LMS</th>
               <th>Academic risk</th>
               <th>Placement risk</th>
-              <th>vs class avg</th>
-              <th>Alerts</th>
+              <th className="num">vs class avg</th>
+              <th className="num">Alerts</th>
               <th>Top score driver</th>
               <th>Main risk driver</th>
               <th>Segment</th>
@@ -275,7 +277,7 @@ export function StudentTable({ rows, showMentor = false, initialFilter = "" }) {
           </thead>
           <tbody>
             {shown.slice(0, LIMIT).map((r) => (
-              <tr key={r.id} className="border-b last:border-0">
+              <tr key={r.id}>
                 <td className="p-3">
                   <input
                     type="checkbox"
@@ -294,11 +296,11 @@ export function StudentTable({ rows, showMentor = false, initialFilter = "" }) {
                   <Link
                     to="/portal/students/$id"
                     params={{ id: r.id }}
-                    className="font-medium text-primary hover:underline"
+                    className="font-semibold text-foreground underline-offset-2 hover:text-ochre-ink hover:underline"
                   >
                     {r.name}
                   </Link>
-                  <span className="block text-xs text-muted-foreground">
+                  <span className="block text-xs text-label">
                     {r.id} ·{" "}
                     {[r.course, r.branch, r.section && `Sec ${r.section}`]
                       .filter(Boolean)
@@ -310,12 +312,14 @@ export function StudentTable({ rows, showMentor = false, initialFilter = "" }) {
                 <td>
                   <BandBadge score={r.score} />
                 </td>
-                <td>{r.score === null ? "—" : Math.round(r.score)}</td>
-                <td>{r.cgpa === null ? "—" : r.cgpa.toFixed(2)}</td>
-                <td className={lowAttendance(r) ? "font-medium text-destructive" : ""}>
+                <td className="num font-semibold">
+                  {r.score === null ? "—" : Math.round(r.score)}
+                </td>
+                <td className="num">{r.cgpa === null ? "—" : r.cgpa.toFixed(2)}</td>
+                <td className={`num ${lowAttendance(r) ? "font-semibold text-risk-critical" : ""}`}>
                   {pct(r.attendance)}
                 </td>
-                <td>{pct(r.lms)}</td>
+                <td className="num">{pct(r.lms)}</td>
                 <td>
                   <LevelPill level={r.academicRisk} points={r.academicPoints} />
                 </td>
@@ -323,22 +327,24 @@ export function StudentTable({ rows, showMentor = false, initialFilter = "" }) {
                   <LevelPill level={r.placementRisk} points={r.placementPoints} />
                 </td>
                 <td
-                  className={
+                  className={`num ${
                     classAvg !== null && r.score !== null && r.score < classAvg
-                      ? "text-destructive"
-                      : "text-success"
-                  }
+                      ? "text-risk-critical"
+                      : "text-risk-track"
+                  }`}
                 >
                   {classAvg === null || r.score === null
                     ? "—"
                     : (r.score - classAvg > 0 ? "+" : "") + (r.score - classAvg).toFixed(1)}
                 </td>
-                <td className={r.urgent ? "font-medium text-destructive" : ""}>{r.alerts}</td>
+                <td className={`num ${r.urgent ? "font-semibold text-risk-critical" : ""}`}>
+                  {r.alerts}
+                </td>
                 <td className="text-xs">{r.topDriver ?? "—"}</td>
                 <td className="text-xs">{r.riskDriver ?? "None"}</td>
                 <td className="text-xs">{r.segment}</td>
                 {showMentor && (
-                  <td className={r.mentorId ? "" : "text-muted-foreground"}>
+                  <td className={r.mentorId ? "" : "text-label"}>
                     {r.mentorName || "Not assigned"}
                   </td>
                 )}
@@ -348,7 +354,7 @@ export function StudentTable({ rows, showMentor = false, initialFilter = "" }) {
               <tr>
                 <td
                   colSpan={showMentor ? 15 : 14}
-                  className="p-6 text-center text-muted-foreground"
+                  className="p-8 text-center text-muted-foreground"
                 >
                   No students match.
                 </td>
@@ -358,14 +364,14 @@ export function StudentTable({ rows, showMentor = false, initialFilter = "" }) {
         </table>
       </div>
       {compared.length >= 2 && (
-        <div className="mt-4 surface p-4">
+        <div className="surface mt-5 p-5">
           <SectionTitle sub="Select up to 3 students in the table to compare">
             Student comparison
           </SectionTitle>
           <div className="overflow-x-auto">
             <table className="w-full whitespace-nowrap text-sm">
               <thead>
-                <tr className="text-left text-muted-foreground">
+                <tr className="text-left">
                   <th className="py-1">Metric</th>
                   {compared.map((r) => (
                     <th key={r.id}>{r.name}</th>
@@ -374,10 +380,10 @@ export function StudentTable({ rows, showMentor = false, initialFilter = "" }) {
               </thead>
               <tbody>
                 {COMPARE_ROWS.map(([label, fn]) => (
-                  <tr key={label} className="border-t">
+                  <tr key={label}>
                     <td className="py-2 text-muted-foreground">{label}</td>
                     {compared.map((r) => (
-                      <td key={r.id} className="font-medium">
+                      <td key={r.id} className="font-semibold tabular-nums">
                         {fn(r)}
                       </td>
                     ))}

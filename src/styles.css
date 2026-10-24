@@ -5,11 +5,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
+  --radius-sm: calc(var(--radius) - 3px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-xl: calc(var(--radius) + 3px);
+  --radius-2xl: calc(var(--radius) + 6px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -27,6 +27,7 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
+  --color-border-hover: var(--border-hover);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-success: var(--success);
@@ -37,6 +38,25 @@
   --color-info-foreground: var(--info-foreground);
   --color-neutral: var(--neutral);
   --color-label: var(--label);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  /* Ink & Ochre: brand authority is ink, the single accent is ochre. */
+  --color-ink: var(--ink);
+  --color-ink-strong: var(--ink-strong);
+  --color-ink-soft: var(--ink-soft);
+  --color-ochre: var(--ochre);
+  --color-ochre-ink: var(--ochre-ink);
+  --color-ochre-pale: var(--ochre-pale);
+  /* Risk bands keep their own ramp, deliberately outside the brand hues. */
+  --color-risk-track: var(--risk-track);
+  --color-risk-track-pale: var(--risk-track-pale);
+  --color-risk-monitor: var(--risk-monitor);
+  --color-risk-monitor-pale: var(--risk-monitor-pale);
+  --color-risk-attention: var(--risk-attention);
+  --color-risk-attention-pale: var(--risk-attention-pale);
+  --color-risk-critical: var(--risk-critical);
+  --color-risk-critical-pale: var(--risk-critical-pale);
+  /* Older names kept so every existing call site keeps compiling. */
   --color-rose: var(--rose);
   --color-rose-pale: var(--rose-pale);
   --color-burgundy-dark: var(--burgundy-dark);
@@ -45,14 +65,103 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --font-display: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  --font-body: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", "Iowan Old Style", "Source Serif 4", Georgia, serif;
+  --font-body: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+  --font-numeric: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
   --color-hero-foreground: var(--hero-foreground);
   --color-hero-muted: var(--hero-muted);
 }
 
+/* ================================ Ink & Ochre ================================
+   Warm paper, deep ink, one earned accent. Brand authority lives in ink blue-black
+   so that red is free to mean risk and nothing else. Every value below is checked
+   for at least 4.5:1 against the paper when it is used for text. */
 :root {
-  --radius: 0.75rem;
+  color-scheme: light;
+  --radius: 0.5rem;
+
+  /* paper */
+  --paper: #faf7f2;
+  --paper-deep: #f1ede4;
+  --card: #ffffff;
+  --rule: #e6e0d6;
+  --rule-strong: #d3cabb;
+
+  /* ink */
+  --ink: #1c2541;
+  --ink-strong: #141c2f;
+  --ink-soft: #2b3756;
+  --burgundy-dark: var(--ink-strong);
+
+  /* ochre: the only decorative colour in the system */
+  --ochre: #b9761c;
+  --ochre-ink: #8a5410;
+  --ochre-pale: #f6eee0;
+  --rose: #c9b79a;
+  --rose-pale: var(--ochre-pale);
+
+  /* risk ramp, colourblind-safe and separable in greyscale */
+  --risk-track: #0f6e5c;
+  --risk-track-pale: #e4f0ec;
+  --risk-monitor: #936017;
+  --risk-monitor-pale: #f6ecd9;
+  --risk-attention: #b44a16;
+  --risk-attention-pale: #f9e8dd;
+  --risk-critical: #a3122b;
+  --risk-critical-pale: #f7e2e5;
+
+  /* shadcn surface + semantic tokens */
+  --background: var(--paper);
+  --foreground: #1f2430;
+  --card-foreground: #1f2430;
+  --popover: #ffffff;
+  --popover-foreground: #1f2430;
+  --primary: var(--ink);
+  --primary-foreground: #ffffff;
+  --secondary: var(--paper-deep);
+  --secondary-foreground: var(--ink);
+  --muted: var(--paper-deep);
+  --muted-foreground: #5b5952;
+  --label: #6e6657;
+  --accent: var(--ochre-pale);
+  --accent-foreground: #5e3c0c;
+  --destructive: var(--risk-critical);
+  --destructive-foreground: #ffffff;
+  --success: var(--risk-track);
+  --success-foreground: #ffffff;
+  --warning: var(--risk-monitor);
+  --warning-foreground: #ffffff;
+  --info: #2f5aa8;
+  --info-foreground: #ffffff;
+  --neutral: #5c5a54;
+  --border: var(--rule);
+  --border-hover: var(--ochre);
+  --input: #dcd5c8;
+  --ring: var(--ochre);
+
+  /* five series separable by hue and by lightness, so greyscale print survives */
+  --chart-1: #22304f;
+  --chart-2: #9c1b2e;
+  --chart-3: #17705a;
+  --chart-4: #b9761c;
+  --chart-5: #7d9cc4;
+
+  --hero-foreground: #ffffff;
+  --hero-muted: #ded7c7;
+  --hero-scrim: rgb(28 37 65 / 82%);
+  --hero-clear: rgb(28 37 65 / 12%);
+  --hero-shadow: rgb(16 22 38 / 32%);
+
+  /* workspace banner and sidebar */
+  --role-from: #2b3756;
+  --role-via: #1c2541;
+  --role-to: #141c2f;
+  --role-side-from: #1c2541;
+  --role-side-to: #121929;
+
+  --shadow-raised:
+    0 1px 2px rgb(28 37 65 / 6%), 0 12px 32px -20px rgb(28 37 65 / 30%),
+    0 2px 8px -6px rgb(28 37 65 / 16%);
 }
 
 @layer base {
@@ -63,37 +172,81 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-body);
+    letter-spacing: -0.005em;
+    -webkit-font-smoothing: antialiased;
   }
-  h1,
-  h2,
-  h3,
+  /* Tracking tightens as size grows; the blunt `* { letter-spacing: 0 }` reset is gone. */
+  h1 {
+    letter-spacing: -0.024em;
+  }
+  h2 {
+    letter-spacing: -0.019em;
+  }
+  h3 {
+    letter-spacing: -0.013em;
+  }
   h4 {
-    font-family: var(--font-display);
+    letter-spacing: -0.008em;
   }
-  * {
-    letter-spacing: 0;
+  /* The serif is opt-in through .font-display so it can never leak into data regions. */
+  .font-display {
+    font-optical-sizing: auto;
+  }
+  /* Numbers stack and change, so they are tabular wherever they appear. */
+  table,
+  .tabular,
+  .stat-figure,
+  .num,
+  input[type="number"] {
+    font-variant-numeric: tabular-nums;
   }
 }
 
+/* ------------------------------------------------------------------ chrome */
 .brand-mark {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: var(--primary);
+  width: 38px;
+  height: 38px;
+  border-radius: 6px;
+  background: var(--ink);
   color: var(--primary-foreground);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 10%);
 }
+.brand-word {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+/* The eyebrow mark: small caps in ochre behind a short rule. */
 .eyebrow {
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ochre-ink);
+}
+.eyebrow::before {
+  content: "";
+  flex: none;
+  width: 1.75rem;
+  height: 2px;
+  background: var(--ochre);
 }
 .page-heading {
-  font-size: 48px;
-  line-height: 1.12;
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-size: clamp(2.25rem, 1.4rem + 3vw, 3.25rem);
+  line-height: 1.08;
   font-weight: 600;
+  letter-spacing: -0.026em;
 }
 .campus-hero {
   position: relative;
@@ -109,10 +262,29 @@
   background: linear-gradient(90deg, var(--hero-scrim), var(--hero-clear));
 }
 .hero-heading {
-  font-size: 72px;
-  line-height: 1.05;
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-size: clamp(2.75rem, 1.5rem + 4.4vw, 4.25rem);
+  line-height: 1.03;
   font-weight: 600;
+  letter-spacing: -0.03em;
   text-shadow: 0 2px 12px var(--hero-shadow);
+}
+/* Low-contrast paper grain, only ever behind the hero and the footer. */
+.paper-grain {
+  position: relative;
+  isolation: isolate;
+}
+.paper-grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url("/paper-grain.png");
+  background-size: 160px 160px;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
 }
 .assistant-position {
   position: fixed;
@@ -131,12 +303,6 @@
   max-height: calc(100dvh - 100px);
 }
 @media (max-width: 767px) {
-  .hero-heading {
-    font-size: 48px;
-  }
-  .page-heading {
-    font-size: 36px;
-  }
   .campus-hero {
     height: auto;
     min-height: 570px;
@@ -161,7 +327,7 @@
 }
 @utility scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-muted) transparent;
+  scrollbar-color: var(--rule-strong) transparent;
 }
 
 .portal-loading-bar {
@@ -205,118 +371,149 @@
   }
 }
 
-/* ======================= Orbit: cream and burgundy theme ======================= */
-:root {
-  color-scheme: light;
-  /* Orbit cream & burgundy design tokens */
-  --ivory: #f7f3ed;
-  --burgundy: #702d40;
-  --burgundy-dark: #572032;
-  --rose: #b88a96;
-  --rose-pale: #f2e5e8;
-  --background: var(--ivory);
-  --foreground: #25232a;
-  --card: #ffffff;
-  --card-foreground: #25232a;
-  --popover: #ffffff;
-  --popover-foreground: #25232a;
-  --primary: var(--burgundy);
-  --primary-foreground: #ffffff;
-  --secondary: #f2ede6;
-  --secondary-foreground: #25232a;
-  --muted: #f2ede6;
-  --muted-foreground: #69636a;
-  --label: #847c83;
-  --accent: var(--rose-pale);
-  --accent-foreground: var(--burgundy-dark);
-  --destructive: #c43d4d;
-  --destructive-foreground: #ffffff;
-  --success: #16845b;
-  --success-foreground: #ffffff;
-  --warning: #b77916;
-  --warning-foreground: #ffffff;
-  --info: #3868b2;
-  --info-foreground: #ffffff;
-  --neutral: #77717a;
-  --border: #e8e0d8;
-  --border-hover: #cdb7bd;
-  --input: #e8e0d8;
-  --ring: #a65b70;
-  --chart-1: #702d40;
-  --chart-2: #b88a96;
-  --chart-3: #b77916;
-  --chart-4: #16845b;
-  --chart-5: #3868b2;
-  --hero-foreground: #ffffff;
-  --hero-muted: #f2e5e8;
-  --hero-scrim: rgb(87 32 50 / 78%);
-  --hero-clear: rgb(87 32 50 / 8%);
-  --hero-shadow: rgb(37 35 42 / 25%);
-  /* workspace banner and sidebar */
-  --role-from: #702d40;
-  --role-via: #632839;
-  --role-to: #572032;
-  --role-side-from: #572032;
-  --role-side-to: #3f1623;
-}
-body {
-  background-color: var(--background);
-  background-image: radial-gradient(60rem 30rem at 90% -10%, rgb(242 229 232 / 70%), transparent);
-  background-attachment: fixed;
-}
+/* ------------------------------------------------------ two-tier surfaces
+   A flat ruled panel is the default for data regions. Only things that genuinely
+   float — dialogs, popovers, toasts, the assistant — get the raised panel. */
 .surface {
-  border-radius: 0.875rem;
-  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  border: 1px solid var(--rule);
   background: var(--card);
-  box-shadow: 0 1px 2px rgb(37 35 42 / 6%);
+}
+.surface-raised {
+  border-radius: var(--radius);
+  border: 1px solid var(--rule);
+  background: var(--popover);
+  box-shadow: var(--shadow-raised);
 }
 a.surface,
 button.surface {
-  transition: border-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 }
 a.surface:hover,
 button.surface:hover {
   border-color: var(--border-hover);
-  box-shadow: 0 6px 16px -10px rgb(87 32 50 / 35%);
+  background: var(--ochre-pale);
 }
+/* A hairline-ruled section head: small caps label with a rule running to the edge. */
+.rule-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--label);
+}
+.rule-head::after {
+  content: "";
+  flex: 1 1 1.5rem;
+  min-width: 1.5rem;
+  height: 1px;
+  background: var(--rule);
+}
+
+/* --------------------------------------------- the score as a piece of typesetting
+   Label in small caps above, an oversized tabular numeral sitting on a 1px baseline
+   rule, a micro mark beside it. No box, no coloured icon chip. A row of these reads
+   like a printed results table. */
+.stat-tile {
+  min-width: 0;
+  padding-top: 0.125rem;
+}
+.stat-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.6563rem;
+  font-weight: 650;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--label);
+  line-height: 1.3;
+}
+.stat-figure-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--rule-strong);
+}
+.stat-figure {
+  font-family: var(--font-numeric);
+  font-size: clamp(1.625rem, 1.3rem + 1.1vw, 2.25rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.stat-sub {
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+}
+.stat-mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  align-self: center;
+}
+
 select {
   border: 1px solid var(--input);
-  border-radius: 0.6rem;
+  border-radius: calc(var(--radius) - 2px);
   background-color: var(--card);
   color: var(--foreground);
-  padding: 0.5rem 0.75rem;
+  padding: 0.45rem 0.7rem;
   font-size: 0.875rem;
+  font-weight: 500;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 }
 select:hover {
   border-color: var(--border-hover);
+  background-color: var(--ochre-pale);
 }
 select:focus-visible {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgb(166 91 112 / 30%);
+  border-color: var(--ochre);
+  box-shadow: 0 0 0 3px rgb(185 118 28 / 28%);
+}
+
+/* ------------------------------------------------------------- ledger tables
+   Hairline row rules, no zebra fill, ochre-tinted hover, small-caps headers. */
+.surface table {
+  border-collapse: collapse;
 }
 .surface table thead th {
-  background: var(--secondary);
-  color: var(--muted-foreground);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  background: transparent;
+  border-bottom: 1px solid var(--rule-strong);
+  color: var(--label);
+  font-size: 0.6563rem;
+  font-weight: 650;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
-  padding-top: 0.7rem;
-  padding-bottom: 0.7rem;
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
   white-space: nowrap;
 }
-.surface table thead th:first-child {
-  border-top-left-radius: 1rem;
+.surface table tbody tr {
+  border-bottom: 1px solid var(--rule);
 }
-.surface table thead th:last-child {
-  border-top-right-radius: 1rem;
+.surface table tbody tr:last-child {
+  border-bottom: 0;
 }
 .surface table tbody tr:nth-child(even) {
-  background: #faf7f2;
+  background: transparent;
 }
 .surface table tbody tr:hover {
-  background: var(--rose-pale);
+  background: var(--ochre-pale);
 }
 .surface table th,
 .surface table td {
@@ -327,28 +524,17 @@ select:focus-visible {
 .surface table td:first-child {
   padding-left: 0.9rem;
 }
-/* pale chip colours written for a dark background need deeper text on cream */
-.text-emerald-300 {
-  color: var(--color-emerald-700);
+.surface table th:last-child,
+.surface table td:last-child {
+  padding-right: 0.9rem;
 }
-.text-indigo-300 {
-  color: var(--color-indigo-700);
+/* Numbers are right-aligned and tabular so columns line up down the page. */
+.num,
+th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
-.text-sky-300 {
-  color: var(--color-sky-700);
-}
-.text-violet-300 {
-  color: var(--color-violet-700);
-}
-.text-amber-300 {
-  color: var(--color-amber-700);
-}
-.text-rose-300 {
-  color: var(--color-rose-700);
-}
-.text-teal-300 {
-  color: var(--color-teal-700);
-}
+
 /* one palette for every workspace; keyboard focus is always visible */
 :focus-visible {
   outline: 2px solid var(--ring);
@@ -372,9 +558,16 @@ select:focus-visible {
     background: #fff !important;
     color: #000 !important;
   }
-  .surface {
+  .paper-grain::before {
+    display: none !important;
+  }
+  .surface,
+  .surface-raised {
     box-shadow: none !important;
     background: #fff !important;
     border-color: #ccc !important;
+  }
+  .stat-figure-row {
+    border-bottom-color: #666 !important;
   }
 }

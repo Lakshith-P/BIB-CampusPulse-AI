@@ -98,7 +98,7 @@ export function AttendancePlanner({ s }) {
   const tone = overallPlan.pct < 75 ? "danger" : overallPlan.pct < target ? "warning" : "success";
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-5">
         <StatCard label="Classes conducted" value={String(overall.held)} />
         <StatCard label="Attended" value={String(overall.attended)} />
         <StatCard label="Missed" value={String(overall.held - overall.attended)} />
@@ -175,8 +175,8 @@ export function AttendancePlanner({ s }) {
           return (
             <section key={p.subject} className={card} aria-label={p.subject}>
               <div className="flex items-start justify-between gap-2">
-                <h3 className="font-display text-lg font-semibold">{p.subject}</h3>
-                <p className="text-right font-display text-2xl font-bold tabular-nums">
+                <h3 className="font-numeric text-lg font-semibold">{p.subject}</h3>
+                <p className="text-right font-numeric text-2xl font-bold tabular-nums">
                   {fmt(p.pct)}
                 </p>
               </div>
