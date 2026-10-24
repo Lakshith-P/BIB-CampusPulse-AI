@@ -1,26 +1,25 @@
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { generateText } from "ai";
-
 import { buildLearnerProfile } from "@/lib/ai-lesson-profile";
 import { generateLesson } from "@/lib/ai-lesson-prompt";
 import { requireOwnStudent, subjectsOf } from "./access.server.js";
+import { generateWithFallback, llmConfigs } from "./llm.server.js";
 
 // Personalised AI video lessons. A student's learning profile comes from the psychology
 // questionnaire; lessons are generated server-side for one of their own LMS subjects, so the
 // prompt, the provider key and the model call never reach the browser.
 
 export const modelCaller = () => {
-  const apiKey = process.env["LLM_API_KEY"];
-  if (!apiKey)
+  if (!llmConfigs().length)
     throw new Error("AI lessons are not configured yet. Ask an administrator to set LLM_API_KEY.");
-  const provider = createOpenAICompatible({
-    name: "llm",
-    apiKey,
-    baseURL:
-      process.env["LLM_BASE_URL"] ?? "https://generativelanguage.googleapis.com/v1beta/openai/",
-  });
-  const model = provider.chatModel(process.env["LLM_MODEL"] ?? "gemini-2.5-flash");
-  return async (prompt) => (await generateText({ model, prompt, temperature: 0.7 })).text;
+  // Tries each configured model in turn, so one that is retired or out of quota does not stop a lesson.
+  return async (prompt) =>
+    (
+      await generateWithFallback({
+        prompt,
+        temperature: 0.7,
+        maxOutputTokens: 8192,
+        timeoutMs: 120_000,
+      })
+    ).text;
 };
 
 const summary = (r) => ({

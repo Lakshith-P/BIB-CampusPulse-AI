@@ -51,7 +51,15 @@ function LeetCodeCard({ studentId }) {
     setMsg("");
     try {
       await save({ data: { username } });
-      await qc.invalidateQueries({ queryKey: ["leetcode", studentId] });
+      await Promise.all(
+        [
+          ["leetcode", studentId],
+          ["prediction"],
+          ["prediction-inputs"],
+          ["learned"],
+          ["agent-plans"],
+        ].map((queryKey) => qc.invalidateQueries({ queryKey })),
+      );
       setEditing(false);
       setMsg("LeetCode account linked.");
     } catch (err) {

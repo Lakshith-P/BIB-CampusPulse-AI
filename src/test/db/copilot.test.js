@@ -83,8 +83,10 @@ describe("model chain", () => {
   it("tries the main model first and Grok as the fallback", () => {
     expect(modelChain({})).toEqual([]);
     const both = modelChain({ LLM_API_KEY: "a", GROK_API_KEY: "b" });
-    expect(both.map((m) => m.name)).toEqual(["primary", "grok"]);
-    expect(both[1]).toMatchObject({ baseURL: "https://api.x.ai/v1" });
+    expect(both.at(-1).name).toBe("grok");
+    expect(both[0].name).toBe("primary");
+    expect(both.length).toBeGreaterThan(2);
+    expect(both.at(-1)).toMatchObject({ baseURL: "https://api.x.ai/v1" });
     expect(modelChain({ GROK_API_KEY: "b" }).map((m) => m.name)).toEqual(["grok"]);
   });
 });

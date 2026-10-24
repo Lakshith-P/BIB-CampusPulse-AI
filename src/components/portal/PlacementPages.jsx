@@ -339,32 +339,13 @@ export function StudentDrives({ s }) {
           </>
         )}
       </section>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="surface p-4">
-          <SectionTitle sub="Compared with typical skill levels for your target roles">
-            Role match and skill gaps
-          </SectionTitle>
-          <RoleMatch s={s} />
-        </section>
-        <section className="surface p-4">
-          <SectionTitle sub="Recorded by your teachers and your AI practice interviews">
-            Mock interview record
-          </SectionTitle>
-          <MockList canEdit={false} />
-        </section>
-      </div>
-      <AtsChecker s={s} />
-      <section className="surface flex flex-wrap items-center justify-between gap-3 p-4">
-        <div>
-          <p className="font-semibold">AI mock interview</p>
-          <p className="text-sm text-muted-foreground">
-            Practise on camera with spoken questions, get graded feedback and download a report.
-          </p>
-        </div>
-        <Button asChild>
-          <Link to="/portal/interview">Open AI Interview</Link>
-        </Button>
+      <section className="surface p-4">
+        <SectionTitle sub="Compared with typical skill levels for your target roles">
+          Role match and skill gaps
+        </SectionTitle>
+        <RoleMatch s={s} />
       </section>
+      <AtsChecker s={s} />
     </div>
   );
 }

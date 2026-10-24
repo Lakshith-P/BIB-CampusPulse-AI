@@ -6,6 +6,7 @@ import { buildRows, BAND_ORDER, isAtRisk } from "@/lib/campus-derive";
 import { componentScores, recommendations } from "@/lib/scoring";
 import { academicRisk, placementRisk } from "@/lib/risk-flags";
 import { DEFAULT_WEIGHTS } from "@/lib/types";
+import { llmConfigs } from "./llm.server.js";
 
 // The Analytics Copilot. A dean or teacher asks a question in plain language; a model decides
 // which of the fixed, read-only tools below to call, and the tools compute their answers from the
@@ -455,14 +456,10 @@ const history = (messages) =>
 /** Runs one question end to end. Returns the answer text and the evidence it was built on. */
 /** The models to try, in order: the main provider, then Grok (xAI) as a fallback if it is set. */
 export function modelChain(env = process.env) {
-  const chain = [];
-  if (env["LLM_API_KEY"])
-    chain.push({
-      name: "primary",
-      apiKey: env["LLM_API_KEY"],
-      baseURL: env["LLM_BASE_URL"] ?? "https://generativelanguage.googleapis.com/v1beta/openai/",
-      model: env["LLM_MODEL"] ?? "gemini-2.5-flash",
-    });
+  // Gemini first (LLM_MODEL, then the "latest" aliases), so a retired model name is not a dead end.
+  const chain = llmConfigs(env)
+    .filter((c) => c.name === "llm")
+    .map((c) => ({ ...c, name: "primary" }));
   if (env["GROK_API_KEY"])
     chain.push({
       name: "grok",

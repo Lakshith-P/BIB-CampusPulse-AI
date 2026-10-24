@@ -91,7 +91,7 @@ export class LlmUnavailableError extends Error {
  * network. Returns { text, model }; throws LlmUnavailableError when every model has failed.
  */
 export async function generateWithFallback(
-  { system, prompt, messages, temperature = 0.2, maxOutputTokens = 700 },
+  { system, prompt, messages, temperature = 0.2, maxOutputTokens = 700, timeoutMs = 40_000 },
   { env = process.env, call } = {},
 ) {
   const configs = llmConfigs(env);
@@ -111,7 +111,7 @@ export async function generateWithFallback(
             temperature,
             maxOutputTokens,
             maxRetries: 0,
-            abortSignal: AbortSignal.timeout(40_000),
+            abortSignal: AbortSignal.timeout(timeoutMs),
           }));
       const { text } = await run({
         config,
