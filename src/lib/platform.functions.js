@@ -347,6 +347,20 @@ export const sendDashboardChatMessage = createServerFn({ method: "POST" })
     if (data.file) limitByIp("chat-upload", 40, 60 * 60 * 1000);
     return run(context.user, (db, user) => messaging.sendChatMessage(db, user, data));
   });
+export const messageDashboardStudents = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(
+    z.object({
+      all: z.boolean().default(false),
+      studentIds: z.array(text(60, 1)).max(500).default([]),
+      body: text(2000),
+      file: fileSchema.optional(),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    limitByIp("chat-broadcast", 30, 60 * 60 * 1000);
+    return run(context.user, (db, user) => messaging.messageStudents(db, user, data));
+  });
 export const downloadDashboardChatFile = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .validator(

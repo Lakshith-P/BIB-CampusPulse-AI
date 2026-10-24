@@ -56,7 +56,7 @@ Access rules are written into the SQL itself. For reads, `loadCampus` filters `s
 
 ## Authentication and sessions
 
-1. **Sign-up** (`signUp`): validates input, hashes the password with bcrypt (cost 12), inserts the user and a `student` role in one transaction, then starts a session.
+1. **Registration** (`registerUser` / `registerMany` in `registration.server.js`): an administrator registers a student or teacher; the server generates a password (12 characters), stores a bcrypt hash (cost 12), creates the role (a student also gets a record) and emails the login. There is no public sign-up.
 2. **Sign-in** (`signIn`): looks up the hash and verifies it. The same message is returned for an unknown email and a wrong password.
 3. **Session**: a signed JWT (HS256, 12 hours) in an httpOnly browser-session, SameSite=Lax cookie, Secure in production. No token is kept in browser storage.
 4. **Every request**: `currentUser()` verifies the token and loads the user's roles from `user_roles`. Roles in the token are never trusted, so a role change applies immediately.
@@ -74,7 +74,7 @@ A single `AccountProvider` (`src/lib/account.jsx`) holds account state for the w
 
 ## Rate limiting
 
-`src/backend/rate-limit.server.js` is an in-memory counter keyed by IP. It limits sign-up (10/hour), sign-in (20/15 min), password change (10/15 min), the assistant and feedback. Because it lives in process memory, on a serverless host each instance counts separately; use platform-level limits (for example Vercel Firewall) for stronger protection.
+`src/backend/rate-limit.server.js` is an in-memory counter keyed by IP. It limits sign-in (20/15 min), registration (30/hour), forgot-password (12/hour), password requests (10/15 min), the assistant and feedback. Because it lives in process memory, on a serverless host each instance counts separately; use platform-level limits (for example Vercel Firewall) for stronger protection.
 
 ## Database connection
 
@@ -82,4 +82,4 @@ A single `AccountProvider` (`src/lib/account.jsx`) holds account state for the w
 
 A sign-in also ends when the page is loaded or reloaded: a freshly loaded page first clears the session cookie (`freshLoad` in `src/lib/account.jsx`), and every session check waits for that. Moving between pages inside the app does not reload, so it keeps the session.
 
-"Forgot your password?" sends a single-use link by email (only a SHA-256 hash of the token is stored, valid for 30 minutes, cleared once used). The reply is identical for unknown emails. Without `SMTP_URL` and `APP_URL`, the request becomes a note in the administrators' Messages instead, and an administrator can issue a temporary password under People & roles.
+"Forgot your password?" is a request an administrator approves (`password_requests`): the person asks on the login page, an administrator approves under **Login credentials**, and the person then sets a new password on the same page (the approval works once, for 24 hours). It needs no email, and the reply is identical for unknown emails. A password change while signed in is also a request that takes effect only when an administrator approves it.

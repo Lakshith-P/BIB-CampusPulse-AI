@@ -3,7 +3,8 @@
 Every student has two predictions, a risk level and a list of recommended actions. Students see
 their own, a teacher sees those of assigned students, and an administrator sees everyone's.
 Code: `src/lib/prediction.js` (the models), `src/backend/predictions.server.js` (data, agents,
-alerts).
+alerts). For every formula, threshold, worked examples and the accuracy of the learned models see
+[PREDICTIVE_RISK.md](PREDICTIVE_RISK.md).
 
 ## Placement prediction (0-100)
 

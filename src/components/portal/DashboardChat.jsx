@@ -11,6 +11,7 @@ import {
   useAction,
 } from "@/components/ui-kit";
 import { PageTitle, RoleGate } from "@/components/portal/PortalShell";
+import { BroadcastComposer } from "@/components/portal/BroadcastComposer";
 import {
   loadDashboardChat,
   downloadDashboardChatFile,
@@ -38,6 +39,7 @@ export function DashboardChat() {
   const [active, setActive] = useState("");
   const [message, setMessage] = useState("");
   const [tab, setTab] = useState("sections");
+  const [composing, setComposing] = useState(false); // writing to many students at once
   const overview = useQuery({
     queryKey: OVERVIEW,
     queryFn: () => loadDashboardChat(),
@@ -104,6 +106,7 @@ export function DashboardChat() {
             aria-selected={tab === key}
             variant={tab === key ? "default" : "outline"}
             onClick={() => {
+              setComposing(false);
               setTab(key);
               if (key === "sections" && sections[0]) setActive(chatKey("section", sections[0].id));
               if (key === "private") {
@@ -181,6 +184,16 @@ export function DashboardChat() {
             <SectionTitle sub="Private chats need teacher approval before messaging.">
               <MessageCircle className="mr-2 inline size-4" /> Requests and chats
             </SectionTitle>
+            {canAttach && (
+              <Button
+                className="mt-3 w-full"
+                size="sm"
+                variant={composing ? "default" : "outline"}
+                onClick={() => setComposing(true)}
+              >
+                <Send /> Message students
+              </Button>
+            )}
             {canRequest && (
               <Button
                 className="mt-3 w-full"
@@ -208,7 +221,10 @@ export function DashboardChat() {
                     <button
                       type="button"
                       disabled={request.status !== "approved"}
-                      onClick={() => setActive(chatKey("private", request.id))}
+                      onClick={() => {
+                        setComposing(false);
+                        setActive(chatKey("private", request.id));
+                      }}
                       className={`w-full text-left text-sm ${request.status === "approved" ? "hover:text-primary" : "cursor-default"}`}
                     >
                       <span className="block font-medium">{requestLabel(request, role)}</span>
@@ -256,7 +272,9 @@ export function DashboardChat() {
               </div>
             )}
           </section>
-          {selectedType === "private" ? (
+          {composing ? (
+            <BroadcastComposer onClose={() => setComposing(false)} />
+          ) : selectedType === "private" ? (
             <ChatPanel
               title={activeLabel}
               messages={messages}

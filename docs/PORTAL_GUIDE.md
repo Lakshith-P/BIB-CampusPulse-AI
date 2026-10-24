@@ -1,0 +1,211 @@
+# SLQG portal guide: every section, role by role
+
+A page-by-page guide to everything in the portal: what each section is for, what it shows, which
+numbers it uses and who may use it. For the full detail of the prediction and risk numbers read
+[PREDICTIVE_RISK.md](PREDICTIVE_RISK.md); for the architecture and code layout read
+[PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md).
+
+## Contents
+
+1. [What SLQG is](#1-what-slqg-is)
+2. [Accounts, logging in and passwords](#2-accounts-logging-in-and-passwords)
+3. [Who can see and do what](#3-who-can-see-and-do-what)
+4. [Student workspace](#4-student-workspace)
+5. [Teacher workspace](#5-teacher-workspace)
+6. [Administrator workspace](#6-administrator-workspace)
+7. [Features shared by everyone](#7-features-shared-by-everyone)
+8. [The numbers at a glance](#8-the-numbers-at-a-glance)
+9. [Setting it up](#9-setting-it-up)
+
+## 1. What SLQG is
+
+SLQG (Student Learning, Quality and Growth) is a student-success analytics platform. It brings seven
+sources of student data (academics, attendance, LMS activity, skills, engagement, placement
+readiness and feedback) under one student record and answers three questions for every student:
+**who needs support, why, and what should be done next.**
+
+It has three parts: a public website (landing page, solution, benefits, privacy, contact, the
+**Pluto** assistant), the **login page**, and the **portal** at `/portal` with a different
+workspace for each of the three roles. Everything in the portal runs on real accounts and a
+PostgreSQL database; there is no demo mode.
+
+## 2. Accounts, logging in and passwords
+
+**There is no self sign-up.** An administrator decides who can log in.
+
+| Step | What happens                                                                                                                                             |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | An administrator opens **Login credentials** in the portal and registers a student or teacher, one at a time or from a CSV file                          |
+| 2    | The system creates the account with a **generated password** (12 characters: a capital, a small letter, a digit and a symbol) and the right role         |
+| 3    | The login is **emailed** to the person's address. If email is not set up, the password is shown once to the administrator, with a download of the logins |
+| 4    | The person logs in at `/auth`, choosing Student, Teacher or Administrator. Choosing a workspace never grants access: the database role decides           |
+
+- **Wrong workspace or wrong password** both answer only "Incorrect email or password". The page never says which accounts exist.
+- **The first administrator** is made from the command line: `npm run db:create-admin -- you@college.edu "Your Name"`; the password is printed once.
+- **A verification code** (6 characters, case-sensitive, with capitals, small letters, digits and symbols) protects log in and the forgot-password form. Each code works once.
+- **Sessions** are a signed token in an httpOnly cookie; roles are re-read from the database on every request.
+
+### Forgot password (needs an administrator)
+
+1. On the login page the person clicks **Forgot your password?**, enters their email and clicks **Ask the administrator**.
+2. Every administrator gets a **notification**, and the request appears in **Login credentials, Password requests**.
+3. The administrator clicks **Approve** (or **Reject**).
+4. The person returns to the same screen, enters their email again, and sees **Choose a new password**. They set it there; it is saved to the database and they log in with it.
+
+The approval works **once** and for **24 hours**. The page answers the same for an email with no account, so it cannot be used to discover who is registered.
+
+### Changing a password while logged in
+
+`Change password` (profile menu) is a **request**. The new password is stored hashed and only takes
+effect when an administrator approves it under **Password requests**. Until then the old password
+keeps working.
+
+## 3. Who can see and do what
+
+| Role (`user_roles`)     | Can see                                        | Can change                                                                                          |
+| ----------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Student**             | Their own record, predictions, chats, drives   | Their own profile fields, applications, submissions, feedback                                       |
+| **Teacher** (`faculty`) | Records of **students assigned to them** only  | Marks, attendance, skills, interventions and verification for those students; drives; announcements |
+| **Administrator**       | Every record, account, message and audit entry | Everything above for anyone, plus accounts, roles, assignments, the learned models                  |
+
+- A teacher account has **only** the teacher role: no student role and no student record.
+- An administrator account has **only** the admin role.
+- Attendance can be marked only for the students a teacher is assigned to; a person who is both teacher and admin still gets only their assigned students there.
+- The server enforces all of this with SQL checks on the caller's role. Hidden navigation is cosmetic.
+
+## 4. Student workspace
+
+The sidebar is hidden behind the three-line button at the top left (next to the SLQG logo). Order:
+Overview, Academics, Attendance Planner, Predictive Risk & AI, Learning & LMS, Placement &
+Careers, **AI Interview**, Skills & Coding, Personalised AI Lessons, then Notifications,
+Announcements, Learning path, Chats, Engagement, Feedback and Profile. Global search (top bar)
+jumps to any feature.
+
+| Page (route)                                     | What it is for and what it shows                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Overview** `/portal`                           | Success Score ring and band, CGPA, attendance, LMS completion, alerts; SGPA by semester; how you compare with classmates (percentiles, aggregates only, hidden for groups under 5); what to do next                                                                                                                                                                                                           |
+| **Academics** `/portal/results`                  | Marks per subject, SGPA and CGPA worked out from the marks, backlogs, semester history, printable result                                                                                                                                                                                                                                                                                                      |
+| **Attendance Planner** `/portal/attendance`      | Target (75/80/85/90%); per subject: classes to attend to reach it and classes you can miss; **Attend or skip** table with advice per subject, this week's classes from the timetable and the effect of skipping the next class; a day-by-day log of present/absent; the weekly timetable                                                                                                                      |
+| **Predictive Risk & AI** `/portal/insights`      | Risk level with reasons; placement prediction (0-100, projection, drivers); result prediction per subject and predicted SGPA; learned forecasts with ranges; recommended actions; the **coach** that builds a plan for a target role; rule-counted risk flags. See [PREDICTIVE_RISK.md](PREDICTIVE_RISK.md)                                                                                                   |
+| **Learning & LMS** `/portal/lms`                 | Units and lessons per subject, teacher files and links, one assignment per unit with due date and submission, marks and remarks; completion feeds the Success Score                                                                                                                                                                                                                                           |
+| **Placement & Careers** `/portal/placement`      | **Placement drives** with an eligibility checklist (Passed / Not met / Unknown), apply, and each drive's **selection rounds** with your result in each. Filters: open, eligible, not eligible, applied, in selection rounds, passed or failed a round, qualified for next round, selected, not selected, past placement records, closed. Role match and skill gaps, mock interview record, ATS resume checker |
+| **AI Interview** `/portal/interview`             | Upload a resume, choose a role, difficulty and question types, then take a spoken, on-camera practice interview graded with feedback. Opens in **full screen as an exam**; see below. Progress summary and history; **download your report**                                                                                                                                                                  |
+| **Skills & Coding** `/portal/skills`             | Teacher-recorded assessments per category (latest three averaged), weak areas, practice suggestions; link your LeetCode account for solved counts, ranking and contests                                                                                                                                                                                                                                       |
+| **Personalised AI Lessons** `/portal/ai-lessons` | A learning-style questionnaire, then narrated board lessons on any topic, a quiz and a boss-battle game                                                                                                                                                                                                                                                                                                       |
+| **Notifications**                                | Bell with unread count: attendance, deadlines, marks, backlogs, risk, drives, rounds, password and interview events, LeetCode contests                                                                                                                                                                                                                                                                        |
+| **Announcements**                                | Placements, events, notices and posters from teachers and administrators                                                                                                                                                                                                                                                                                                                                      |
+| **Chats** `/portal/chat`                         | Section group chats and private chats with your teacher (the teacher approves the request). Teachers can attach files; you can download them                                                                                                                                                                                                                                                                  |
+| **Engagement** `/portal/engagement`              | Events, clubs, hackathons, certifications; mark an activity completed and give evidence for **your assigned teacher**, who verifies it. Only verified activities count toward the score                                                                                                                                                                                                                       |
+| **Feedback** `/portal/feedback`                  | Weekly satisfaction, notes to your mentor, and confidential complaints (readable only by you and administrators, with a tamper-evident audit trail)                                                                                                                                                                                                                                                           |
+| **Profile** `/portal/profile`                    | Contact details, bio, links, resume, target roles, LeetCode username                                                                                                                                                                                                                                                                                                                                          |
+
+### AI Interview exam mode
+
+- The interview opens in **full screen**. The rules are shown before it starts.
+- **Switching tabs or windows, or leaving full screen, gives a warning.** After **3 warnings** the
+  interview ends automatically; the answers given so far are still graded, and the student's
+  **assigned teacher is notified**. The warning count is kept on the server.
+- A question navigator shows which questions are answered; a code answer is reviewed by the model,
+  never run.
+- Afterwards: score out of 100, strengths, what to work on, score by question type and per-question
+  feedback with a model answer. **Download report** saves an HTML file (print it to PDF). An
+  interview that ended early does not count as a mock interview on the record.
+
+## 5. Teacher workspace
+
+A teacher sees **only assigned students**. The shell has top menus, a left icon bar, an
+announcements strip, global search and the notification bell. The Pluto assistant answers
+teacher-level questions from the teacher's own students.
+
+| Page                  | What a teacher does                                                                                                                                                                                                                                                                                      |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Overview**          | Headline numbers for the class; students grouped by risk band                                                                                                                                                                                                                                            |
+| **My students**       | Filter and sort the class; compare up to three students; open a **live student profile** (score breakdown, risk flags, attendance, LMS, skills, placement with their **AI interviews and any warnings**, engagement, LeetCode, predictions, feedback)                                                    |
+| **Results**           | Class results; enter marks and attendance counts                                                                                                                                                                                                                                                         |
+| **Analytics Copilot** | Ask questions in plain language; get an answer, recommended actions and the **evidence tables** it used                                                                                                                                                                                                  |
+| **Placement**         | Overview of readiness; **post a drive** with criteria and **selection rounds**; for each applicant set Pending, Passed or Failed per round (rounds are taken in order and the stage follows automatically); log mock interviews. Filters: open, closed, with applicants, with shortlisted, with selected |
+| **Attendance**        | **Mark attendance** class by class for assigned students; edit the timetable; see which students have no timetable                                                                                                                                                                                       |
+| **Attendance & risk** | Lists of low attendance, academic risk and low LMS                                                                                                                                                                                                                                                       |
+| **LMS**               | Configure units, upload material, set assignments, grade submissions                                                                                                                                                                                                                                     |
+| **Skills**            | Record assessments                                                                                                                                                                                                                                                                                       |
+| **Engagement**        | Post events and certifications; **verify** completed activities (only the student's assigned teacher)                                                                                                                                                                                                    |
+| **Interventions**     | Create support actions with reason, action, priority, owner and follow-up date; update status and outcome                                                                                                                                                                                                |
+| **Predictions**       | Run the **prediction agent**: risk levels for the class, a watchlist with reasons and actions, one-click interventions, alerts                                                                                                                                                                           |
+| **Chats**             | Section rooms and private chats; approve private-chat requests; attach files; **Message students** writes to all assigned students at once, or to the ones you select (even one), each in their own private chat where they can answer                                                                   |
+| **Feedback**          | Read notes and add notes on assigned records                                                                                                                                                                                                                                                             |
+| **Announcements**     | Post one at a time: placement, event, notice or poster                                                                                                                                                                                                                                                   |
+
+## 6. Administrator workspace
+
+An administrator has everything a teacher has, for **all** students, plus:
+
+| Page                                   | What an administrator does                                                                                                                                                                                                                          |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Login credentials** `/portal/access` | **Register people** (one student or teacher, or a CSV, with a downloadable template and a preview that lists problem rows) and **Password requests** (approve or reject forgot-password and password-change requests, with a count of pending ones) |
+| **All students / Student records**     | Full list; create and edit records; CSV import of full records; data-quality checks                                                                                                                                                                 |
+| **Teachers**                           | Teacher workload                                                                                                                                                                                                                                    |
+| **Assign students**                    | Choose a teacher, see their students, add one by search or remove one                                                                                                                                                                               |
+| **People & roles**                     | Lists teachers and administrators (not students); grant or remove roles; delete accounts; reset a password. The last administrator cannot be removed and you cannot remove your own admin role                                                      |
+| **Overview / Analytics**               | Campus-wide filters (branch, year, cohort, band) drive every chart; click a band or risk count to list the students; coverage per data source                                                                                                       |
+| **Predictions**                        | Run the agent for the campus and **train the learned models** from live data; see accuracy, precision, recall and F1                                                                                                                                |
+| **Messages**                           | Contact-form messages                                                                                                                                                                                                                               |
+| **Complaints**                         | Review confidential complaints, set severity, assign, resolve with evidence, verify the audit chain                                                                                                                                                 |
+| **Audit log**                          | Every change to a student record, with who and when                                                                                                                                                                                                 |
+| **Announcements**                      | Post updates                                                                                                                                                                                                                                        |
+
+## 7. Features shared by everyone
+
+| Feature            | What it does                                                                                                                                                                                                                                                                                                                                              |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Pluto**          | Chat assistant at the bottom right. On the public pages it answers about the product only. Signed in, it answers from **the user's own role**: a student about their own record, a teacher about assigned students, an administrator about the campus. It is hidden on the landing and login pages and moves up on the Chats page so it never covers Send |
+| **Notifications**  | Rules turn data into notifications once per situation (stable key); read state is kept                                                                                                                                                                                                                                                                    |
+| **Announcements**  | Posts by teachers and administrators; a strip at the top of staff pages                                                                                                                                                                                                                                                                                   |
+| **Global search**  | Jumps to any page of the user's workspace by name or keyword                                                                                                                                                                                                                                                                                              |
+| **Loading screen** | The **SLQG** wordmark with the letters shining one after another appears when a page takes more than 100 ms to load                                                                                                                                                                                                                                       |
+| **WhatsApp**       | Optional: log in by chat and ask for scores, attendance and more, with the same permissions as the site (see [WHATSAPP.md](WHATSAPP.md))                                                                                                                                                                                                                  |
+| **Colours**        | Status colours are shades of blue only; meaning is always also given in words and icons                                                                                                                                                                                                                                                                   |
+
+## 8. The numbers at a glance
+
+| Number                          | Range / values                                                                | Defined in                                                                    |
+| ------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Success Score                   | 0-100; On Track 80+, Monitor 65-79, Needs Attention 50-64, High Priority < 50 | [PREDICTIVE_RISK.md §2](PREDICTIVE_RISK.md#2-student-success-score-and-bands) |
+| Component weights               | Academics 30, Attendance 20, LMS 15, Placement 15, Engagement 10, Skills 10   | same                                                                          |
+| Academic / placement risk flags | Points from signals: High at 5 / 6, Medium at 2 / 3                           | [§3](PREDICTIVE_RISK.md#3-risk-flags-rule-counted)                            |
+| Placement prediction            | 0-100; Placement-ready 75+, On track 60-74, Needs work 45-59, At risk < 45    | [§4](PREDICTIVE_RISK.md#4-placement-prediction)                               |
+| Result prediction               | Marks per subject; Safe 55+, Watch 40-54, At risk < 40; pass mark 40          | [§5](PREDICTIVE_RISK.md#5-result-prediction)                                  |
+| Overall risk level              | High, Medium, Low                                                             | [§6](PREDICTIVE_RISK.md#6-the-overall-risk-level)                             |
+| Learned-model quality           | MAE, RMSE, R-squared; accuracy, precision, recall, F1                         | [§8-10](PREDICTIVE_RISK.md#8-learned-models-linear-regression)                |
+| Attendance marks                | 90+ = 5, 85+ = 4, 80+ = 3, 75+ = 2, below 75 = 0                              | [§2](PREDICTIVE_RISK.md#2-student-success-score-and-bands)                    |
+| Attendance rule                 | Below 75% in a subject risks the exam                                         | [§5](PREDICTIVE_RISK.md#5-result-prediction)                                  |
+| Grade points                    | 90+ = 10 (O), 80+ = 9, 70+ = 8, 60+ = 7, 50+ = 6, 40+ = 5, below 40 = 0 (F)   | [§5](PREDICTIVE_RISK.md#5-result-prediction)                                  |
+| Interview exam rule             | 3 warnings end the interview; the teacher is notified                         | §4 above                                                                      |
+| Forgot-password approval        | One use, valid 24 hours                                                       | §2 above                                                                      |
+
+## 9. Setting it up
+
+Environment variables (see `.env.example`):
+
+| Variable                                                 | What for                                                                                                                                                         |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`, `JWT_SECRET`                             | The PostgreSQL database and the key that signs sessions (at least 32 characters). Required                                                                       |
+| `SMTP_URL`, `APP_URL`, `MAIL_FROM`                       | Email: the mail account that sends logins, the public address of the site, the sender name. Optional; without them the administrator is shown each password once |
+| `HF_API_KEY`, `LLM_API_KEY`, `GROQ_API_KEY`, `LLM_MODEL` | Language models for Pluto, lessons, interviews and agent briefings. Optional; plain-data fallbacks are used without them                                         |
+| `TAVILY_API_KEY`                                         | Web search for the prediction coach. Optional                                                                                                                    |
+| `TWILIO_*`                                               | WhatsApp. Optional                                                                                                                                               |
+| `CRON_SECRET`                                            | Protects the daily LeetCode refresh                                                                                                                              |
+
+Commands:
+
+| Command                                     | Does                                                      |
+| ------------------------------------------- | --------------------------------------------------------- |
+| `npm run dev`                               | Start the app locally                                     |
+| `npm run db:migrate`                        | Apply database migrations                                 |
+| `npm run db:create-admin -- email "Name"`   | Create the first administrator (prints the password once) |
+| `npm run db:set-role -- email role`         | Grant or revoke a role from the command line              |
+| `npm run db:seed-predictions`               | Fill prediction inputs for the synthetic students         |
+| `npm test`, `npm run build`, `npm run lint` | Tests, production build, lint                             |
+
+First-time set-up: set `DATABASE_URL` and `JWT_SECRET`, run `npm run db:migrate`, create the first
+administrator, log in at `/auth?workspace=admin` or by choosing Administrator, open **Login
+credentials** and register your teachers and students.
