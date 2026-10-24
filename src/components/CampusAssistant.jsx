@@ -1,7 +1,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useState, useRef, useEffect } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { Compass, X, MessageCircle, ArrowUpRight, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +43,10 @@ function Sources({ parts }) {
 
 export function CampusAssistant() {
   const [open, setOpen] = useState(false);
+  // On the chat pages the Send button is bottom right, so Pluto sits higher there.
+  const onChatPage = useRouterState({
+    select: (s) => s.location.pathname.startsWith("/portal/chat"),
+  });
   const [text, setText] = useState("");
   const input = useRef(null);
   const { user } = useAccount();
@@ -59,7 +63,7 @@ export function CampusAssistant() {
     if (open && !busy) input.current?.focus();
   }, [open, busy]);
   return (
-    <div className="assistant-position">
+    <div className={`assistant-position${onChatPage ? " assistant-position-raised" : ""}`}>
       {open && (
         <section
           className="assistant-panel flex flex-col overflow-hidden rounded-lg border bg-card shadow-xl"

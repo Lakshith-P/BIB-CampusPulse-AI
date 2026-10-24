@@ -698,3 +698,13 @@ html {
     color: #0066cc;
   }
 }
+
+/* On the chat pages Pluto sits higher, so it stays clear of the Send button at the bottom right. */
+.assistant-position-raised {
+  bottom: 96px;
+}
+@media (max-width: 767px) {
+  .assistant-position-raised {
+    bottom: 88px;
+  }
+}
