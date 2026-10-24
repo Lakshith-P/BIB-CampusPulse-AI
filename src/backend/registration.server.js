@@ -33,6 +33,48 @@ export function generatePassword() {
   return chars.join("");
 }
 
+// ------------------------------------------------------------------ logins made from a name
+/** The domain of a login made from a name: bharath becomes bharath@insightiq.com. */
+export const loginDomain = () => process.env["LOGIN_EMAIL_DOMAIN"]?.trim() || "insightiq.com";
+
+/** The first name as it is used in a login: lower case, letters and digits only ("Bhaarth K" becomes "bhaarth"). */
+export function firstNameKey(name) {
+  const first = String(name ?? "")
+    .trim()
+    .split(/\s+/)[0]
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+  return first || "user";
+}
+
+/** The first free login for a name: bharath@insightiq.com, then bharath2@..., bharath3@... */
+export async function uniqueLoginEmail(db, name) {
+  const base = firstNameKey(name);
+  const domain = loginDomain();
+  for (let n = 1; n < 10000; n++) {
+    const local = n === 1 ? base : `${base}${n}`;
+    const taken = await db.query("SELECT 1 FROM users WHERE email = $1", [`${local}@${domain}`]);
+    if (!taken.rowCount) return { email: `${local}@${domain}`, local };
+  }
+  throw new Error("Could not make a login for that name.");
+}
+
+/** The shortest password the platform accepts. */
+export const MIN_PASSWORD = 8;
+
+/**
+ * The starting password for a login: the name, an @, and the first letter, for example bharath@b.
+ * When that is shorter than 8 characters, numbers (1, 2, 3 ...) are added until it is 8: ram@r becomes ram@r123.
+ */
+export function startingPassword(local) {
+  const base = `${local}@${local[0]}`;
+  return base.length >= MIN_PASSWORD
+    ? base
+    : base + "12345678".slice(0, MIN_PASSWORD - base.length);
+}
+
 /**
  * How mail is sent. In the app these come from mail.server.js; tests pass their own, so no real
  * email is ever sent from a test.
@@ -84,9 +126,15 @@ Temporary password: <b>${escapeHtml(password)}</b></p>
  */
 export async function registerUser(db, admin, person, mailer, hash = hashPassword) {
   requireAdminUser(admin);
-  const email = person.email.trim().toLowerCase();
   const name = person.name.trim();
-  const exists = await db.query("SELECT 1 FROM users WHERE email = $1", [email]);
+  // With no email given, the login is made from the name: bharath@insightiq.com
+  const given = person.email?.trim().toLowerCase() || "";
+  const made = given ? null : await uniqueLoginEmail(db, name);
+  const email = given || made.email;
+  const local = made ? made.local : firstNameKey(name);
+  const exists = given
+    ? await db.query("SELECT 1 FROM users WHERE email = $1", [email])
+    : { rowCount: 0 };
   if (exists.rowCount) return { email, name, role: person.role, status: "exists" };
 
   let teacherId = null;
@@ -140,7 +188,7 @@ export async function registerUser(db, admin, person, mailer, hash = hashPasswor
     record = parsed.data;
   }
 
-  const password = generatePassword();
+  const password = startingPassword(local);
   const created = await db.query(
     "INSERT INTO users(email, password_hash, display_name) VALUES($1,$2,$3) RETURNING id",
     [email, await hash(password), name],
@@ -157,8 +205,16 @@ export async function registerUser(db, admin, person, mailer, hash = hashPasswor
     [admin.id, record?.id ?? userId],
   );
 
-  const result = { email, name, role: person.role, status: "created", emailed: false };
-  if (mailer.ready) {
+  const result = {
+    email,
+    name,
+    role: person.role,
+    status: "created",
+    emailed: false,
+    generated: Boolean(made),
+  };
+  // A login made from a name is not a real mailbox, so only an email the administrator typed is mailed.
+  if (mailer.ready && !made) {
     try {
       await mailer.send({
         to: email,
@@ -193,7 +249,7 @@ export async function registerMany(db, admin, people, mailer, hash) {
     } catch (error) {
       await db.query("ROLLBACK TO SAVEPOINT person");
       results.push({
-        email: person.email,
+        email: person.email ?? "",
         name: person.name,
         role: person.role,
         status: "failed",

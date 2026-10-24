@@ -13,7 +13,11 @@ const text = (max, min = 0) => z.string().trim().min(min).max(max);
 
 const person = z.object({
   name: text(100, 2),
-  email: z.string().trim().toLowerCase().email().max(254),
+  // left out, the login is made from the name (bharath@insightiq.com)
+  email: z
+    .union([z.literal(""), z.string().trim().toLowerCase().email().max(254)])
+    .optional()
+    .transform((v) => v || undefined),
   role: z.enum(["student", "faculty"]),
   studentId: text(40).optional(),
   course: text(60).optional(),
@@ -57,7 +61,10 @@ export const loadMailStatus = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .handler(async ({ context }) => {
     if (!context.user.roles.includes("admin")) throw new Error("Only administrators can do this.");
-    return { ready: (await registration.defaultMailer()).ready };
+    return {
+      ready: (await registration.defaultMailer()).ready,
+      domain: registration.loginDomain(),
+    };
   });
 
 // Messages an administrator posts from the Messages page (administrators only).

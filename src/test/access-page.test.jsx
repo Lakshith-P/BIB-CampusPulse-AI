@@ -11,7 +11,7 @@ vi.mock("@/lib/access.functions", () => ({
   registerAccounts: (...a) => register(...a),
   decidePasswordRequest: (...a) => decide(...a),
   loadPasswordRequests: vi.fn(async () => requests),
-  loadMailStatus: vi.fn(async () => ({ ready: mailReady })),
+  loadMailStatus: vi.fn(async () => ({ ready: mailReady, domain: "insightiq.com" })),
 }));
 vi.mock("@/lib/campus.functions", () => ({
   listAccounts: vi.fn(async () => [
@@ -43,35 +43,40 @@ beforeEach(() => {
 });
 
 describe("Login & access: registering people", () => {
-  it("registers one student with their details and the chosen teacher", async () => {
+  it("registers a student from the name alone and shows the login that was made", async () => {
     register.mockResolvedValue({
       created: 1,
-      emailed: 1,
+      emailed: 0,
       skipped: 0,
       failed: 0,
       results: [
-        { name: "Asha", email: "asha@x.edu", role: "student", status: "created", emailed: true },
+        {
+          name: "Bharath Kumar",
+          email: "bharath@insightiq.com",
+          role: "student",
+          status: "created",
+          emailed: false,
+          generated: true,
+          password: "bharath@b",
+        },
       ],
     });
     show();
-    expect(await screen.findByText(/Email is set up/)).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText(/Full name/), { target: { value: "Asha" } });
-    fireEvent.change(screen.getByLabelText(/Email \(their login\)/), {
-      target: { value: "asha@x.edu" },
-    });
+    expect(await screen.findByText(/becomes/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/Full name/), { target: { value: "Bharath Kumar" } });
+    await screen.findByRole("option", { name: /Tina/ }); // the teacher list has loaded
     fireEvent.change(screen.getByLabelText("Assigned teacher"), {
       target: { value: "tina@x.edu" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /Register and send login/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Register" }));
     await waitFor(() => expect(register).toHaveBeenCalled());
+    // no email is sent: the server makes the login from the name
     expect(register.mock.calls[0][0]).toEqual({
-      data: {
-        people: [
-          { role: "student", name: "Asha", email: "asha@x.edu", teacherEmail: "tina@x.edu" },
-        ],
-      },
+      data: { people: [{ role: "student", name: "Bharath Kumar", teacherEmail: "tina@x.edu" }] },
     });
-    expect(await screen.findByText("Registered and emailed")).toBeInTheDocument();
+    // the example in the notice, and the login in the results table
+    await waitFor(() => expect(screen.getAllByText("bharath@insightiq.com")).toHaveLength(2));
+    expect(screen.getAllByText("bharath@b")).toHaveLength(2);
   });
 
   it("a teacher needs no student details", async () => {
@@ -81,8 +86,19 @@ describe("Login & access: registering people", () => {
     expect(screen.queryByText("Branch")).not.toBeInTheDocument();
   });
 
-  it("shows a password once, with a download, when email is not set up", async () => {
-    mailReady = false;
+  it("sends an email only when one is typed", async () => {
+    register.mockResolvedValue({ created: 1, emailed: 1, skipped: 0, failed: 0, results: [] });
+    show();
+    fireEvent.change(screen.getByLabelText(/Full name/), { target: { value: "Asha" } });
+    fireEvent.change(screen.getByLabelText(/Email \(optional\)/), {
+      target: { value: "asha@x.edu" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Register" }));
+    await waitFor(() => expect(register).toHaveBeenCalled());
+    expect(register.mock.calls[0][0].data.people[0]).toMatchObject({ email: "asha@x.edu" });
+  });
+
+  it("gives a download of the logins that were made", async () => {
     register.mockResolvedValue({
       created: 1,
       emailed: 0,
@@ -91,22 +107,18 @@ describe("Login & access: registering people", () => {
       results: [
         {
           name: "Zed",
-          email: "zed@x.edu",
+          email: "zed@insightiq.com",
           role: "student",
           status: "created",
           emailed: false,
-          password: "Abc#4567xyZ9",
+          password: "zed@z123",
         },
       ],
     });
     show();
-    expect(await screen.findByText(/Email is not set up on this server yet/)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/Full name/), { target: { value: "Zed" } });
-    fireEvent.change(screen.getByLabelText(/Email \(their login\)/), {
-      target: { value: "zed@x.edu" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /Register and send login/ }));
-    expect(await screen.findByText("Abc#4567xyZ9")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Register" }));
+    expect(await screen.findByText("zed@z123")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Download these logins/ })).toBeInTheDocument();
   });
 

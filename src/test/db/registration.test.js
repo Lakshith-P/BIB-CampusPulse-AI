@@ -376,3 +376,96 @@ describe("forgot password, without email", () => {
     ).rejects.toThrow(/no approved request/);
   });
 });
+
+describe("a login made from the name", () => {
+  const make = (name, role = "student") =>
+    reg.registerUser(db, admin, { name, role }, mailer, fastHash);
+  const loginOk = async (email, password) =>
+    bcrypt.compare(password, (await login(email)).password_hash);
+
+  it("makes the login from the first name and the password from the name and its first letter", async () => {
+    sent.length = 0;
+    const r = await make("Bharath Kumar");
+    expect(r).toMatchObject({
+      status: "created",
+      email: "bharath@insightiq.com",
+      password: "bharath@b",
+      emailed: false,
+      generated: true,
+    });
+    expect(await loginOk("bharath@insightiq.com", "bharath@b")).toBe(true); // it really logs in
+    expect(await roles("bharath@insightiq.com")).toEqual(["student"]);
+    expect(sent).toHaveLength(0); // a made-up login is not a mailbox, so nothing is emailed
+  });
+
+  it("pads a short password with numbers until it has 8 characters", async () => {
+    expect(reg.startingPassword("bharath")).toBe("bharath@b"); // already long enough
+    expect(reg.startingPassword("ravi")).toBe("ravi@r12"); // 6 characters, so 12 is added
+    expect(reg.startingPassword("ram")).toBe("ram@r123");
+    expect(reg.startingPassword("al")).toBe("al@a1234");
+    expect(reg.startingPassword("a")).toBe("a@a12345");
+    expect(reg.startingPassword("anil")).toHaveLength(8);
+    const r = await make("Ravi Teja");
+    expect(r).toMatchObject({ email: "ravi@insightiq.com", password: "ravi@r12" });
+    expect(await loginOk("ravi@insightiq.com", "ravi@r12")).toBe(true);
+    expect(r.password.length).toBeGreaterThanOrEqual(8);
+  });
+
+  it("does the same for a teacher, who gets only the teacher role", async () => {
+    const r = await make("Meena Iyer", "faculty");
+    expect(r).toMatchObject({ email: "meena@insightiq.com", password: "meena@m1" });
+    expect(await roles("meena@insightiq.com")).toEqual(["faculty"]);
+  });
+
+  it("adds a number when the login is taken, and the password follows it", async () => {
+    const second = await make("Bharath Reddy");
+    expect(second).toMatchObject({ email: "bharath2@insightiq.com", password: "bharath2@b" });
+    const third = await make("Bharath Naidu");
+    expect(third).toMatchObject({ email: "bharath3@insightiq.com", password: "bharath3@b" });
+    expect(await loginOk("bharath2@insightiq.com", "bharath2@b")).toBe(true);
+  });
+
+  it("copes with capitals, accents, punctuation and a name with no usable letters", async () => {
+    expect((await make("  ÁNGEL de la Cruz ")).email).toBe("angel@insightiq.com");
+    expect((await make("O'Neil")).email).toBe("oneil@insightiq.com");
+    expect((await make("-- ")).email).toBe("user@insightiq.com");
+  });
+
+  it("a typed email is still used as given, and mailed when email is set up", async () => {
+    sent.length = 0;
+    const r = await reg.registerUser(
+      db,
+      admin,
+      { name: "Priya Nair", email: "priya.nair@college.edu", role: "student" },
+      mailer,
+      fastHash,
+    );
+    expect(r).toMatchObject({ email: "priya.nair@college.edu", emailed: true, generated: false });
+    expect(sent.map((m) => m.to)).toEqual(["priya.nair@college.edu"]);
+    expect(
+      await loginOk("priya.nair@college.edu", sent[0].text.match(/Temporary password: (\S+)/)[1]),
+    ).toBe(true);
+  });
+
+  it("registers a list without emails in one go, each with its own login", async () => {
+    await db.query("BEGIN");
+    const out = await reg.registerMany(
+      db,
+      admin,
+      [
+        { name: "Karan Shah", role: "student" },
+        { name: "Karan Verma", role: "student" },
+        { name: "Latha Rao", role: "faculty" },
+      ],
+      offline,
+      fastHash,
+    );
+    await db.query("COMMIT");
+    expect(out.results.map((r) => [r.email, r.password])).toEqual([
+      ["karan@insightiq.com", "karan@k1"],
+      ["karan2@insightiq.com", "karan2@k"],
+      ["latha@insightiq.com", "latha@l1"],
+    ]);
+    expect(out).toMatchObject({ created: 3, failed: 0 });
+  });
+});

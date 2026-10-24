@@ -56,7 +56,7 @@ Access rules are written into the SQL itself. For reads, `loadCampus` filters `s
 
 ## Authentication and sessions
 
-1. **Registration** (`registerUser` / `registerMany` in `registration.server.js`): an administrator registers a student or teacher; the server generates a password (12 characters), stores a bcrypt hash (cost 12), creates the role (a student also gets a record) and emails the login. There is no public sign-up.
+1. **Registration** (`registerUser` / `registerMany` in `registration.server.js`): an administrator registers a student or teacher by name. The server makes the login from the first name (`bharath@insightiq.com`, a number added if taken), sets the starting password (`bharath@b`, padded with numbers to at least 8 characters), stores a bcrypt hash (cost 12), creates the role (a student also gets a record) and returns the credentials to show. If an email is typed it is used instead and the credentials are mailed when SMTP is set. There is no public sign-up.
 2. **Sign-in** (`signIn`): looks up the hash and verifies it. The same message is returned for an unknown email and a wrong password.
 3. **Session**: a signed JWT (HS256, 12 hours) in an httpOnly browser-session, SameSite=Lax cookie, Secure in production. No token is kept in browser storage.
 4. **Every request**: `currentUser()` verifies the token and loads the user's roles from `user_roles`. Roles in the token are never trusted, so a role change applies immediately.

@@ -37,7 +37,7 @@ The website assistant ("Pluto") appears on the public pages. It has no access to
 | `faculty` | Records of students assigned to them           | Interventions for those students; feedback notes on those records |
 | `admin`   | Every record, account, message and audit entry | Student records, role grants, teacher assignments                 |
 
-There is no self sign-up. An administrator registers every student and teacher under **Login credentials**, and the system emails a generated password. The first administrator is created with `npm run db:create-admin`. Staff roles can also be granted under **People & roles** or with `db:set-role`.
+There is no self sign-up. An administrator registers every student and teacher under **Login credentials**; the login is made from the first name (`bharath@insightiq.com`, password `bharath@b`) and shown on screen. The first administrator is created with `npm run db:create-admin`. Staff roles can also be granted under **People & roles** or with `db:set-role`.
 
 ### Scoring in one table
 

@@ -1,11 +1,12 @@
 // Bulk registration: a CSV of the students and teachers an administrator wants to give logins to.
-// Columns: name, email, role (student or teacher), then for students the optional student_id,
+// Columns: name and role (student or teacher) are required. The email is optional: left blank, the
+// login is made from the first name (bharath@insightiq.com). Students can also have student_id,
 // course, branch, section, semester, grad_year and teacher_email (the assigned teacher).
 
-export const REGISTRATION_TEMPLATE = `name,email,role,student_id,course,branch,section,semester,grad_year,teacher_email
-Asha Rao,asha@college.edu,student,S-1001,B.Tech,CSE,A,5,2027,tina@college.edu
-Ravi Kumar,ravi@college.edu,student,S-1002,B.Tech,CSE,A,5,2027,tina@college.edu
-Tina Teacher,tina@college.edu,teacher,,,,,,,
+export const REGISTRATION_TEMPLATE = `name,role,email,student_id,course,branch,section,semester,grad_year,teacher_email
+Asha Rao,student,,S-1001,B.Tech,CSE,A,5,2027,tina@insightiq.com
+Ravi Kumar,student,,S-1002,B.Tech,CSE,A,5,2027,tina@insightiq.com
+Tina Teacher,teacher,,,,,,,,
 `;
 
 export const MAX_REGISTRATION_ROWS = 500;
@@ -48,7 +49,7 @@ export function parseRegistrationCsv(text) {
   const first = lines.findIndex((l) => l.trim());
   if (first < 0) return { rows: [], fileErrors: ["The file is empty."] };
   const headers = splitLine(lines[first]).map((h) => h.toLowerCase().replace(/\s+/g, "_"));
-  const fileErrors = ["name", "email", "role"]
+  const fileErrors = ["name", "role"]
     .filter((h) => !headers.includes(h))
     .map((h) => `Missing the "${h}" column.`);
   if (fileErrors.length) return { rows: [], fileErrors };
@@ -62,8 +63,8 @@ export function parseRegistrationCsv(text) {
     const errors = [];
     const email = rec.email.toLowerCase();
     if (!rec.name) errors.push("Name is missing.");
-    if (!EMAIL.test(email)) errors.push("Email is not valid.");
-    else if (seen.has(email)) errors.push("This email appears twice in the file.");
+    if (email && !EMAIL.test(email)) errors.push("Email is not valid.");
+    else if (email && seen.has(email)) errors.push("This email appears twice in the file.");
     const role = ROLE[rec.role.toLowerCase()];
     if (!role) errors.push('Role must be "student" or "teacher".');
     const semester = rec.semester ? Number(rec.semester) : undefined;
@@ -74,7 +75,7 @@ export function parseRegistrationCsv(text) {
       errors.push("Graduation year is not valid.");
     if (rec.teacher_email && !EMAIL.test(rec.teacher_email))
       errors.push("Teacher email is not valid.");
-    if (EMAIL.test(email)) seen.add(email);
+    if (email && EMAIL.test(email)) seen.add(email);
     rows.push({
       line: i + 1,
       errors,
@@ -82,7 +83,7 @@ export function parseRegistrationCsv(text) {
         ? undefined
         : {
             name: rec.name,
-            email,
+            email: email || undefined,
             role,
             studentId: rec.student_id || undefined,
             course: rec.course || undefined,

@@ -8,7 +8,7 @@ describe("registration CSV", () => {
     expect(rows.map((r) => r.errors)).toEqual([[], [], []]);
     expect(rows[0].user).toEqual({
       name: "Asha Rao",
-      email: "asha@college.edu",
+      email: undefined, // left blank: the login is made from the name
       role: "student",
       studentId: "S-1001",
       course: "B.Tech",
@@ -16,7 +16,7 @@ describe("registration CSV", () => {
       section: "A",
       semester: 5,
       gradYear: 2027,
-      teacherEmail: "tina@college.edu",
+      teacherEmail: "tina@insightiq.com",
     });
     expect(rows[2].user).toMatchObject({ role: "faculty", name: "Tina Teacher" });
   });

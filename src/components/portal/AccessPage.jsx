@@ -25,20 +25,24 @@ import { saveBlob } from "@/lib/save-file";
 
 const REQUESTS = ["password-requests"];
 
+function useMailStatus() {
+  return useQuery({ queryKey: ["mail-status"], queryFn: () => loadMailStatus() });
+}
+
+/** What registering does: the login is made from the first name and shown here. */
 function MailNotice() {
-  const { data } = useQuery({ queryKey: ["mail-status"], queryFn: () => loadMailStatus() });
-  if (!data) return null;
-  return data.ready ? (
-    <p className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
-      <Mail className="size-4 shrink-0 text-primary" aria-hidden />
-      Email is set up. Each person receives their login, with a generated password, at their own
-      email address.
-    </p>
-  ) : (
-    <p role="note" className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
-      Email is not set up on this server yet (set <b>SMTP_URL</b>, <b>APP_URL</b> and{" "}
-      <b>MAIL_FROM</b>). Until it is, a generated password is shown here once for each person, so
-      you can give it to them privately.
+  const { data } = useMailStatus();
+  const domain = data?.domain ?? "insightiq.com";
+  return (
+    <p className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+      <Mail className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+      <span>
+        The login is made from the first name and shown here as soon as you register: the name{" "}
+        <b>Bharath</b> becomes <b>bharath@{domain}</b> with the password <b>bharath@b</b> (the name,
+        an @, and its first letter; short ones get numbers added to reach 8 characters, so Ram gets
+        ram@r123). If a login is taken, a number is added (bharath2@{domain}). Give the person their
+        login and password.
+      </span>
     </p>
   );
 }
@@ -64,7 +68,7 @@ function Results({ outcome }) {
           <thead className="text-left text-xs text-muted-foreground">
             <tr>
               <th className="py-2">Name</th>
-              <th>Email</th>
+              <th>Login ID</th>
               <th>Role</th>
               <th>Result</th>
               <th>Password</th>
@@ -98,7 +102,7 @@ function Results({ outcome }) {
       {handover.length > 0 && (
         <div className="flex flex-wrap items-center gap-3">
           <p className="text-xs text-muted-foreground">
-            These passwords were not emailed and are shown only now. Give them out privately.
+            Give each person their login ID and password. The passwords are shown only now.
           </p>
           <Button
             type="button"
@@ -108,7 +112,7 @@ function Results({ outcome }) {
               saveBlob(
                 new Blob(
                   [
-                    "name,email,role,password\r\n" +
+                    "name,login_id,role,password\r\n" +
                       handover
                         .map((r) =>
                           [r.name, r.email, r.role, r.password].map((v) => `"${v}"`).join(","),
@@ -154,7 +158,7 @@ function ManualForm({ teachers, onDone }) {
         const person = {
           role: f.role,
           name: f.name,
-          email: f.email,
+          ...(f.email.trim() && { email: f.email.trim() }),
           ...(student
             ? {
                 ...(f.studentId && { studentId: f.studentId }),
@@ -175,7 +179,7 @@ function ManualForm({ teachers, onDone }) {
       }}
     >
       <div className="sm:col-span-2 lg:col-span-4">
-        <SectionTitle sub="The system makes a password and sends it to the email address below.">
+        <SectionTitle sub="Enter the name. The login ID and password are made and shown right after.">
           Register one person
         </SectionTitle>
       </div>
@@ -188,8 +192,8 @@ function ManualForm({ teachers, onDone }) {
       <Field label="Full name">
         <Input value={f.name} onChange={set("name")} required minLength={2} maxLength={100} />
       </Field>
-      <Field label="Email (their login)">
-        <Input type="email" value={f.email} onChange={set("email")} required maxLength={254} />
+      <Field label="Email (optional)" hint="Leave blank to make the login from the name.">
+        <Input type="email" value={f.email} onChange={set("email")} maxLength={254} />
       </Field>
       {student && (
         <>
@@ -236,7 +240,7 @@ function ManualForm({ teachers, onDone }) {
       )}
       <div className="flex items-end sm:col-span-2 lg:col-span-4">
         <Button type="submit" disabled={busy}>
-          <UserPlus /> Register and send login
+          <UserPlus /> Register
         </Button>
       </div>
     </form>
