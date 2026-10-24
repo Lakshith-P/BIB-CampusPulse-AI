@@ -1,4 +1,4 @@
-# Orbit roadmap
+# SLQG roadmap
 
 ## Current deliverable
 

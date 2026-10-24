@@ -9,6 +9,7 @@ import { InterventionCard, InterventionForm, SupportPlan } from "@/components/po
 import { PageTitle, RoleGate } from "@/components/portal/PortalShell";
 import { StudentTable, pct } from "@/components/portal/StudentTable";
 import { AcademicsEditor } from "@/components/portal/AcademicsEditor";
+import { PredictionInputsEditor, PredictionPanel } from "@/components/portal/PredictionPanel";
 import { LiveStudentProfile } from "@/components/student-profile/LiveStudentProfile";
 import { byAttention, isAtRisk, lowAttendance } from "@/lib/campus-derive";
 import { listAccounts, listAudit } from "@/lib/campus.functions";
@@ -109,6 +110,12 @@ export function StudentDetailPage({ id }) {
           />
           <AcademicsEditor s={row.s} onSaved={refresh} />
           <SupportPlan studentId={row.id} canManage />
+          <div className="mt-4">
+            <PredictionPanel studentId={row.id} />
+          </div>
+          <div className="mt-4">
+            <PredictionInputsEditor studentId={row.id} />
+          </div>
         </>
       )}
     </RoleGate>

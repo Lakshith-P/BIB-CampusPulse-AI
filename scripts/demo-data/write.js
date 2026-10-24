@@ -105,10 +105,7 @@ export async function seedDatabase(db, data, { passwordHash }) {
     ["user_id", "role"],
     people.flatMap((p) =>
       p.role === "faculty"
-        ? [
-            { user_id: userId.get(p.email), role: "student" },
-            { user_id: userId.get(p.email), role: "faculty" },
-          ]
+        ? [{ user_id: userId.get(p.email), role: "faculty" }]
         : [{ user_id: userId.get(p.email), role: "student" }],
     ),
   );

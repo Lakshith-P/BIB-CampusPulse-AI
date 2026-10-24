@@ -185,9 +185,7 @@ export function renderPdf({ title = "Document", footer = "", blocks = [] }) {
   const fontBold = add(
     "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>",
   );
-  const info = add(
-    `<< /Title (${escape(plain(title))}) /Producer (BIB InsightIQ) /Creator (BIB InsightIQ) >>`,
-  );
+  const info = add(`<< /Title (${escape(plain(title))}) /Producer (SLQG) /Creator (SLQG) >>`);
   const pageIds = [];
   for (const items of pages) {
     const stream = contentStream(items);

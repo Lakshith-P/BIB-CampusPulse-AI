@@ -1,6 +1,6 @@
 # Student Success Score: Method Note
 
-Orbit combines seven data sources into one score from 0 to 100. The score is a prototype decision aid for faculty, not institutional policy. Weights and thresholds are defined in `src/lib/types.js`, and the calculations in `src/lib/scoring.js`.
+SLQG combines seven data sources into one score from 0 to 100. The score is a prototype decision aid for faculty, not institutional policy. Weights and thresholds are defined in `src/lib/types.js`, and the calculations in `src/lib/scoring.js`.
 
 ## Indicators and weights
 

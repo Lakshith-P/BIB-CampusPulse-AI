@@ -3,6 +3,6 @@ import { AuditPage } from "@/components/portal/StaffPages";
 import { pageHead } from "@/lib/metadata";
 
 export const Route = createFileRoute("/_authenticated/portal/audit")({
-  head: () => pageHead("Audit log", "Audit log in your BIB InsightIQ workspace."),
+  head: () => pageHead("Audit log", "Audit log in your SLQG workspace."),
   component: AuditPage,
 });

@@ -32,7 +32,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export const PRODUCT = "BIB InsightIQ";
+export const PRODUCT = "SLQG";
 
 const PRIMARY = [
   { to: "/portal", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -83,20 +83,22 @@ function Sidebar({ name, program, onNavigate }) {
       <div className="flex min-h-0 flex-col">
         <div className="border-b border-slate-200 p-4">
           <Link to="/portal" className="flex items-center gap-2">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-[#00338D] font-bold tracking-tight text-white shadow-sm">
-              BI
-            </span>
+            <img
+              src="/slqg-logo.png"
+              alt=""
+              width="36"
+              height="36"
+              className="size-9 shrink-0 object-contain"
+            />
             <span>
               <span className="flex items-center gap-1.5">
-                <span className="cp-display block text-sm font-bold leading-tight tracking-tight text-[#00338D]">
-                  {PRODUCT}
-                </span>
+                <img src="/slqg-lettering.png" alt={PRODUCT} className="block h-4 w-auto" />
                 <span className="rounded bg-blue-100 px-1.5 text-[9px] font-bold uppercase tracking-wider text-[#00338D]">
                   AI
                 </span>
               </span>
               <span className="block text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-                Student Success Platform
+                Learning, Quality &amp; Growth
               </span>
             </span>
           </Link>
@@ -187,7 +189,7 @@ export function StudentShell({ profile, myRow, rows, onSignOut, children }) {
           <div className="flex items-center gap-3">
             {term && (
               <span className="hidden items-center gap-1.5 rounded-full border border-[#A7F3D0] bg-[#ECFDF5] px-3 py-1 text-xs font-semibold tracking-wide text-[#047857] md:inline-flex">
-                <span className="size-1.5 rounded-full bg-[#10B981]" />
+                <span className="size-1.5 rounded-full bg-[#3A7FC8]" />
                 {term}
               </span>
             )}

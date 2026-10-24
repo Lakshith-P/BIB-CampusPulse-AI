@@ -114,11 +114,13 @@ export async function cohortStanding(db, user) {
   };
 }
 
-// Records for plain student accounts that signed up before records were created at sign-up.
+// Records for student accounts that signed up before records were created at sign-up. An account
+// without the student role (a teacher waiting for approval) is never given one.
 export async function backfillStudentRecords(db) {
   const missing = await db.query(
     `SELECT u.id, u.email, u.display_name FROM users u
       WHERE NOT EXISTS (SELECT 1 FROM student_records s WHERE s.owner_id = u.id)
+        AND EXISTS (SELECT 1 FROM user_roles r WHERE r.user_id = u.id AND r.role = 'student')
         AND NOT EXISTS (SELECT 1 FROM user_roles r WHERE r.user_id = u.id AND r.role IN ('faculty','admin'))`,
   );
   for (const u of missing.rows) await ensureStudentRecord(db, u);

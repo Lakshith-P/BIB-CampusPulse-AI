@@ -1,6 +1,6 @@
-# Orbit Documentation
+# SLQG Documentation
 
-Orbit is a student success intelligence platform built by TEAM BIB (Biryani Intelligence Bureau) for the HacXLerate Smart Campus Analytics challenge. It brings seven student data sources (academics, attendance, LMS activity, skills, engagement, placement readiness and feedback) under one student identifier, computes an explainable **Student Success Score**, and lets mentors record and track interventions.
+SLQG is a student success intelligence platform built by TEAM BIB (Biryani Intelligence Bureau) for the HacXLerate Smart Campus Analytics challenge. It brings seven student data sources (academics, attendance, LMS activity, skills, engagement, placement readiness and feedback) under one student identifier, computes an explainable **Student Success Score**, and lets mentors record and track interventions.
 
 For every student, the platform answers three questions: who needs support, why, and what the faculty member should do next.
 

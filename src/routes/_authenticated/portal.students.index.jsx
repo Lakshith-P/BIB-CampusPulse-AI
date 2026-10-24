@@ -3,6 +3,6 @@ import { StudentsPage } from "@/components/portal/StaffPages";
 import { pageHead } from "@/lib/metadata";
 
 export const Route = createFileRoute("/_authenticated/portal/students/")({
-  head: () => pageHead("Students", "Students in your BIB InsightIQ workspace."),
+  head: () => pageHead("Students", "Students in your SLQG workspace."),
   component: StudentsPage,
 });

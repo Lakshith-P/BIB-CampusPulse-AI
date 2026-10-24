@@ -3,10 +3,17 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, MessageCircle, Send, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState, SectionTitle } from "@/components/widgets";
-import { ErrorState, PageSkeleton, useAction } from "@/components/ui-kit";
+import {
+  DownloadButton,
+  ErrorState,
+  FileField,
+  PageSkeleton,
+  useAction,
+} from "@/components/ui-kit";
 import { PageTitle, RoleGate } from "@/components/portal/PortalShell";
 import {
   loadDashboardChat,
+  downloadDashboardChatFile,
   loadDashboardChatMessages,
   requestPrivateChat,
   reviewPrivateChat,
@@ -73,6 +80,8 @@ export function DashboardChat() {
   if (overview.isLoading) return <PageSkeleton rows={3} />;
   if (overview.error) return <ErrorState error={overview.error} onRetry={overview.refetch} />;
 
+  // only teachers and administrators share files; the server enforces the same rule
+  const canAttach = role === "faculty" || role === "admin";
   const studentRequest = role === "student" ? requests[0] : null;
   const canRequest =
     role === "student" && (!studentRequest || studentRequest.status === "rejected");
@@ -140,15 +149,29 @@ export function DashboardChat() {
             message={message}
             setMessage={setMessage}
             busy={busy}
-            onSend={(body) =>
+            canAttach={canAttach}
+            onDownload={(messageId) =>
+              downloadDashboardChatFile({
+                data: { type: "section", id: selectedSection.id, messageId },
+              })
+            }
+            onSend={(body, file) =>
               selectedSection &&
               run(
                 () =>
                   sendDashboardChatMessage({
-                    data: { type: "section", id: selectedSection.id, body },
+                    data: {
+                      type: "section",
+                      id: selectedSection.id,
+                      body,
+                      ...(file ? { file } : {}),
+                    },
                   }),
                 "Message sent.",
-              ).then((result) => result.ok && setMessage(""))
+              ).then((result) => {
+                if (result.ok) setMessage("");
+                return result.ok;
+              })
             }
           />
         </div>
@@ -241,12 +264,21 @@ export function DashboardChat() {
               message={message}
               setMessage={setMessage}
               busy={busy}
-              onSend={(body) =>
+              canAttach={canAttach}
+              onDownload={(messageId) =>
+                downloadDashboardChatFile({ data: { type: "private", id: selectedId, messageId } })
+              }
+              onSend={(body, file) =>
                 run(
                   () =>
-                    sendDashboardChatMessage({ data: { type: "private", id: selectedId, body } }),
+                    sendDashboardChatMessage({
+                      data: { type: "private", id: selectedId, body, ...(file ? { file } : {}) },
+                    }),
                   "Message sent.",
-                ).then((result) => result.ok && setMessage(""))
+                ).then((result) => {
+                  if (result.ok) setMessage("");
+                  return result.ok;
+                })
               }
             />
           ) : (
@@ -265,7 +297,25 @@ export function DashboardChat() {
   );
 }
 
-function ChatPanel({ title, messages, profileId, message, setMessage, busy, onSend }) {
+function fileSize(bytes) {
+  const n = Number(bytes) || 0;
+  return n >= 1024 * 1024
+    ? `${(n / 1024 / 1024).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(n / 1024))} KB`;
+}
+
+function ChatPanel({
+  title,
+  messages,
+  profileId,
+  message,
+  setMessage,
+  busy,
+  onSend,
+  canAttach,
+  onDownload,
+}) {
+  const [file, setFile] = useState(null);
   if (!title)
     return (
       <EmptyState title="Choose a conversation" hint="Select a group or approved private chat." />
@@ -300,7 +350,15 @@ function ChatPanel({ title, messages, profileId, message, setMessage, busy, onSe
               <p className="mb-1 text-xs font-semibold opacity-80">
                 {item.sender_id === profileId ? "You" : item.sender_name}
               </p>
-              <p className="whitespace-pre-wrap break-words">{item.body}</p>
+              {item.body && <p className="whitespace-pre-wrap break-words">{item.body}</p>}
+              {item.has_file && (
+                <div className="mt-1 text-foreground">
+                  <DownloadButton
+                    label={`${item.file_name} · ${fileSize(item.file_size)}`}
+                    onFetch={() => onDownload(item.id)}
+                  />
+                </div>
+              )}
               <time className="mt-1 block text-right text-[10px] opacity-70">
                 {new Date(item.created_at).toLocaleString()}
               </time>
@@ -309,12 +367,18 @@ function ChatPanel({ title, messages, profileId, message, setMessage, busy, onSe
         </div>
       )}
       <form
-        className="flex items-end gap-2 border-t p-3"
+        className="flex flex-wrap items-end gap-2 border-t p-3"
         onSubmit={(event) => {
           event.preventDefault();
-          if (message.trim()) onSend(message.trim());
+          if (!message.trim() && !file) return;
+          Promise.resolve(onSend(message.trim(), file)).then((ok) => ok && setFile(null));
         }}
       >
+        {canAttach && (
+          <div className="w-full">
+            <FileField value={file} onChange={setFile} label="Attach a file" disabled={busy} />
+          </div>
+        )}
         <textarea
           value={message}
           onChange={(event) => setMessage(event.target.value)}
@@ -324,7 +388,11 @@ function ChatPanel({ title, messages, profileId, message, setMessage, busy, onSe
           placeholder="Write a message…"
           className="min-h-10 flex-1 resize-y rounded-md border bg-background px-3 py-2 text-sm"
         />
-        <Button type="submit" disabled={busy || !message.trim()} aria-label="Send message">
+        <Button
+          type="submit"
+          disabled={busy || (!message.trim() && !file)}
+          aria-label="Send message"
+        >
           <Send />
         </Button>
       </form>

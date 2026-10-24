@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link2, Plus, Save, Trash2 } from "lucide-react";
+import { Plus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -57,36 +57,43 @@ export function AdminTools({ students, records, selectedId = "", onSaved, tabs =
   const people = useMemo(() => accounts.data ?? [], [accounts.data]);
   const byId = useMemo(() => new Map(people.map((p) => [p.id, p])), [people]);
   const facultyPeople = people.filter((p) => p.roles.includes("faculty"));
-  // Everyone starts with the student role, so "student" here means: not a teacher or administrator.
+  // A student is an account that holds the student role. A teacher waiting for approval holds no
+  // role yet, so is not a student.
   const studentPeople = people.filter(
-    (p) => !p.roles.includes("faculty") && !p.roles.includes("admin"),
+    (p) =>
+      p.roles.includes("student") && !p.roles.includes("faculty") && !p.roles.includes("admin"),
   );
+
+  // The People tab lists teachers, teacher requests and administrators. Student accounts are not
+  // shown there; they are still available to the tabs that connect students to teachers.
+  const teacherRequests = people.filter((p) => p.teacherRequest);
+  const teacherList = people.filter((p) => p.roles.includes("faculty"));
+  const adminList = people.filter((p) => p.roles.includes("admin") && !p.roles.includes("faculty"));
 
   const refresh = async () => {
     await qc.invalidateQueries({ queryKey: ["accounts"] });
     await qc.invalidateQueries({ queryKey: ["private-campus"] });
   };
 
-  // ---------- Connect students to a teacher (emails only) ----------
-  const [teacher, setTeacher] = useState("");
-  const [chosen, setChosen] = useState(() => new Set());
-  const [filter, setFilter] = useState("");
+  // ---------- Assign students, teacher first ----------
+  // Teachers are listed; a teacher's students and a search box appear when one is opened. The
+  // full list of students is never shown.
+  const [openTeacher, setOpenTeacher] = useState("");
+  const [find, setFind] = useState("");
   const teacherOf = useMemo(() => {
     const m = new Map();
     for (const r of records) if (r.owner_id) m.set(r.owner_id, r.faculty_id);
     return m;
   }, [records]);
-  const candidates = studentPeople.filter(
-    (p) => !filter || label(p).toLowerCase().includes(filter.trim().toLowerCase()),
-  );
-  const toggle = (id) =>
-    setChosen((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  // Assign (or clear) the teacher of one student straight from their row.
+  const unassigned = studentPeople.filter((p) => !teacherOf.get(p.id)).length;
+  const matches = (teacherId) => {
+    const q = find.trim().toLowerCase();
+    if (q.length < 2) return [];
+    return studentPeople
+      .filter((p) => teacherOf.get(p.id) !== teacherId && label(p).toLowerCase().includes(q))
+      .slice(0, 8);
+  };
+  // Give one student a teacher, or clear it with an empty teacher id.
   async function assignOne(student, facultyId) {
     setBusy(true);
     setMsg("");
@@ -105,33 +112,48 @@ export function AdminTools({ students, records, selectedId = "", onSaved, tabs =
       setBusy(false);
     }
   }
-  async function connect(unlink) {
-    setBusy(true);
-    setMsg("");
-    try {
-      const ids = [...chosen].filter((id) => id !== teacher);
-      const result = await link({
-        data: { facultyId: unlink ? null : teacher, studentUserIds: ids },
-      });
-      await refresh();
-      setChosen(new Set());
-      const who = byId.get(teacher);
-      setMsg(
-        unlink
-          ? `Disconnected ${result.linked} student(s) from their teacher.`
-          : `Connected ${result.linked} student(s) to ${who?.name || who?.email}.` +
-              (result.created
-                ? ` ${result.created} had no record yet, so a blank one was created. Add their details later if you want scores.`
-                : ""),
-      );
-    } catch (err) {
-      setMsg(explain(err));
-    } finally {
-      setBusy(false);
-    }
-  }
 
   // ---------- People & roles ----------
+  const personRow = (p) => (
+    <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 p-3 text-sm">
+      <div>
+        <p className="font-medium">{p.name || p.email}</p>
+        <p className="text-muted-foreground">
+          {p.email} ·{" "}
+          {p.teacherRequest ? "requested teacher access" : p.roles.join(", ") || "no role"}
+        </p>
+      </div>
+      <div className="flex gap-2">
+        {["faculty", "admin"].map((role) => {
+          const has = p.roles.includes(role);
+          return (
+            <Button
+              key={role}
+              type="button"
+              size="sm"
+              variant={has ? "default" : "outline"}
+              onClick={() => changeRole(p.id, role, !has)}
+            >
+              {has ? `Remove ${role}` : `Make ${role}`}
+            </Button>
+          );
+        })}
+        <Button type="button" size="sm" variant="ghost" onClick={() => resetFor(p)}>
+          Reset password
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="text-destructive hover:text-destructive"
+          onClick={() => deleteFor(p)}
+        >
+          Delete
+        </Button>
+      </div>
+    </div>
+  );
+
   async function changeRole(userId, role, on) {
     setMsg("");
     try {
@@ -357,7 +379,7 @@ export function AdminTools({ students, records, selectedId = "", onSaved, tabs =
     <section className="mt-6 rounded-lg border bg-card p-5">
       {tabs.length > 2 && <SectionTitle>Administrator tools</SectionTitle>}
       <div className={tabs.length > 1 ? "mb-4 flex flex-wrap gap-2" : "hidden"}>
-        {tab("connect", "Connect students to a teacher")}
+        {tab("connect", "Teachers and their students")}
         {tab("people", "People & roles")}
         {tab("student", "Add student details (optional)")}
         {tab("csv", "Import CSV")}
@@ -373,166 +395,171 @@ export function AdminTools({ students, records, selectedId = "", onSaved, tabs =
       {open === "connect" && (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Students are listed below. Use the teacher box on a student&apos;s row to assign just
-            that student, or tick several students, choose a teacher at the top and connect them all
-            at once. No other details are needed. Marks and attendance can be added later.
+            Choose a teacher to see their students and add more. Students are found by searching;
+            they are not listed here.
           </p>
           {facultyPeople.length === 0 && !accounts.isLoading && (
             <p className="rounded-md border border-dashed p-3 text-sm">
-              There are no teachers yet. Open <strong>People &amp; roles</strong> and click{" "}
-              <strong>Make faculty</strong> next to a teacher&apos;s account first.
+              There are no teachers yet. Open <strong>People &amp; roles</strong> and approve a
+              teacher with <strong>Make faculty</strong> first.
             </p>
           )}
-          <label className="block text-sm">
-            Teacher for the ticked students
-            <select
-              value={teacher}
-              onChange={(e) => setTeacher(e.target.value)}
-              className={selectClass}
-            >
-              <option value="">Choose a teacher…</option>
-              {facultyPeople.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {label(p)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Input
-                placeholder="Search students by name or email"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                aria-label="Search students"
-                className="max-w-xs"
-              />
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => setChosen(new Set(candidates.map((p) => p.id)))}
-              >
-                Select all shown
-              </Button>
-              <Button type="button" size="sm" variant="ghost" onClick={() => setChosen(new Set())}>
-                Clear
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                {candidates.length} student{candidates.length === 1 ? "" : "s"} · {chosen.size}{" "}
-                selected
-              </span>
-            </div>
-            <div className="mt-3 max-h-80 divide-y overflow-auto rounded-md border">
-              {accounts.isLoading && <p className="p-3 text-sm">Loading…</p>}
-              {!accounts.isLoading && candidates.length === 0 && (
-                <p className="p-3 text-sm text-muted-foreground">
-                  No students found. Students appear here after they sign up.
-                </p>
-              )}
-              {candidates.map((p) => (
-                <div key={p.id} className="flex flex-wrap items-center gap-3 p-3 text-sm">
-                  <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={chosen.has(p.id)}
-                      onChange={() => toggle(p.id)}
-                      className="size-4"
-                      aria-label={`Select ${p.email}`}
-                    />
-                    <span className="min-w-0">
-                      <span className="block font-medium">{p.name || p.email}</span>
-                      <span className="block truncate text-muted-foreground">{p.email}</span>
-                    </span>
-                  </label>
-                  <select
-                    value={teacherOf.get(p.id) ?? ""}
-                    disabled={busy || facultyPeople.length === 0}
-                    onChange={(e) => assignOne(p, e.target.value)}
-                    aria-label={`Teacher for ${p.email}`}
-                    className="text-sm"
+          {accounts.isLoading && <p className="text-sm">Loading…</p>}
+          <div className="divide-y rounded-md border">
+            {facultyPeople.map((t) => {
+              const mine = studentPeople.filter((p) => teacherOf.get(p.id) === t.id);
+              const isOpen = openTeacher === t.id;
+              const found = isOpen ? matches(t.id) : [];
+              return (
+                <section key={t.id} aria-label={`Teacher ${t.name || t.email}`}>
+                  <button
+                    type="button"
+                    aria-expanded={isOpen}
+                    onClick={() => {
+                      setOpenTeacher(isOpen ? "" : t.id);
+                      setFind("");
+                    }}
+                    className="flex w-full flex-wrap items-center justify-between gap-2 p-3 text-left text-sm hover:bg-muted/40"
                   >
-                    <option value="">{teacherOf.has(p.id) ? "No teacher" : "Not assigned"}</option>
-                    {facultyPeople.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name || t.email}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-            </div>
+                    <span>
+                      <span className="block font-medium">{t.name || t.email}</span>
+                      <span className="block text-muted-foreground">{t.email}</span>
+                    </span>
+                    <span className="text-muted-foreground">
+                      {mine.length} student{mine.length === 1 ? "" : "s"} ·{" "}
+                      {isOpen ? "Close" : "Open"}
+                    </span>
+                  </button>
+                  {isOpen && (
+                    <div className="space-y-4 border-t bg-muted/20 p-3 text-sm">
+                      <div>
+                        <p className="mb-2 font-medium">Students of this teacher ({mine.length})</p>
+                        {mine.length === 0 ? (
+                          <p className="text-muted-foreground">No students yet.</p>
+                        ) : (
+                          <div className="divide-y rounded-md border bg-card">
+                            {mine.map((p) => (
+                              <div
+                                key={p.id}
+                                className="flex items-center justify-between gap-3 p-2"
+                              >
+                                <span className="min-w-0">
+                                  <span className="block font-medium">{p.name || p.email}</span>
+                                  <span className="block truncate text-muted-foreground">
+                                    {p.email}
+                                  </span>
+                                </span>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={busy}
+                                  onClick={() => assignOne(p, "")}
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <label className="mb-2 block font-medium" htmlFor={`find-${t.id}`}>
+                          Add a student
+                        </label>
+                        <Input
+                          id={`find-${t.id}`}
+                          placeholder="Search by name or email"
+                          value={find}
+                          onChange={(e) => setFind(e.target.value)}
+                          className="max-w-sm"
+                        />
+                        {find.trim().length < 2 ? (
+                          <p className="mt-2 text-muted-foreground">
+                            Type at least 2 letters to search.
+                          </p>
+                        ) : found.length === 0 ? (
+                          <p className="mt-2 text-muted-foreground">No other student matches.</p>
+                        ) : (
+                          <div className="mt-2 divide-y rounded-md border bg-card">
+                            {found.map((p) => (
+                              <div
+                                key={p.id}
+                                className="flex items-center justify-between gap-3 p-2"
+                              >
+                                <span className="min-w-0">
+                                  <span className="block font-medium">{p.name || p.email}</span>
+                                  <span className="block truncate text-muted-foreground">
+                                    {p.email}
+                                    {teacherOf.get(p.id)
+                                      ? ` · now with ${byId.get(teacherOf.get(p.id))?.name || byId.get(teacherOf.get(p.id))?.email}`
+                                      : " · no teacher yet"}
+                                  </span>
+                                </span>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  disabled={busy}
+                                  onClick={() => {
+                                    void assignOne(p, t.id);
+                                    setFind("");
+                                  }}
+                                >
+                                  <Plus /> Add
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </section>
+              );
+            })}
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              disabled={busy || !teacher || chosen.size === 0}
-              onClick={() => connect(false)}
-            >
-              <Link2 /> Connect {chosen.size || ""} student{chosen.size === 1 ? "" : "s"} to teacher
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={busy || chosen.size === 0}
-              onClick={() => connect(true)}
-            >
-              Disconnect selected from their teacher
-            </Button>
-          </div>
+          {!accounts.isLoading && (
+            <p className="text-xs text-muted-foreground">
+              {unassigned} student{unassigned === 1 ? "" : "s"} do not have a teacher yet.
+            </p>
+          )}
         </div>
       )}
 
       {open === "people" && (
-        <div>
-          <p className="mb-3 text-sm text-muted-foreground">
-            Everyone who has signed up. New accounts are students; give teacher or administrator
-            access here.
+        <div className="space-y-5">
+          <p className="text-sm text-muted-foreground">
+            Teachers, and people who have asked for teacher access. Approve a request with{" "}
+            <strong>Make faculty</strong>. Student accounts are not listed here.
           </p>
           {accounts.isLoading && <p className="text-sm">Loading…</p>}
-          <div className="divide-y rounded-md border">
-            {people.map((p) => (
-              <div
-                key={p.id}
-                className="flex flex-wrap items-center justify-between gap-3 p-3 text-sm"
-              >
-                <div>
-                  <p className="font-medium">{p.name || p.email}</p>
-                  <p className="text-muted-foreground">
-                    {p.email} · {p.roles.join(", ") || "no role"}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  {["faculty", "admin"].map((role) => {
-                    const has = p.roles.includes(role);
-                    return (
-                      <Button
-                        key={role}
-                        type="button"
-                        size="sm"
-                        variant={has ? "default" : "outline"}
-                        onClick={() => changeRole(p.id, role, !has)}
-                      >
-                        {has ? `Remove ${role}` : `Make ${role}`}
-                      </Button>
-                    );
-                  })}
-                  <Button type="button" size="sm" variant="ghost" onClick={() => resetFor(p)}>
-                    Reset password
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => deleteFor(p)}
-                  >
-                    Delete
-                  </Button>
-                </div>
+          {teacherRequests.length > 0 && (
+            <section aria-label="Teacher requests">
+              <h3 className="mb-2 text-sm font-semibold">
+                Waiting for approval ({teacherRequests.length})
+              </h3>
+              <div className="divide-y rounded-md border border-warning/50 bg-warning/5">
+                {teacherRequests.map(personRow)}
               </div>
-            ))}
-          </div>
+            </section>
+          )}
+          <section aria-label="Teachers">
+            <h3 className="mb-2 text-sm font-semibold">Teachers ({teacherList.length})</h3>
+            {teacherList.length === 0 && !accounts.isLoading ? (
+              <p className="rounded-md border p-3 text-sm text-muted-foreground">
+                No teachers yet. When someone signs up in the Teacher workspace, their request
+                appears above for approval.
+              </p>
+            ) : (
+              <div className="divide-y rounded-md border">{teacherList.map(personRow)}</div>
+            )}
+          </section>
+          {adminList.length > 0 && (
+            <section aria-label="Administrators">
+              <h3 className="mb-2 text-sm font-semibold">Administrators ({adminList.length})</h3>
+              <div className="divide-y rounded-md border">{adminList.map(personRow)}</div>
+            </section>
+          )}
         </div>
       )}
 

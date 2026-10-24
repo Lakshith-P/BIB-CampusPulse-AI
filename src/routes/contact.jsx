@@ -11,10 +11,7 @@ import { CaptchaField, useCaptcha } from "@/components/CaptchaField";
 import { Send, MessagesSquare, ArrowUpRight } from "lucide-react";
 export const Route = createFileRoute("/contact")({
   head: () =>
-    pageHead(
-      "Connect With Us",
-      "Contact TEAM BIB about campus analytics, collaboration and BIB InsightIQ.",
-    ),
+    pageHead("Connect With Us", "Contact TEAM BIB about campus analytics, collaboration and SLQG."),
   component: Contact,
 });
 function Contact() {
@@ -79,7 +76,7 @@ function Contact() {
             </p>
             <Button asChild variant="outline" className="mt-6">
               <Link to="/solution">
-                Why BIB InsightIQ <ArrowUpRight />
+                Why SLQG <ArrowUpRight />
               </Link>
             </Button>
           </div>

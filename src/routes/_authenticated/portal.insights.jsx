@@ -6,7 +6,7 @@ export const Route = createFileRoute("/_authenticated/portal/insights")({
   head: () =>
     pageHead(
       "Predictive Risk & AI",
-      "Risk flags and Success Score drivers in your BIB InsightIQ workspace.",
+      "Risk flags and Success Score drivers in your SLQG workspace.",
     ),
   component: StudentInsightsPage,
 });

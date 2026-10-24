@@ -1,14 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
-  CheckCircle2,
   Eye,
   EyeOff,
   LifeBuoy,
   LoaderCircle,
-  Orbit,
   UserRound,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -16,8 +14,7 @@ import { pageHead } from "@/lib/metadata";
 import { requestPasswordReset, signIn, signUp } from "@/lib/auth.functions";
 import { CaptchaField, useCaptcha } from "@/components/CaptchaField";
 import { useAccount } from "@/lib/account";
-import { LANDING, landingFor } from "@/lib/destinations";
-import campus from "@/assets/campus.jpg";
+import { LoginShowcase } from "@/components/auth/LoginShowcase";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search) => ({
@@ -25,8 +22,7 @@ export const Route = createFileRoute("/auth")({
       ? search.workspace
       : undefined,
   }),
-  head: () =>
-    pageHead("Log In", "Sign in to BIB InsightIQ with student, teacher or administrator access."),
+  head: () => pageHead("Log In", "Sign in to SLQG with student, teacher or administrator access."),
   component: Auth,
 });
 
@@ -34,35 +30,6 @@ const WORKSPACES = [
   ["student", "Student"],
   ["faculty", "Teacher"],
   ["admin", "Administrator"],
-];
-
-// The left side cycles through a few messages, like a notice board. Manual only: no auto-motion.
-const SLIDES = [
-  {
-    title: "BIB InsightIQ sets a new standard for student success",
-    sub: "One score. Seven data sources. A clear next step for every student.",
-    big: "07",
-    bigLabel: "connected data sources",
-    points: [],
-  },
-  {
-    title: "Know who needs help, and why",
-    sub: "Every student's story in one place, for the people who support them.",
-    points: [
-      "Students: your score, attendance, results and placement readiness",
-      "Teachers: your students ranked by need, with follow-ups",
-      "Administrators: campus-wide analytics and records",
-    ],
-  },
-  {
-    title: "Private by design",
-    sub: "Your records are only shown to the people allowed to see them.",
-    points: [
-      "Passwords are hashed and sessions are signed",
-      "Permissions are checked on the server for every request",
-      "Human review always, scores are a decision aid",
-    ],
-  },
 ];
 
 // The server reports invalid input as a JSON list of problems; turn that into one sentence.
@@ -93,23 +60,12 @@ function Auth() {
   const [busy, setBusy] = useState(false);
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
-  const [slide, setSlide] = useState(0);
   const [view, setView] = useState("login");
   const [sent, setSent] = useState("");
   const navigate = useNavigate();
   const { user, refresh } = useAccount();
   const { captcha, reload: loadCaptcha } = useCaptcha(setError);
-  const [landing, setLanding] = useState("/portal");
-  // Remember the last choice for each workspace in this browser.
-  useEffect(() => {
-    try {
-      setLanding(landingFor(workspace, localStorage.getItem(`orbit-landing-${workspace}`)));
-    } catch {
-      setLanding("/portal");
-    }
-  }, [workspace]);
   const signingUp = mode === "signup";
-  const s = SLIDES[slide];
 
   async function submit(e) {
     e.preventDefault();
@@ -138,12 +94,7 @@ function Auth() {
         await signIn({ data: { email, password, workspace, ...proof } });
       }
       await refresh();
-      try {
-        localStorage.setItem(`orbit-landing-${workspace}`, landing);
-      } catch {
-        /* the choice just is not remembered */
-      }
-      await navigate({ to: landingFor(workspace, landing) });
+      await navigate({ to: "/portal" });
     } catch (err) {
       setError(friendly(err));
       void loadCaptcha();
@@ -193,59 +144,15 @@ function Auth() {
       data-role={workspace}
       className="grid min-h-dvh lg:h-dvh lg:grid-cols-2 lg:overflow-hidden"
     >
-      <section
-        className="relative hidden overflow-hidden bg-ink lg:block"
-        aria-label="BIB InsightIQ"
-      >
-        <img src={campus} alt="" className="absolute inset-0 size-full object-cover" />
-        <div className="absolute inset-0 bg-ink/30" />
-        <div
-          className="absolute inset-0 bg-gradient-to-br from-[var(--role-from)] via-[var(--role-via)] to-[var(--role-to)] opacity-95 [clip-path:polygon(0_12%,66%_12%,52%_86%,0_86%)]"
-          aria-hidden
+      <div className="hidden lg:block">
+        <LoginShowcase
+          workspace={workspace}
+          onWorkspace={(next) => {
+            setWorkspace(next);
+            setError("");
+          }}
         />
-        <div className="absolute left-[8%] top-[18%] w-[48%] text-white" aria-live="polite">
-          <h2 className="font-display text-[clamp(1.5rem,4.2vh,2.5rem)] font-bold leading-tight">
-            {s.title}
-          </h2>
-          <p className="mt-3 text-white/85">{s.sub}</p>
-          {s.big && (
-            <div className="mt-8">
-              <p className="font-display text-[clamp(3.5rem,11vh,6rem)] font-bold leading-none">
-                {s.big}
-              </p>
-              <p className="mt-2 text-lg font-semibold uppercase tracking-wide text-white/90">
-                {s.bigLabel}
-              </p>
-            </div>
-          )}
-          {s.points.length > 0 && (
-            <ul className="mt-8 space-y-4 text-sm">
-              {s.points.map((p) => (
-                <li key={p} className="flex gap-2.5">
-                  <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-white/80" />
-                  {p}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <p className="absolute bottom-[6%] left-[8%] max-w-md text-xs text-white/80">
-          Turning campus data into student success.
-        </p>
-        <div className="absolute right-6 top-6 flex gap-2" role="tablist" aria-label="Slides">
-          {SLIDES.map((_, n) => (
-            <button
-              key={n}
-              type="button"
-              role="tab"
-              aria-selected={n === slide}
-              aria-label={`Slide ${n + 1}`}
-              onClick={() => setSlide(n)}
-              className={`size-3 rounded-full ${n === slide ? "bg-primary" : "bg-white/50"}`}
-            />
-          ))}
-        </div>
-      </section>
+      </div>
 
       <section className="relative flex flex-col items-center justify-center gap-[clamp(0.35rem,1.8vh,1.25rem)] overflow-y-auto bg-background px-5 py-[clamp(0.5rem,2.5vh,2rem)]">
         <div className="absolute inset-x-5 top-3 flex items-center justify-between">
@@ -258,16 +165,22 @@ function Auth() {
           <ThemeToggle />
         </div>
 
-        <div className="flex items-center gap-4">
-          <span className="brand-mark !size-[clamp(2.1rem,7vh,4rem)] !rounded-2xl">
-            <Orbit className="size-6 sm:size-7" />
-          </span>
+        <div className="flex items-center gap-3">
+          <img
+            src="/slqg-logo.png"
+            alt=""
+            width="64"
+            height="64"
+            className="h-[clamp(2.4rem,7vh,4rem)] w-auto"
+          />
           <div>
-            <p className="font-display text-[clamp(1.6rem,6vh,3rem)] font-bold leading-none text-primary">
-              BIB InsightIQ
-            </p>
-            <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.35em] text-muted-foreground">
-              Student success platform
+            <img
+              src="/slqg-lettering.png"
+              alt="SLQG"
+              className="h-[clamp(1.4rem,4.5vh,2.4rem)] w-auto"
+            />
+            <p className="mt-1.5 text-[10px] font-medium uppercase tracking-[0.28em] text-muted-foreground">
+              Student Learning, Quality &amp; Growth
             </p>
           </div>
         </div>
@@ -428,21 +341,6 @@ function Auth() {
                   {show ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
                 </button>
               </div>
-
-              <label className="flex items-center gap-3 text-sm font-medium">
-                <span className="shrink-0">Open after login</span>
-                <select
-                  value={landing}
-                  onChange={(e) => setLanding(e.target.value)}
-                  className="h-[clamp(2.5rem,6vh,3.5rem)] min-w-0 flex-1 !rounded-xl !border-0 !bg-muted px-4 text-sm"
-                >
-                  {LANDING[workspace].map((o) => (
-                    <option key={o.to} value={o.to}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
 
               {captchaBox}
 

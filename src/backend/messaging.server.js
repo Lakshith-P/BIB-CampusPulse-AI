@@ -1,4 +1,5 @@
 import { isAdmin, isFaculty, ownStudent } from "./access.server.js";
+import { decodeFile, encodeFile } from "./files.server.js";
 
 const sectionKey = (record) =>
   [record.branch, record.semester, record.section, record.gradYear].map((v) => v ?? "").join("|");
@@ -151,7 +152,8 @@ export async function loadChatMessages(db, user, { type, id }) {
   else throw new Error("Choose a valid chat.");
   const { rows } = await db.query(
     `SELECT m.id, m.sender_id, coalesce(u.display_name, u.email::text, 'Former user') AS sender_name,
-            m.body, m.created_at
+            m.body, m.created_at, m.file_name, m.file_type,
+            (m.file_data IS NOT NULL) AS has_file, octet_length(m.file_data) AS file_size
        FROM ${table} m LEFT JOIN users u ON u.id = m.sender_id
       WHERE m.${type === "section" ? "room_id" : "request_id"} = $1
       ORDER BY m.created_at DESC LIMIT 100`,
@@ -160,7 +162,30 @@ export async function loadChatMessages(db, user, { type, id }) {
   return rows.reverse();
 }
 
-export async function sendChatMessage(db, user, { type, id, body }) {
+/** Only teachers and administrators share files; everyone in the chat can download them. */
+export async function sendChatMessage(db, user, { type, id, body, file }) {
+  requireChatRole(user);
+  if (type === "section") await authorizeSectionRoom(db, user, id);
+  else if (type === "private") await authorizePrivateChat(db, user, id);
+  else throw new Error("Choose a valid chat.");
+  const text = (body ?? "").trim();
+  if (!text && !file) throw new Error("Write a message or attach a file.");
+  if (file && !isFaculty(user) && !isAdmin(user))
+    throw new Error("Only teachers and administrators can share files in a chat.");
+  const upload = file ? decodeFile(file) : null;
+  const table = type === "section" ? "chat_section_messages" : "private_chat_messages";
+  const foreignKey = type === "section" ? "room_id" : "request_id";
+  const { rows } = await db.query(
+    `INSERT INTO ${table}(${foreignKey}, sender_id, body, file_name, file_type, file_data)
+     VALUES($1, $2, $3, $4, $5, $6)
+     RETURNING id, sender_id, body, created_at, file_name, file_type, (file_data IS NOT NULL) AS has_file`,
+    [id, user.id, text, upload?.name ?? "", upload?.type ?? "", upload?.buffer ?? null],
+  );
+  return rows[0];
+}
+
+/** A file from a chat the person belongs to. The message must be in the chat they were checked against. */
+export async function downloadChatFile(db, user, { type, id, messageId }) {
   requireChatRole(user);
   if (type === "section") await authorizeSectionRoom(db, user, id);
   else if (type === "private") await authorizePrivateChat(db, user, id);
@@ -168,9 +193,9 @@ export async function sendChatMessage(db, user, { type, id, body }) {
   const table = type === "section" ? "chat_section_messages" : "private_chat_messages";
   const foreignKey = type === "section" ? "room_id" : "request_id";
   const { rows } = await db.query(
-    `INSERT INTO ${table}(${foreignKey}, sender_id, body) VALUES($1, $2, $3)
-     RETURNING id, sender_id, body, created_at`,
-    [id, user.id, body.trim()],
+    `SELECT file_name, file_type, file_data FROM ${table} WHERE id = $1 AND ${foreignKey} = $2`,
+    [messageId, id],
   );
-  return rows[0];
+  if (!rows[0]?.file_data) throw new Error("That file is not available.");
+  return encodeFile(rows[0].file_name, rows[0].file_type, rows[0].file_data);
 }

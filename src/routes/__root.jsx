@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -16,12 +17,16 @@ import { lazy, Suspense, useEffect, useState } from "react";
 const CampusAssistant = lazy(() =>
   import("@/components/CampusAssistant").then((m) => ({ default: m.CampusAssistant })),
 );
+// Pluto is not shown on the sign-in page; it appears once the person is inside.
+const NO_ASSISTANT = ["/auth"];
 function LateAssistant() {
+  const path = useRouterState({ select: (state) => state.location.pathname });
   const [ready, setReady] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 1500);
     return () => clearTimeout(t);
   }, []);
+  if (NO_ASSISTANT.some((p) => path === p || path.startsWith(p + "/"))) return null;
   return ready ? (
     <Suspense fallback={null}>
       <CampusAssistant />
@@ -87,14 +92,14 @@ export const Route = createRootRouteWithContext()({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "BIB InsightIQ — Campus Intelligence" },
+      { title: "SLQG — Student Learning, Quality & Growth" },
       {
         name: "description",
         content:
           "Turning campus data into student success. A TEAM BIB campus intelligence platform.",
       },
       { name: "author", content: "TEAM BIB" },
-      { property: "og:title", content: "BIB InsightIQ — Campus Intelligence" },
+      { property: "og:title", content: "SLQG — Student Learning, Quality & Growth" },
       { property: "og:description", content: "Turning campus data into student success." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

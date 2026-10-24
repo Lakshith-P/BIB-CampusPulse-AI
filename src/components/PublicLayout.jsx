@@ -1,10 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { Menu, Orbit, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useAccount } from "@/lib/account";
 const links = [
-  { to: "/solution", text: "Why BIB InsightIQ" },
+  { to: "/solution", text: "Why SLQG" },
   { to: "/benefits", text: "For your campus" },
   { to: "/privacy", text: "Trust & privacy" },
   { to: "/contact", text: "Connect with us" },
@@ -13,10 +13,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 export function Brand() {
   return (
     <Link to="/" className="flex shrink-0 items-center gap-2.5">
-      <span className="brand-mark">
-        <Orbit className="size-[22px]" />
-      </span>
-      <span className="brand-word">BIB InsightIQ</span>
+      <img src="/slqg-logo.png" alt="" width="36" height="36" className="h-9 w-auto" />
+      <img src="/slqg-lettering.png" alt="SLQG" className="h-5 w-auto" />
     </Link>
   );
 }
@@ -108,7 +106,7 @@ export function PublicLayout({ children }) {
                   to="/solution"
                   className="text-muted-foreground transition-colors hover:text-ochre-ink"
                 >
-                  Why BIB InsightIQ
+                  Why SLQG
                 </Link>
               </li>
               <li>

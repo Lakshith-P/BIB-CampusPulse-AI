@@ -1,13 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { CheckCircle2, Eye, EyeOff, LoaderCircle, Orbit } from "lucide-react";
+import { CheckCircle2, Eye, EyeOff, LoaderCircle } from "lucide-react";
 import { pageHead } from "@/lib/metadata";
 import { resetPasswordWithToken } from "@/lib/auth.functions";
 
 export const Route = createFileRoute("/new-password")({
   validateSearch: (search) => ({ token: typeof search.token === "string" ? search.token : "" }),
-  head: () =>
-    pageHead("Choose a new password", "Choose a new password for your BIB InsightIQ account."),
+  head: () => pageHead("Choose a new password", "Choose a new password for your SLQG account."),
   component: NewPassword,
 });
 
@@ -50,10 +49,8 @@ function NewPassword() {
     <main className="grid min-h-dvh place-items-center bg-background px-5 py-8">
       <div className="w-full max-w-md">
         <div className="mb-6 flex items-center justify-center gap-3">
-          <span className="brand-mark !size-12 !rounded-2xl">
-            <Orbit className="size-7" />
-          </span>
-          <p className="font-display text-4xl font-bold text-primary">BIB InsightIQ</p>
+          <img src="/slqg-logo.png" alt="" width="56" height="56" className="h-14 w-auto" />
+          <img src="/slqg-lettering.png" alt="SLQG" className="h-8 w-auto" />
         </div>
         <div className="rounded-3xl border bg-card p-7 shadow-sm">
           {done ? (

@@ -1,6 +1,6 @@
 # Routes
 
-Orbit uses TanStack Start **file-based routing**. Each `.jsx` file here is a page; the file name is
+SLQG uses TanStack Start **file-based routing**. Each `.jsx` file here is a page; the file name is
 its address. `routeTree.gen.ts` is generated, so never edit it by hand.
 
 | File                                                                      | Address                                                 | Who can open it                                                      |

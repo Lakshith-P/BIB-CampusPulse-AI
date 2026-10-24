@@ -13,6 +13,7 @@ import { checkCaptcha, createCaptcha } from "@/backend/captcha.server";
 import { appUrl, mailReady, sendMail } from "@/backend/mail.server";
 import { requireAuth } from "@/backend/auth-middleware";
 import { query, withTransaction } from "@/backend/db.server";
+import { grantAccountRole } from "@/backend/accounts.server";
 import { ensureStudentRecord } from "@/backend/student-record.server";
 const email = z.string().trim().toLowerCase().email().max(254);
 const password = z
@@ -82,18 +83,17 @@ export const signUp = createServerFn({ method: "POST" })
           [data.email, await hashPassword(data.password), data.name],
         );
         user = created.rows[0];
-        await db.query("INSERT INTO user_roles(user_id, role) VALUES($1,'student')", [user.id]);
-        if (workspace === "student" && !bootstrapAdmin)
-          await ensureStudentRecord(db, { ...user, email: data.email });
+        // Only a student sign-up is a student. A teacher or administrator gets that role alone
+        // (a teacher waiting for approval has none yet), and never a student record.
+        if (workspace === "student") {
+          await db.query("INSERT INTO user_roles(user_id, role) VALUES($1,'student')", [user.id]);
+          if (!bootstrapAdmin) await ensureStudentRecord(db, { ...user, email: data.email });
+        }
       }
       const held = (
         await db.query("SELECT role::text AS role FROM user_roles WHERE user_id = $1", [user.id])
       ).rows.map((r) => r.role);
-      const give = (role) =>
-        db.query("INSERT INTO user_roles(user_id, role) VALUES($1,$2) ON CONFLICT DO NOTHING", [
-          user.id,
-          role,
-        ]);
+      const give = (role) => grantAccountRole(db, user.id, role);
       if (bootstrapAdmin && !held.includes("admin")) await give("admin");
       if (workspace === "admin") {
         await give("admin");
@@ -143,20 +143,13 @@ export const signIn = createServerFn({ method: "POST" })
     const user = rows[0];
     const valid = await verifyPassword(data.password, user?.password_hash);
     if (!user || !valid) throw new Error("Incorrect email or password.");
-    // Picking a workspace never grants access; it only has to match a role the account holds.
+    // Picking a workspace never grants access; it has to match a role the account holds. A wrong
+    // workspace gets the same answer as a wrong password, so it does not say what the account is.
     const held = await query("SELECT 1 FROM user_roles WHERE user_id = $1 AND role = $2", [
       user.id,
       data.workspace,
     ]);
-    if (!held.rowCount) {
-      throw new Error(
-        data.workspace === "faculty"
-          ? "This account does not have teacher access yet. If you just signed up as a teacher, an administrator has to approve it first."
-          : data.workspace === "admin"
-            ? "This account does not have administrator access."
-            : "This account does not have student access.",
-      );
-    }
+    if (!held.rowCount) throw new Error("Incorrect email or password.");
     await startSession(user.id);
     return { ok: true };
   });
@@ -189,7 +182,7 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
       try {
         await sendMail({
           to: data.email,
-          subject: "Reset your BIB InsightIQ password",
+          subject: "Reset your SLQG password",
           text: `Hello${user.display_name ? " " + user.display_name : ""},\n\nUse this link to choose a new password. It works once and expires in ${RESET_MINUTES} minutes:\n${link}\n\nIf you did not ask for this, ignore this email; your password has not changed.`,
           html: `<p>Hello${user.display_name ? " " + user.display_name : ""},</p><p><a href="${link}">Choose a new password</a>. The link works once and expires in ${RESET_MINUTES} minutes.</p><p>If you did not ask for this, ignore this email; your password has not changed.</p>`,
         });

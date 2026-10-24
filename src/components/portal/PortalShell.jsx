@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
+  Gauge,
   Bell,
   Award,
   BookOpen,
@@ -84,6 +85,7 @@ export const NAV = {
     { to: "/portal/skills", label: "Skills", icon: Brain },
     { to: "/portal/feedback", label: "Feedback", icon: MessageSquare },
     { to: "/portal/interventions", label: "Interventions", icon: ClipboardList },
+    { to: "/portal/predictions", label: "Predictions", icon: Gauge },
     { to: "/portal/monitor", label: "Attendance & risk", icon: Activity },
     { to: "/portal/profile", label: "Profile", icon: UserRound },
   ],
@@ -106,6 +108,7 @@ export const NAV = {
     { to: "/portal/people", label: "People & roles", icon: KeyRound },
     { to: "/portal/records", label: "Student records", icon: FolderOpen },
     { to: "/portal/interventions", label: "Interventions", icon: ClipboardList },
+    { to: "/portal/predictions", label: "Predictions", icon: Gauge },
     { to: "/portal/monitor", label: "Attendance & risk", icon: Activity },
     { to: "/portal/messages", label: "Messages", icon: Mail },
     { to: "/portal/complaints", label: "Complaints", icon: ShieldAlert },
@@ -131,6 +134,7 @@ const RAIL_ICON = {
   profile: UserRound,
   students: Users,
   support: ClipboardList,
+  predictions: Gauge,
   people: KeyRound,
 };
 

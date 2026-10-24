@@ -14,7 +14,7 @@ function secret() {
   return s;
 }
 const hash = (answer) =>
-  createHmac("sha256", secret()).update(`captcha:${answer.toUpperCase()}`).digest("hex");
+  createHmac("sha256", secret()).update(`captcha:${answer}`).digest("hex");
 
 function drawSvg(code) {
   const w = 190;

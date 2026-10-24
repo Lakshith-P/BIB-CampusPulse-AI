@@ -46,11 +46,12 @@ export function CaptchaField({ captcha, reload }) {
           required
           maxLength={8}
           autoComplete="off"
-          autoCapitalize="characters"
+          autoCapitalize="off"
+
           spellCheck={false}
           placeholder="Type the letters"
           aria-label="Type the letters you see"
-          className="order-last h-11 w-full rounded-xl border bg-card px-3 uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary sm:order-none sm:w-auto sm:min-w-0 sm:flex-1"
+          className="order-last h-11 w-full rounded-xl border bg-card px-3 tracking-widest outline-none focus:ring-2 focus:ring-primary sm:order-none sm:w-auto sm:min-w-0 sm:flex-1"
         />
         <button
           type="button"
