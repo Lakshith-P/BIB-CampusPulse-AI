@@ -131,4 +131,16 @@ describe("interview exam mode", () => {
     expect(await screen.findByText(/ended early/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Download report/ })).toBeInTheDocument();
   });
+
+  it("lets the student finish at any point, after a confirmation", async () => {
+    await startRoom();
+    fireEvent.click(screen.getByRole("button", { name: "Finish interview" }));
+    expect(await screen.findByText(/Finish the interview now\?/)).toBeInTheDocument();
+    // Cancelling keeps the interview going and submits nothing.
+    fireEvent.click(screen.getByRole("button", { name: "Keep going" }));
+    expect(submit).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Finish interview" }));
+    fireEvent.click(screen.getByRole("button", { name: /Yes, finish and get feedback/ }));
+    await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
+  });
 });

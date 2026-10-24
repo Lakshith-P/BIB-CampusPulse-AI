@@ -246,6 +246,7 @@ function InterviewSession({ interview, onDone, onExit, roomEl }) {
   const lastWarning = useRef(0);
   const warningCount = useRef(0);
   const [warning, setWarning] = useState(null); // { count, ended }
+  const [confirmEnd, setConfirmEnd] = useState(false);
 
   const leaveFullScreen = useCallback(() => {
     fullScreenOn.current = false;
@@ -524,10 +525,54 @@ function InterviewSession({ interview, onDone, onExit, roomEl }) {
         <span className="inline-flex items-center gap-1.5">
           <ShieldAlert className="size-3.5" aria-hidden /> Exam mode: stay on this screen
         </span>
-        <span className="tabular-nums" aria-live="polite">
-          Warnings {warning?.count ?? warningCount.current} / {MAX_WARNINGS}
+        <span className="inline-flex items-center gap-3">
+          <span className="tabular-nums" aria-live="polite">
+            Warnings {warning?.count ?? warningCount.current} / {MAX_WARNINGS}
+          </span>
+          <Button
+            type="button"
+            size="sm"
+            variant="destructive"
+            disabled={busy}
+            onClick={() => {
+              dictation.stop();
+              setConfirmEnd(true);
+            }}
+          >
+            Finish interview
+          </Button>
         </span>
       </div>
+      {confirmEnd && (
+        <div
+          role="alertdialog"
+          aria-label="Finish the interview?"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm"
+        >
+          <p>
+            <b>Finish the interview now?</b> You have answered {answered.filter(Boolean).length} of{" "}
+            {questions.length} questions. Unanswered questions score 0, and you cannot come back to
+            this interview afterwards.
+          </p>
+          <span className="flex gap-2">
+            <Button type="button" size="sm" variant="outline" onClick={() => setConfirmEnd(false)}>
+              Keep going
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              disabled={busy}
+              onClick={() => {
+                setConfirmEnd(false);
+                finish();
+              }}
+            >
+              Yes, finish and get feedback
+            </Button>
+          </span>
+        </div>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
         <span className="font-medium">
           Question {index + 1} of {questions.length}
@@ -665,13 +710,6 @@ function InterviewSession({ interview, onDone, onExit, roomEl }) {
           </div>
         </div>
       </div>
-      {index < questions.length - 1 && (
-        <div className="text-right">
-          <Button variant="ghost" size="sm" disabled={busy} onClick={finish}>
-            End interview early
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
