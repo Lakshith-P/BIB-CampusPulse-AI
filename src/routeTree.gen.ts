@@ -31,6 +31,7 @@ import { Route as AuthenticatedPortalEngagementRouteImport } from './routes/_aut
 import { Route as AuthenticatedPortalFeedbackRouteImport } from './routes/_authenticated/portal.feedback'
 import { Route as AuthenticatedPortalInsightsRouteImport } from './routes/_authenticated/portal.insights'
 import { Route as AuthenticatedPortalInterventionsRouteImport } from './routes/_authenticated/portal.interventions'
+import { Route as AuthenticatedPortalInterviewRouteImport } from './routes/_authenticated/portal.interview'
 import { Route as AuthenticatedPortalLearningRouteImport } from './routes/_authenticated/portal.learning'
 import { Route as AuthenticatedPortalLmsRouteImport } from './routes/_authenticated/portal.lms'
 import { Route as AuthenticatedPortalMessagesRouteImport } from './routes/_authenticated/portal.messages'
@@ -171,6 +172,12 @@ const AuthenticatedPortalInterventionsRoute =
     path: '/interventions',
     getParentRoute: () => AuthenticatedPortalRoute,
   } as any)
+const AuthenticatedPortalInterviewRoute =
+  AuthenticatedPortalInterviewRouteImport.update({
+    id: '/interview',
+    path: '/interview',
+    getParentRoute: () => AuthenticatedPortalRoute,
+  } as any)
 const AuthenticatedPortalLearningRoute =
   AuthenticatedPortalLearningRouteImport.update({
     id: '/learning',
@@ -303,6 +310,7 @@ export interface FileRoutesByFullPath {
   '/portal/feedback': typeof AuthenticatedPortalFeedbackRoute
   '/portal/insights': typeof AuthenticatedPortalInsightsRoute
   '/portal/interventions': typeof AuthenticatedPortalInterventionsRoute
+  '/portal/interview': typeof AuthenticatedPortalInterviewRoute
   '/portal/learning': typeof AuthenticatedPortalLearningRoute
   '/portal/lms': typeof AuthenticatedPortalLmsRoute
   '/portal/messages': typeof AuthenticatedPortalMessagesRoute
@@ -344,6 +352,7 @@ export interface FileRoutesByTo {
   '/portal/feedback': typeof AuthenticatedPortalFeedbackRoute
   '/portal/insights': typeof AuthenticatedPortalInsightsRoute
   '/portal/interventions': typeof AuthenticatedPortalInterventionsRoute
+  '/portal/interview': typeof AuthenticatedPortalInterviewRoute
   '/portal/learning': typeof AuthenticatedPortalLearningRoute
   '/portal/lms': typeof AuthenticatedPortalLmsRoute
   '/portal/messages': typeof AuthenticatedPortalMessagesRoute
@@ -388,6 +397,7 @@ export interface FileRoutesById {
   '/_authenticated/portal/feedback': typeof AuthenticatedPortalFeedbackRoute
   '/_authenticated/portal/insights': typeof AuthenticatedPortalInsightsRoute
   '/_authenticated/portal/interventions': typeof AuthenticatedPortalInterventionsRoute
+  '/_authenticated/portal/interview': typeof AuthenticatedPortalInterviewRoute
   '/_authenticated/portal/learning': typeof AuthenticatedPortalLearningRoute
   '/_authenticated/portal/lms': typeof AuthenticatedPortalLmsRoute
   '/_authenticated/portal/messages': typeof AuthenticatedPortalMessagesRoute
@@ -432,6 +442,7 @@ export interface FileRouteTypes {
     | '/portal/feedback'
     | '/portal/insights'
     | '/portal/interventions'
+    | '/portal/interview'
     | '/portal/learning'
     | '/portal/lms'
     | '/portal/messages'
@@ -473,6 +484,7 @@ export interface FileRouteTypes {
     | '/portal/feedback'
     | '/portal/insights'
     | '/portal/interventions'
+    | '/portal/interview'
     | '/portal/learning'
     | '/portal/lms'
     | '/portal/messages'
@@ -516,6 +528,7 @@ export interface FileRouteTypes {
     | '/_authenticated/portal/feedback'
     | '/_authenticated/portal/insights'
     | '/_authenticated/portal/interventions'
+    | '/_authenticated/portal/interview'
     | '/_authenticated/portal/learning'
     | '/_authenticated/portal/lms'
     | '/_authenticated/portal/messages'
@@ -709,6 +722,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPortalInterventionsRouteImport
       parentRoute: typeof AuthenticatedPortalRoute
     }
+    '/_authenticated/portal/interview': {
+      id: '/_authenticated/portal/interview'
+      path: '/interview'
+      fullPath: '/portal/interview'
+      preLoaderRoute: typeof AuthenticatedPortalInterviewRouteImport
+      parentRoute: typeof AuthenticatedPortalRoute
+    }
     '/_authenticated/portal/learning': {
       id: '/_authenticated/portal/learning'
       path: '/learning'
@@ -857,6 +877,7 @@ interface AuthenticatedPortalRouteChildren {
   AuthenticatedPortalFeedbackRoute: typeof AuthenticatedPortalFeedbackRoute
   AuthenticatedPortalInsightsRoute: typeof AuthenticatedPortalInsightsRoute
   AuthenticatedPortalInterventionsRoute: typeof AuthenticatedPortalInterventionsRoute
+  AuthenticatedPortalInterviewRoute: typeof AuthenticatedPortalInterviewRoute
   AuthenticatedPortalLearningRoute: typeof AuthenticatedPortalLearningRoute
   AuthenticatedPortalLmsRoute: typeof AuthenticatedPortalLmsRoute
   AuthenticatedPortalMessagesRoute: typeof AuthenticatedPortalMessagesRoute
@@ -888,6 +909,7 @@ const AuthenticatedPortalRouteChildren: AuthenticatedPortalRouteChildren = {
   AuthenticatedPortalFeedbackRoute: AuthenticatedPortalFeedbackRoute,
   AuthenticatedPortalInsightsRoute: AuthenticatedPortalInsightsRoute,
   AuthenticatedPortalInterventionsRoute: AuthenticatedPortalInterventionsRoute,
+  AuthenticatedPortalInterviewRoute: AuthenticatedPortalInterviewRoute,
   AuthenticatedPortalLearningRoute: AuthenticatedPortalLearningRoute,
   AuthenticatedPortalLmsRoute: AuthenticatedPortalLmsRoute,
   AuthenticatedPortalMessagesRoute: AuthenticatedPortalMessagesRoute,

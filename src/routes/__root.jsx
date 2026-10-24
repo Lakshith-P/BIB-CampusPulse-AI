@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
 import { THEME_SCRIPT } from "@/components/ThemeToggle";
+import { RouteTransition } from "@/components/SlqgLoader";
 import { AccountProvider } from "@/lib/account";
 import { lazy, Suspense, useEffect, useState } from "react";
 
@@ -145,6 +146,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AccountProvider>
         <Outlet />
+        <RouteTransition />
         <LateAssistant />
       </AccountProvider>
     </QueryClientProvider>

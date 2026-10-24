@@ -22,15 +22,17 @@ export const Route = createFileRoute("/auth")({
       ? search.workspace
       : undefined,
   }),
-  head: () => pageHead("Log In", "Sign in to SLQG with student, teacher or administrator access."),
+  head: () => pageHead("Log In", "Sign in to SLQG with student or teacher access."),
   component: Auth,
 });
 
-const WORKSPACES = [
+// The administrator workspace is not offered on the public page. Administrators open the sign-in
+// page with ?workspace=admin, which adds it to the list; the server checks the role either way.
+const PUBLIC_WORKSPACES = [
   ["student", "Student"],
   ["faculty", "Teacher"],
-  ["admin", "Administrator"],
 ];
+const ADMIN_WORKSPACE = ["admin", "Administrator"];
 
 // The server reports invalid input as a JSON list of problems; turn that into one sentence.
 function friendly(err) {
@@ -55,7 +57,10 @@ const fieldBox =
   "h-[clamp(2.5rem,6vh,3.5rem)] w-full rounded-xl border-0 bg-muted px-5 text-sm text-foreground outline-none transition focus:ring-2 focus:ring-primary placeholder:text-muted-foreground";
 
 function Auth() {
-  const [workspace, setWorkspace] = useState(Route.useSearch().workspace ?? "student");
+  const requested = Route.useSearch().workspace;
+  const WORKSPACES =
+    requested === "admin" ? [...PUBLIC_WORKSPACES, ADMIN_WORKSPACE] : PUBLIC_WORKSPACES;
+  const [workspace, setWorkspace] = useState(requested ?? "student");
   const [mode, setMode] = useState("login");
   const [busy, setBusy] = useState(false);
   const [show, setShow] = useState(false);
@@ -147,6 +152,7 @@ function Auth() {
       <div className="hidden lg:block">
         <LoginShowcase
           workspace={workspace}
+          showAdmin={requested === "admin"}
           onWorkspace={(next) => {
             setWorkspace(next);
             setError("");

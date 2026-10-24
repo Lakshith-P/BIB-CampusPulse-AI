@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { LoaderCircle } from "lucide-react";
+import { SlqgLoaderScreen } from "@/components/SlqgLoader";
 import { PortalShell } from "@/components/portal/PortalShell";
 import { ToastProvider } from "@/components/ui-kit";
 import { pageHead } from "@/lib/metadata";
@@ -13,14 +13,7 @@ export const Route = createFileRoute("/_authenticated/portal")({
     ),
   loader: ({ context }) => context.queryClient.ensureQueryData(campusOptions),
   pendingMs: 0,
-  pendingComponent: () => (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40" role="status">
-      <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
-        <LoaderCircle className="size-8 animate-spin text-primary" />
-        Loading your workspace…
-      </div>
-    </div>
-  ),
+  pendingComponent: () => <SlqgLoaderScreen label="Loading your workspace" />,
   component: () => (
     <ToastProvider>
       <PortalShell>

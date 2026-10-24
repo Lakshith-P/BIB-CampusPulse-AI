@@ -57,7 +57,6 @@ function Benefits() {
                 "Monitor integrated-source coverage and data quality",
                 "Oversee support and accountable record changes",
               ],
-              workspace: "admin",
             },
           ].map((x) => (
             <article key={x.role} className="flex flex-col rounded-lg border bg-card p-7">
@@ -72,11 +71,13 @@ function Benefits() {
                   </li>
                 ))}
               </ul>
-              <Button asChild variant="outline" className="mt-auto">
-                <Link to="/auth" search={{ workspace: x.workspace }}>
-                  Log in as {x.role.split(" ")[0].toLowerCase()} <ArrowUpRight />
-                </Link>
-              </Button>
+              {x.workspace && (
+                <Button asChild variant="outline" className="mt-auto">
+                  <Link to="/auth" search={{ workspace: x.workspace }}>
+                    Log in as {x.role.split(" ")[0].toLowerCase()} <ArrowUpRight />
+                  </Link>
+                </Button>
+              )}
             </article>
           ))}
         </div>

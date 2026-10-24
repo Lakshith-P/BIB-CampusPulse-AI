@@ -547,6 +547,23 @@ describe("engagement opportunities and verification", () => {
     const staff = await engagement.listOpportunities(db, teacher, TODAY);
     expect(staff[0].stats.participants).toBe(1);
   });
+
+  it("names the student's assigned teacher, and needs one before an activity can be completed", async () => {
+    const mine = await engagement.listOpportunities(db, ann, TODAY);
+    expect(mine[0].teacher).toBe("Teacher One");
+    const loner = await addUser(db, "loner@x.edu", "Loner");
+    await addStudent(db, "S-LONER", loner, null);
+    expect((await engagement.listOpportunities(db, loner, TODAY))[0].teacher).toBeNull();
+    await expect(
+      engagement.setParticipation(db, loner, {
+        opportunityId: mine[0].id,
+        status: "completed",
+        evidence: "x",
+      }),
+    ).rejects.toThrow(/assigned teacher/);
+    await db.query("DELETE FROM student_records WHERE id = 'S-LONER'");
+    await db.query("DELETE FROM users WHERE id = $1", [loner.id]);
+  });
 });
 
 describe("skill assessments", () => {

@@ -129,7 +129,7 @@ export function CampusAssistant() {
             </ConversationContent>
             <ConversationScrollButton />
           </Conversation>
-          <div className="border-t p-3">
+          <div className="p-3">
             <div className="mb-3 flex gap-3 text-xs">
               {user ? (
                 <Link to="/portal" onClick={() => setOpen(false)} className="text-primary">

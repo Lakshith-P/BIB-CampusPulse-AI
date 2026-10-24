@@ -9,6 +9,7 @@ import {
   visibleStudent,
 } from "./access.server.js";
 import { checkEligibility } from "@/lib/scoring";
+import { roundStates, statusFromRounds } from "@/lib/drive-rounds";
 import { studentSchema } from "@/lib/student-validation";
 
 const toDrive = (r) => ({
@@ -25,10 +26,11 @@ const toDrive = (r) => ({
   gradYear: r.grad_year,
   requiresAssessment: r.requires_assessment,
   link: r.link,
+  rounds: r.rounds ?? [],
 });
 
 const DRIVE_COLUMNS = `d.id, d.company, d.role_title, d.description, d.package, d.drive_date::text AS drive_date,
-  d.deadline::text AS deadline, d.min_cgpa, d.max_backlogs, d.branches, d.grad_year, d.requires_assessment, d.link`;
+  d.deadline::text AS deadline, d.min_cgpa, d.max_backlogs, d.branches, d.grad_year, d.requires_assessment, d.link, d.rounds`;
 
 /** Evaluates a drive against a stored student record. Eligibility is never assumed. */
 export function evaluate(record, drive) {
@@ -62,17 +64,21 @@ export async function listDrives(db, user, today) {
   }
   const own = await ownStudent(db, user);
   const apps = own
-    ? await db.query("SELECT drive_id, status FROM drive_applications WHERE student_id = $1", [
-        own.id,
-      ])
+    ? await db.query(
+        "SELECT drive_id, status, round_results FROM drive_applications WHERE student_id = $1",
+        [own.id],
+      )
     : { rows: [] };
   const status = new Map(apps.rows.map((a) => [a.drive_id, a.status]));
+  const results = new Map(apps.rows.map((a) => [a.drive_id, a.round_results ?? {}]));
   return rows.map((r) => {
     const drive = toDrive(r);
     return {
       ...drive,
       open: r.deadline >= today,
       application: status.get(r.id) ?? null,
+      roundResults: results.get(r.id) ?? {},
+      roundStates: status.has(r.id) ? roundStates(drive.rounds, results.get(r.id) ?? {}) : [],
       eligibility: own ? evaluate(own.record, drive) : null,
     };
   });
@@ -82,8 +88,8 @@ export async function saveDrive(db, user, data, today) {
   requireStaff(user);
   const { rows } = await db.query(
     `INSERT INTO placement_drives(company, role_title, description, package, drive_date, deadline,
-        min_cgpa, max_backlogs, branches, grad_year, requires_assessment, link, created_by)
-     VALUES($1,$2,$3,$4,NULLIF($5,'')::date,$6::date,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
+        min_cgpa, max_backlogs, branches, grad_year, requires_assessment, link, created_by, rounds)
+     VALUES($1,$2,$3,$4,NULLIF($5,'')::date,$6::date,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
     [
       data.company,
       data.roleTitle,
@@ -98,6 +104,7 @@ export async function saveDrive(db, user, data, today) {
       data.requiresAssessment,
       data.link,
       user.id,
+      data.rounds ?? [],
     ],
   );
   const id = rows[0].id;
@@ -159,7 +166,7 @@ export async function applyToDrive(db, user, { driveId }, today) {
 export async function listApplicants(db, user, { driveId }) {
   requireStaff(user);
   const { rows } = await db.query(
-    `SELECT a.student_id, a.status, a.applied_at, sr.record->>'name' AS name,
+    `SELECT a.student_id, a.status, a.round_results, a.applied_at, sr.record->>'name' AS name,
             sr.record->>'branch' AS branch, sr.record->>'cgpa' AS cgpa
        FROM drive_applications a JOIN student_records sr ON sr.id = a.student_id
       WHERE a.drive_id = $1 AND ($3::boolean OR sr.faculty_id = $2)
@@ -185,6 +192,53 @@ export async function setApplicationStatus(db, user, { driveId, studentId, statu
     key: `application:${driveId}:${studentId}:${status}`,
   });
   return { saved: true };
+}
+
+/**
+ * A teacher records how a student did in one round of a drive. Rounds are taken in order, so a
+ * round can only be marked once the ones before it are passed. The application's stage follows
+ * from the rounds: a failed round is "rejected", every round passed is "selected", some passed is
+ * "shortlisted". Clearing a round also clears the rounds after it.
+ */
+export async function setRoundResult(db, user, { driveId, studentId, round, result }) {
+  const student = await staffStudent(db, user, studentId);
+  const found = await db.query(
+    `SELECT d.company, d.rounds, a.round_results
+       FROM placement_drives d JOIN drive_applications a ON a.drive_id = d.id
+      WHERE d.id = $1 AND a.student_id = $2`,
+    [driveId, studentId],
+  );
+  const row = found.rows[0];
+  if (!row) throw new Error("That student has not applied to this drive.");
+  const rounds = row.rounds ?? [];
+  const at = rounds.indexOf(round);
+  if (at < 0) throw new Error("This drive has no such round.");
+  const results = { ...(row.round_results ?? {}) };
+  if (result !== "pending" && rounds.slice(0, at).some((r) => results[r] !== "passed"))
+    throw new Error("Mark the earlier rounds as passed first.");
+  if (result === "pending") for (const r of rounds.slice(at)) delete results[r];
+  else results[round] = result;
+  const status = statusFromRounds(rounds, results);
+  await db.query(
+    `UPDATE drive_applications SET round_results = $3, status = $4, updated_at = now()
+      WHERE drive_id = $1 AND student_id = $2`,
+    [driveId, studentId, JSON.stringify(results), status],
+  );
+  if (result !== "pending")
+    await notify(db, student.owner_id, {
+      area: "Placement",
+      priority: status === "selected" ? "high" : "medium",
+      title: `${row.company}: ${round} ${result}`,
+      body:
+        status === "selected"
+          ? "You have passed every round. You are selected."
+          : status === "rejected"
+            ? "You did not move forward in this drive."
+            : `You move on to the next round.`,
+      link: "/portal/placement",
+      key: `round:${driveId}:${studentId}:${round}:${result}`,
+    });
+  return { saved: true, status };
 }
 
 // ------------------------------------------------------------------ mock interviews

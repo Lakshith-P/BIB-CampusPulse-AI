@@ -133,6 +133,32 @@ describe("marking attendance", () => {
   });
 });
 
+describe("an account that is both a teacher and an administrator", () => {
+  it("marks attendance only for the students assigned to them, like any teacher", async () => {
+    const both = await addUser(db, "both@x.edu", "Both", ["admin", "faculty"]);
+    // no students yet: the whole campus is not theirs to mark
+    expect(await attendance.attendanceSubjects(db, both)).toEqual([]);
+    await expect(attendance.loadRoster(db, both, { ...base, period: 3 })).rejects.toThrow(
+      /assigned to you/,
+    );
+    const dee = await addUser(db, "dee@x.edu", "Dee");
+    await addStudent(db, "S-DEE", dee, both, { subjects: maths(4, 4) });
+    const roster = await attendance.loadRoster(db, both, { ...base, period: 3 });
+    expect(roster.students.map((x) => x.id)).toEqual(["S-DEE"]);
+    await expect(
+      attendance.markAttendance(
+        db,
+        both,
+        { ...base, period: 3, marks: [{ studentId: "S-ANN", present: false }] },
+        TODAY,
+      ),
+    ).rejects.toThrow(/not in your class/);
+    // leave the shared data as it was for the tests after this one
+    await db.query("DELETE FROM student_records WHERE id = 'S-DEE'");
+    await db.query("DELETE FROM users WHERE id = ANY($1)", [[both.id, dee.id]]);
+  });
+});
+
 describe("timetable", () => {
   it("lets a teacher add classes, rejects clashes and bad times, and shows them to students", async () => {
     await attendance.saveSlot(db, teacher, {

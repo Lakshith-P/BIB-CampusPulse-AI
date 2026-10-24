@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { SlqgLoader } from "@/components/SlqgLoader";
 
 // ---------------------------------------------------------------- toasts
 const ToastContext = createContext({ toast: () => {} });
@@ -122,29 +123,10 @@ export function Skeleton({ className }) {
   );
 }
 
-export function PageSkeleton({ rows = 4 }) {
+export function PageSkeleton() {
   return (
-    <div role="status" aria-label="Loading" className="space-y-5">
-      <Skeleton className="h-9 w-56" />
-      {/* The loading shape mirrors the real page: a row of ruled figures, then ledger rows. */}
-      <div className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4">
-        {Array.from({ length: 4 }, (_, i) => (
-          <div key={i} className="stat-tile">
-            <Skeleton className="h-2.5 w-20" />
-            <div className="stat-figure-row">
-              <Skeleton className="h-8 w-24" />
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="surface divide-y divide-rule">
-        {Array.from({ length: rows }, (_, i) => (
-          <div key={i} className="flex items-center gap-4 px-4 py-3.5">
-            <Skeleton className="h-3 w-1/3" />
-            <Skeleton className="ml-auto h-3 w-16" />
-          </div>
-        ))}
-      </div>
+    <div className="flex min-h-[16rem] items-center justify-center py-10">
+      <SlqgLoader label="Loading" />
     </div>
   );
 }

@@ -200,3 +200,75 @@ describe("mock interview", () => {
     expect(await count()).toBe(before);
   });
 });
+
+describe("leaving the interview screen", () => {
+  const input = { role: "Analyst", difficulty: "easy", types: ["hr", "coding"], count: 4 };
+  const start = () => iv.startInterview(db, ann, input, model(JSON.stringify(questions)));
+  const notices = async () =>
+    (
+      await db.query(
+        "SELECT title, body, priority FROM notifications WHERE user_id = $1 AND dedupe_key LIKE 'interview-violation:%'",
+        [teacher.id],
+      )
+    ).rows;
+
+  it("counts each time, and only the third ends the interview and tells the teacher", async () => {
+    const s = await start();
+    expect(await iv.recordViolation(db, ann, { id: s.id, reason: "tab-switch" })).toEqual({
+      violations: 1,
+      ended: false,
+    });
+    expect(await iv.recordViolation(db, ann, { id: s.id, reason: "left-full-screen" })).toEqual({
+      violations: 2,
+      ended: false,
+    });
+    expect(await notices()).toHaveLength(0);
+    expect(await iv.recordViolation(db, ann, { id: s.id, reason: "tab-switch" })).toEqual({
+      violations: 3,
+      ended: true,
+    });
+    const [note] = await notices();
+    expect(note).toMatchObject({ priority: "high" });
+    expect(note.title).toContain("Student S-ANN");
+    expect(note.body).toContain("3 times");
+  });
+
+  it("grades what was answered, marks it ended, and keeps it off the mock interview count", async () => {
+    const s = await start();
+    for (let i = 0; i < 3; i++)
+      await iv.recordViolation(db, ann, { id: s.id, reason: "tab-switch" });
+    const before = (await recordOf(db, "S-ANN")).mockInterviews ?? 0;
+    const result = await iv.submitInterview(
+      db,
+      ann,
+      { id: s.id, answers: [{ index: 0, answer: "My answer", code: "", language: "" }] },
+      model(JSON.stringify(grade([7]))),
+    );
+    expect(result).toMatchObject({ terminated: true, violations: 3 });
+    expect((await recordOf(db, "S-ANN")).mockInterviews ?? 0).toBe(before);
+    const listed = (await iv.listInterviews(db, ann)).find((x) => x.id === s.id);
+    expect(listed).toMatchObject({ status: "terminated", violations: 3 });
+    expect(await iv.getInterviewResult(db, ann, { id: s.id })).toMatchObject({
+      terminated: true,
+      role: "Analyst",
+    });
+    await expect(
+      iv.submitInterview(db, ann, { id: s.id, answers: [] }, model("{}")),
+    ).rejects.toThrow(/already/);
+  });
+
+  it("is private: nobody else can add to the count, and a normal finish is not terminated", async () => {
+    const s = await start();
+    await expect(iv.recordViolation(db, ben, { id: s.id, reason: "tab-switch" })).rejects.toThrow(
+      /not found/,
+    );
+    await iv.recordViolation(db, ann, { id: s.id, reason: "tab-switch" });
+    const result = await iv.submitInterview(
+      db,
+      ann,
+      { id: s.id, answers: [{ index: 0, answer: "ok", code: "", language: "" }] },
+      model(JSON.stringify(grade([5]))),
+    );
+    expect(result).toMatchObject({ terminated: false, violations: 1 });
+  });
+});

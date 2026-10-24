@@ -40,7 +40,21 @@ export async function listOpportunities(db, user, today) {
       )
     : { rows: [] };
   const by = new Map(mine.rows.map((m) => [m.opportunity_id, m]));
-  return rows.map((r) => ({ ...r, open: open(r), participation: by.get(r.id) ?? null }));
+  // Evidence goes to the student's own assigned teacher, so the page shows who that is.
+  const teacher = own?.faculty_id
+    ? ((
+        await db.query(
+          "SELECT coalesce(nullif(display_name, ''), email) AS name FROM users WHERE id = $1",
+          [own.faculty_id],
+        )
+      ).rows[0]?.name ?? null)
+    : null;
+  return rows.map((r) => ({
+    ...r,
+    open: open(r),
+    participation: by.get(r.id) ?? null,
+    teacher,
+  }));
 }
 
 export async function saveOpportunity(db, user, data, today) {
@@ -93,6 +107,10 @@ export async function setParticipation(db, user, { opportunityId, status, eviden
   const own = await requireOwnStudent(db, user);
   const o = await db.query("SELECT 1 FROM opportunities WHERE id = $1", [opportunityId]);
   if (!o.rowCount) throw new Error("That opportunity no longer exists.");
+  if (status === "completed" && !own.faculty_id)
+    throw new Error(
+      "You do not have an assigned teacher yet, so there is nobody to verify this. Ask an administrator to assign one.",
+    );
   // Changing the status away from "completed" withdraws any earlier verification.
   await db.query(
     `INSERT INTO opportunity_participation(opportunity_id, student_id, status, evidence)

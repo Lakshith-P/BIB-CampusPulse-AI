@@ -5,6 +5,9 @@ import {
   CameraOff,
   Download,
   FileText,
+  Maximize,
+  Printer,
+  ShieldAlert,
   Mic,
   MicOff,
   Play,
@@ -30,16 +33,24 @@ import {
 import { cn } from "@/lib/utils";
 import { DIFFICULTIES, QUESTION_TYPES, TYPE_KEYS } from "@/lib/interview-prompt";
 import { useSpeech } from "@/lib/use-speech";
+import { buildInterviewReportHtml, reportFileName, verdict } from "@/lib/interview-report";
+import { saveBlob } from "@/lib/save-file";
 import {
   downloadMyResume,
   loadInterviewResult,
   removeInterview,
   removeMyResume,
+  reportInterviewViolation,
   saveMyResume,
   startMockInterview,
   submitMockInterview,
 } from "@/lib/platform.functions";
 import { KEYS, useInterviews, useResume } from "@/lib/use-platform";
+import { RoleGate } from "@/components/portal/PortalShell";
+import { useCampus } from "@/lib/use-campus";
+
+/** Times a student may leave the interview screen before it ends (the server counts too). */
+const MAX_WARNINGS = 3;
 
 // ---------------------------------------------------------------- resume
 export function ResumeCard() {
@@ -191,7 +202,23 @@ function Clock({ seconds, resetKey }) {
   );
 }
 
-function InterviewRoom({ interview, onDone, onExit }) {
+/**
+ * The interview room. It fills the screen when the interview starts, and leaving the screen
+ * (another tab or window, or leaving full screen) is a warning; the third one ends the interview.
+ */
+function InterviewRoom(props) {
+  const roomEl = useRef(null);
+  return (
+    <div
+      ref={roomEl}
+      className="[&:fullscreen]:h-screen [&:fullscreen]:overflow-y-auto [&:fullscreen]:bg-background [&:fullscreen]:p-6"
+    >
+      <InterviewSession {...props} roomEl={roomEl} />
+    </div>
+  );
+}
+
+function InterviewSession({ interview, onDone, onExit, roomEl }) {
   const { questions } = interview;
   const [phase, setPhase] = useState("prep"); // prep | live | grading
   const [index, setIndex] = useState(0);
@@ -211,6 +238,72 @@ function InterviewRoom({ interview, onDone, onExit }) {
   const chunks = useRef([]);
   const { speak, cancel, supported: canSpeak } = useSpeech();
   const { busy, run } = useAction();
+  const answersRef = useRef(answers);
+  answersRef.current = answers;
+  const finishRef = useRef(null);
+  const fullScreenOn = useRef(false); // we asked for full screen, so leaving it counts
+  const ended = useRef(false);
+  const lastWarning = useRef(0);
+  const warningCount = useRef(0);
+  const [warning, setWarning] = useState(null); // { count, ended }
+
+  const leaveFullScreen = useCallback(() => {
+    fullScreenOn.current = false;
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+  }, []);
+  const enterFullScreen = useCallback(() => {
+    const el = roomEl.current;
+    if (!el?.requestFullscreen) return;
+    el.requestFullscreen()
+      .then(() => {
+        fullScreenOn.current = true;
+      })
+      .catch(() => {});
+  }, [roomEl]);
+
+  // One warning each time the student leaves the screen. The server keeps the real count.
+  const warn = useCallback(
+    async (reason) => {
+      const now = Date.now();
+      if (ended.current || now - lastWarning.current < 1500) return;
+      lastWarning.current = now;
+      let count = 0;
+      let over = false;
+      try {
+        const r = await reportInterviewViolation({ data: { id: interview.id, reason } });
+        count = r.violations;
+        over = r.ended;
+      } catch {
+        // Offline: count here so the rule still holds.
+        count = warningCount.current + 1;
+        over = count >= MAX_WARNINGS;
+      }
+      warningCount.current = count;
+      setWarning({ count, ended: over });
+      if (over) {
+        ended.current = true;
+        await finishRef.current?.();
+      }
+    },
+    [interview.id],
+  );
+  useEffect(() => {
+    if (phase !== "live") return;
+    const hidden = () => document.hidden && warn("tab-switch");
+    const blurred = () => warn("tab-switch");
+    const fullscreen = () => {
+      if (fullScreenOn.current && !document.fullscreenElement) warn("left-full-screen");
+    };
+    document.addEventListener("visibilitychange", hidden);
+    window.addEventListener("blur", blurred);
+    document.addEventListener("fullscreenchange", fullscreen);
+    return () => {
+      document.removeEventListener("visibilitychange", hidden);
+      window.removeEventListener("blur", blurred);
+      document.removeEventListener("fullscreenchange", fullscreen);
+    };
+  }, [phase, warn]);
+  useEffect(() => leaveFullScreen, [leaveFullScreen]);
   const q = questions[index];
   const current = answers[index];
   const isCoding = q.type === "coding";
@@ -262,6 +355,7 @@ function InterviewRoom({ interview, onDone, onExit }) {
   }, [phase, index]);
 
   const begin = () => {
+    enterFullScreen(); // must happen straight from the click
     if (stream.current && typeof MediaRecorder !== "undefined") {
       try {
         recorder.current = new MediaRecorder(stream.current);
@@ -278,6 +372,7 @@ function InterviewRoom({ interview, onDone, onExit }) {
     dictation.stop();
     cancel();
     setPhase("grading");
+    leaveFullScreen();
     let recordingUrl = null;
     if (recorder.current && recorder.current.state !== "inactive") {
       await new Promise((resolve) => {
@@ -291,7 +386,7 @@ function InterviewRoom({ interview, onDone, onExit }) {
       submitMockInterview({
         data: {
           id: interview.id,
-          answers: answers.map((a, i) => ({
+          answers: answersRef.current.map((a, i) => ({
             ...a,
             code:
               questions[i].type === "coding" && a.code === (questions[i].starterCode ?? "")
@@ -302,8 +397,12 @@ function InterviewRoom({ interview, onDone, onExit }) {
       }),
     );
     if (r.ok) onDone(r.result, recordingUrl);
-    else setPhase("live");
+    else {
+      ended.current = false;
+      setPhase("live");
+    }
   };
+  finishRef.current = finish;
 
   const move = (to) => {
     dictation.stop();
@@ -355,9 +454,19 @@ function InterviewRoom({ interview, onDone, onExit }) {
               <li>Coding questions open an editor: write your code and explain your approach.</li>
               <li>Your video stays on your device. Only your written answers are graded.</li>
             </ul>
+            <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
+              <p className="flex items-center gap-2 font-medium">
+                <ShieldAlert className="size-4 text-primary" aria-hidden /> Exam rules
+              </p>
+              <ul className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">
+                <li>The interview opens in full screen and stays there until you finish.</li>
+                <li>Switching tabs or windows, or leaving full screen, gives you a warning.</li>
+                <li>After {MAX_WARNINGS} warnings the interview ends and your teacher is told.</li>
+              </ul>
+            </div>
             <div className="mt-4 flex gap-2">
               <Button onClick={begin}>
-                <Play /> Start interview
+                <Maximize /> Start interview in full screen
               </Button>
               <Button variant="ghost" onClick={onExit}>
                 Cancel
@@ -368,8 +477,57 @@ function InterviewRoom({ interview, onDone, onExit }) {
       </div>
     );
 
+  const answered = answers.map((a) => Boolean(a.answer.trim() || a.code.trim()));
   return (
     <div className="space-y-3">
+      {warning && (
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          aria-label="Interview warning"
+          className="fixed inset-0 z-[70] grid place-items-center bg-black/75 p-4"
+        >
+          <div className="max-w-md rounded-xl bg-card p-6 text-center shadow-xl">
+            <ShieldAlert className="mx-auto size-10 text-primary" aria-hidden />
+            {warning.ended ? (
+              <>
+                <h2 className="mt-3 text-lg font-semibold">Interview ended</h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  You left the interview screen {warning.count} times, so the interview was ended
+                  and your teacher has been told. Your answers so far are being reviewed.
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="mt-3 text-lg font-semibold">
+                  Warning {warning.count} of {MAX_WARNINGS}
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  You left the interview screen. Stay in full screen and on this tab. After{" "}
+                  {MAX_WARNINGS - warning.count} more the interview ends and your teacher is told.
+                </p>
+                <Button
+                  className="mt-4"
+                  onClick={() => {
+                    enterFullScreen();
+                    setWarning(null);
+                  }}
+                >
+                  <Maximize /> Return to the interview
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted px-3 py-1.5 text-xs">
+        <span className="inline-flex items-center gap-1.5">
+          <ShieldAlert className="size-3.5" aria-hidden /> Exam mode: stay on this screen
+        </span>
+        <span className="tabular-nums" aria-live="polite">
+          Warnings {warning?.count ?? warningCount.current} / {MAX_WARNINGS}
+        </span>
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
         <span className="font-medium">
           Question {index + 1} of {questions.length}
@@ -379,7 +537,25 @@ function InterviewRoom({ interview, onDone, onExit }) {
           Suggested time <Clock seconds={q.timeSec ?? 180} resetKey={index} />
         </span>
       </div>
-      <ProgressBar value={(index / questions.length) * 100} />
+      <ProgressBar value={(answered.filter(Boolean).length / questions.length) * 100} />
+      <nav aria-label="Questions" className="flex flex-wrap gap-1.5">
+        {questions.map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            aria-label={`Question ${i + 1}${answered[i] ? ", answered" : ""}`}
+            aria-current={i === index}
+            onClick={() => move(i)}
+            className={cn(
+              "size-8 rounded-md border text-xs font-medium",
+              answered[i] && "border-primary bg-primary/10 text-primary",
+              i === index && "ring-2 ring-primary",
+            )}
+          >
+            {i + 1}
+          </button>
+        ))}
+      </nav>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <div className="space-y-3">
           {feed}
@@ -501,23 +677,62 @@ function InterviewRoom({ interview, onDone, onExit }) {
 }
 
 // ---------------------------------------------------------------- result
+function ReportButtons({ result }) {
+  const { profile, rows } = useCampus();
+  const name =
+    rows?.find((r) => r.owner_id === profile?.id)?.s?.name || profile?.display_name || "";
+  const html = () => buildInterviewReportHtml(result, { name });
+  const print = () => {
+    const frame = document.createElement("iframe");
+    frame.style.cssText = "position:fixed;width:0;height:0;border:0;visibility:hidden";
+    frame.srcdoc = html();
+    frame.onload = () => {
+      frame.contentWindow.focus();
+      frame.contentWindow.print();
+      setTimeout(() => frame.remove(), 60_000);
+    };
+    document.body.append(frame);
+  };
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Button
+        type="button"
+        onClick={() => saveBlob(new Blob([html()], { type: "text/html" }), reportFileName(result))}
+      >
+        <Download /> Download report
+      </Button>
+      <Button type="button" variant="outline" onClick={print}>
+        <Printer /> Print / save as PDF
+      </Button>
+    </div>
+  );
+}
+
 function Result({ result, recordingUrl, onBack }) {
   const tone = result.overall >= 70 ? "success" : result.overall >= 45 ? "warning" : "danger";
   return (
     <div className="space-y-4">
+      {result.terminated && (
+        <div
+          role="alert"
+          className="flex gap-3 rounded-xl border border-primary/40 bg-primary/5 p-4 text-sm"
+        >
+          <ShieldAlert className="size-5 shrink-0 text-primary" aria-hidden />
+          <p>
+            This interview was ended early because you left the interview screen {result.violations}{" "}
+            times. Your teacher has been told. It was graded on the answers you gave and does not
+            count as a mock interview on your record.
+          </p>
+        </div>
+      )}
+      <ReportButtons result={result} />
       <div className="rounded-xl border bg-card p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs text-muted-foreground">{result.role} · mock interview</p>
             <p className="text-3xl font-bold tabular-nums">{result.overall}/100</p>
           </div>
-          <StatusPill tone={tone}>
-            {result.overall >= 70
-              ? "Interview ready"
-              : result.overall >= 45
-                ? "Getting there"
-                : "Needs practice"}
-          </StatusPill>
+          <StatusPill tone={tone}>{verdict(result.overall)}</StatusPill>
         </div>
         <p className="mt-2 text-sm">{result.summary}</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -679,6 +894,35 @@ function Setup({ hasResume, onStarted }) {
   );
 }
 
+/** How the student is doing across their finished interviews. */
+function Progress({ history }) {
+  const graded = history.filter((h) => h.status === "completed" && h.overall !== null);
+  if (!graded.length) return null;
+  const scores = graded.map((h) => h.overall);
+  const average = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+  const latest = graded[0].overall;
+  const change = graded.length > 1 ? latest - graded[1].overall : null;
+  const tiles = [
+    ["Interviews taken", graded.length],
+    ["Average score", `${average}/100`],
+    ["Best score", `${Math.max(...scores)}/100`],
+    [
+      "Latest vs previous",
+      change === null ? "First one" : `${change > 0 ? "+" : ""}${change} points`,
+    ],
+  ];
+  return (
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-4" aria-label="Your interview progress">
+      {tiles.map(([label, value]) => (
+        <div key={label} className="rounded-xl border bg-card p-3">
+          <p className="text-xs text-muted-foreground">{label}</p>
+          <p className="text-xl font-semibold tabular-nums">{value}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Student placement page section: resume, a new AI video interview, and past results. */
 export function MockInterviewHub() {
   const resume = useResume();
@@ -738,6 +982,7 @@ export function MockInterviewHub() {
           hasResume={Boolean(resume.data)}
           onStarted={(interview) => setMode({ name: "room", interview })}
         />
+        {history.data && <Progress history={history.data} />}
         {history.error ? (
           <ErrorState error={history.error} onRetry={history.refetch} />
         ) : !history.data?.length ? (
@@ -748,7 +993,7 @@ export function MockInterviewHub() {
               <li key={h.id} className="flex items-center justify-between gap-2 px-3 py-2">
                 <button
                   type="button"
-                  disabled={h.status !== "completed"}
+                  disabled={h.status === "started"}
                   className="min-w-0 flex-1 text-left disabled:cursor-default"
                   onClick={() => setMode({ name: "past", id: h.id })}
                 >
@@ -757,8 +1002,15 @@ export function MockInterviewHub() {
                     {h.difficulty} · {new Date(h.createdAt).toLocaleDateString()}
                   </span>
                 </button>
+                {h.violations > 0 && (
+                  <StatusPill tone="warning">
+                    {h.violations} warning{h.violations === 1 ? "" : "s"}
+                  </StatusPill>
+                )}
                 {h.status === "completed" ? (
                   <span className="font-semibold tabular-nums">{h.overall}/100</span>
+                ) : h.status === "terminated" ? (
+                  <StatusPill tone="danger">Ended early</StatusPill>
                 ) : (
                   <StatusPill tone="neutral">Not finished</StatusPill>
                 )}
@@ -786,5 +1038,26 @@ export function MockInterviewHub() {
         }
       />
     </div>
+  );
+}
+
+/** The AI Interview page in the student sidebar. */
+export function AiInterviewPage() {
+  return (
+    <RoleGate allow={["student"]}>
+      <div className="mx-auto max-w-5xl space-y-5">
+        <header>
+          <h1 className="text-[1.75rem] font-semibold leading-9 tracking-tight text-[#00205f]">
+            AI Interview
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            A practice interview on camera. It opens in full screen like an exam: leaving the screen
+            gives a warning, and after {MAX_WARNINGS} the interview ends and your teacher is told.
+            When you finish you can download your report.
+          </p>
+        </header>
+        <MockInterviewHub />
+      </div>
+    </RoleGate>
   );
 }

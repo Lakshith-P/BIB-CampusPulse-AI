@@ -101,8 +101,12 @@ function ParticipationControl({ o, refresh }) {
       {status === "completed" && (
         <div className="min-w-48 flex-1">
           <Field
-            label="Evidence for your teacher"
-            hint="A certificate name, project link or short note."
+            label={`Evidence for ${o.teacher ?? "your teacher"}`}
+            hint={
+              o.teacher
+                ? `Only your assigned teacher, ${o.teacher}, can verify this. Add a certificate name, project link or short note.`
+                : "You do not have an assigned teacher yet, so this cannot be verified."
+            }
           >
             <Input value={evidence} onChange={(e) => setEvidence(e.target.value)} maxLength={500} />
           </Field>
@@ -116,9 +120,9 @@ function ParticipationControl({ o, refresh }) {
           tone={p.verified ? "success" : p.status === "completed" ? "warning" : "neutral"}
         >
           {p.verified
-            ? "Verified by your teacher"
+            ? `Verified by ${o.teacher ?? "your teacher"}`
             : p.status === "completed"
-              ? "Awaiting verification"
+              ? `Awaiting verification by ${o.teacher ?? "your teacher"}`
               : "Not completed yet"}
         </StatusPill>
       )}

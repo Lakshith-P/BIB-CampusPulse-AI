@@ -639,3 +639,62 @@ html {
 .copilot-answer ul {
   margin-block: 0.5rem;
 }
+
+/* ========================= SLQG loader =========================
+   The name SLQG on its own; the letters shine one after another, S, L, Q, then G. */
+.slqg-loader {
+  --cycle: 2.4s;
+  display: inline-flex;
+  gap: 0.06em;
+  font: 800 3.25rem/1 "Manrope", "Inter", ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.04em;
+}
+.slqg-loader-sm {
+  font-size: 1.75rem;
+}
+.slqg-loader-letter {
+  color: #00205f;
+  animation: slqg-shine var(--cycle) ease-in-out infinite;
+}
+.slqg-loader-L {
+  animation-delay: calc(var(--cycle) * 0.2);
+}
+.slqg-loader-Q {
+  animation-delay: calc(var(--cycle) * 0.4);
+}
+.slqg-loader-G {
+  animation-delay: calc(var(--cycle) * 0.6);
+}
+@keyframes slqg-shine {
+  0%, 40%, 100% {
+    color: #8fb4e6;
+    text-shadow: none;
+  }
+  12% {
+    color: #00b8f5;
+    text-shadow:
+      0 0 10px rgb(0 184 245 / 80%),
+      0 0 26px rgb(0 102 204 / 60%);
+  }
+}
+/* the page-change transition: a soft veil with the loader in the middle */
+.slqg-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: color-mix(in oklab, var(--background) 72%, transparent);
+  backdrop-filter: blur(2px);
+  animation: slqg-fade-in 0.2s ease-out;
+  pointer-events: none;
+}
+@keyframes slqg-fade-in {
+  from { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .slqg-loader-letter {
+    animation: none;
+    color: #0066cc;
+  }
+}

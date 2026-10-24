@@ -1,5 +1,5 @@
 import { decodeFile, encodeFile } from "./files.server.js";
-import { requireOwnStudent } from "./access.server.js";
+import { notify, requireOwnStudent } from "./access.server.js";
 import { modelCaller } from "./ai-lessons.server.js";
 import {
   DIFFICULTIES,
@@ -161,6 +161,46 @@ export async function startInterview(
   return { id: rows[0].id, role, difficulty, questions: publicQuestions(questions) };
 }
 
+/** Times a student may leave the interview screen; the next time ends the interview. */
+export const MAX_WARNINGS = 3;
+
+/**
+ * Counts one time the student left the interview screen (switched tab or left full screen). The
+ * count is kept here, not in the browser. The third time ends the interview and tells the student's
+ * assigned teacher.
+ */
+export async function recordViolation(db, user, { id, reason }) {
+  const { rows } = await db.query(
+    `SELECT s.id, s.status, s.violations, s.role, s.student_id, sr.faculty_id, sr.record->>'name' AS name
+       FROM interview_sessions s JOIN student_records sr ON sr.id = s.student_id
+      WHERE s.id = $1 AND s.owner_id = $2`,
+    [id, user.id],
+  );
+  const s = rows[0];
+  if (!s) throw new Error("That interview was not found.");
+  if (s.status !== "started") return { violations: s.violations, ended: s.status === "terminated" };
+  const violations = s.violations + 1;
+  const ended = violations >= MAX_WARNINGS;
+  await db.query(
+    `UPDATE interview_sessions
+        SET violations = $2,
+            violation_log = violation_log || $3::jsonb,
+            ended_reason = CASE WHEN $4::boolean THEN 'left-exam-screen' ELSE ended_reason END
+      WHERE id = $1`,
+    [id, violations, JSON.stringify([{ at: new Date().toISOString(), reason }]), ended],
+  );
+  if (ended)
+    await notify(db, s.faculty_id, {
+      area: "Placement",
+      priority: "high",
+      title: `${s.name || s.student_id} was removed from a mock interview`,
+      body: `They left the interview screen ${MAX_WARNINGS} times during the ${s.role} mock interview, so it was ended automatically.`,
+      link: "/portal/students",
+      key: `interview-violation:${id}`,
+    });
+  return { violations, ended };
+}
+
 const average = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
 export async function submitInterview(db, user, { id, answers }, callModel = modelCaller()) {
@@ -170,7 +210,9 @@ export async function submitInterview(db, user, { id, answers }, callModel = mod
   );
   const session = rows[0];
   if (!session) throw new Error("That interview was not found.");
-  if (session.status === "completed") throw new Error("This interview has already been graded.");
+  if (session.status !== "started") throw new Error("This interview has already been graded.");
+  // An interview that was ended for leaving the screen is graded on what was answered so far.
+  const terminated = Boolean(session.ended_reason);
   const byIndex = new Map(answers.map((a) => [a.index, a]));
   const items = session.questions.map((q, index) => {
     const a = byIndex.get(index);
@@ -222,6 +264,8 @@ export async function submitInterview(db, user, { id, answers }, callModel = mod
     summary: graded.summary,
     strengths: graded.strengths,
     improvements: graded.improvements,
+    violations: session.violations,
+    terminated,
     byType: Object.fromEntries(
       Object.entries(byType).map(([t, s]) => [t, Math.round(average(s) * 10)]),
     ),
@@ -229,10 +273,12 @@ export async function submitInterview(db, user, { id, answers }, callModel = mod
   };
   await db.query(
     `UPDATE interview_sessions
-        SET answers = $2, result = $3, status = 'completed', completed_at = now()
+        SET answers = $2, result = $3, status = $4, completed_at = now()
       WHERE id = $1`,
-    [id, JSON.stringify(answers), JSON.stringify(result)],
+    [id, JSON.stringify(answers), JSON.stringify(result), terminated ? "terminated" : "completed"],
   );
+  // An interview that was cut short does not count as a mock interview on the record.
+  if (terminated) return { id, role: session.role, ...result };
   // Counts as a mock interview on the student's record and in the placement readiness data.
   await db.query(
     `INSERT INTO mock_interviews(student_id, interviewer, score, feedback, recorded_by)
@@ -252,7 +298,7 @@ export async function submitInterview(db, user, { id, answers }, callModel = mod
 
 export async function listInterviews(db, user) {
   const { rows } = await db.query(
-    `SELECT id, role, difficulty, status, result->'overall' AS overall, created_at
+    `SELECT id, role, difficulty, status, violations, result->'overall' AS overall, created_at
        FROM interview_sessions WHERE owner_id = $1 ORDER BY created_at DESC LIMIT 50`,
     [user.id],
   );
@@ -261,6 +307,7 @@ export async function listInterviews(db, user) {
     role: r.role,
     difficulty: r.difficulty,
     status: r.status,
+    violations: r.violations,
     overall: r.overall === null ? null : Number(r.overall),
     createdAt: new Date(r.created_at).toISOString(),
   }));
@@ -268,11 +315,16 @@ export async function listInterviews(db, user) {
 
 export async function getInterviewResult(db, user, { id }) {
   const { rows } = await db.query(
-    "SELECT role, status, result FROM interview_sessions WHERE id = $1 AND owner_id = $2",
+    "SELECT role, status, result, created_at FROM interview_sessions WHERE id = $1 AND owner_id = $2",
     [id, user.id],
   );
-  if (!rows[0] || rows[0].status !== "completed") throw new Error("That result was not found.");
-  return { id, role: rows[0].role, ...rows[0].result };
+  if (!rows[0] || rows[0].status === "started") throw new Error("That result was not found.");
+  return {
+    id,
+    role: rows[0].role,
+    takenAt: new Date(rows[0].created_at).toISOString(),
+    ...rows[0].result,
+  };
 }
 
 export async function deleteInterview(db, user, { id }) {

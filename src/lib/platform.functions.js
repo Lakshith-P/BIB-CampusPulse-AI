@@ -435,6 +435,15 @@ export const submitMockInterview = createServerFn({ method: "POST" })
     limitByIp("interview-grade", 20, 60 * 60 * 1000);
     return run(context.user, (db, user) => interview.submitInterview(db, user, data));
   });
+export const reportInterviewViolation = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(
+    z.object({ id: z.string().uuid(), reason: z.enum(["tab-switch", "left-full-screen"]) }),
+  )
+  .handler(async ({ data, context }) => {
+    limitByIp("interview-violation", 60, 60 * 60 * 1000);
+    return run(context.user, (db, user) => interview.recordViolation(db, user, data));
+  });
 export const loadMyInterviews = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .handler(({ context }) => run(context.user, (db, user) => interview.listInterviews(db, user)));
@@ -567,6 +576,7 @@ export const postDrive = createServerFn({ method: "POST" })
       gradYear: z.number().int().min(2020).max(2040).nullable().optional(),
       requiresAssessment: z.boolean(),
       link: url,
+      rounds: z.array(text(60, 1)).max(8).default([]),
     }),
   )
   .handler(({ data, context }) =>
@@ -605,6 +615,19 @@ export const moveApplication = createServerFn({ method: "POST" })
   )
   .handler(({ data, context }) =>
     run(context.user, (db, user) => placement.setApplicationStatus(db, user, data)),
+  );
+export const setDriveRound = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .validator(
+    z.object({
+      driveId: z.string().uuid(),
+      studentId: text(50, 1),
+      round: text(60, 1),
+      result: z.enum(["passed", "failed", "pending"]),
+    }),
+  )
+  .handler(({ data, context }) =>
+    run(context.user, (db, user) => placement.setRoundResult(db, user, data)),
   );
 export const logMockInterview = createServerFn({ method: "POST" })
   .middleware([requireAuth])

@@ -61,6 +61,11 @@ export const SEARCH_GROUPS = {
         ["Placement Portal", "/portal/placement", "jobs company recruit drive interview offer"],
         ["Current placement drives", "/portal/placement", "openings companies visiting campus"],
         ["Placement readiness", "/portal/placement", "aptitude coding resume assessments"],
+        [
+          "AI mock interview",
+          "/portal/interview",
+          "ai interview practice video camera questions report resume hr technical coding",
+        ],
         ["Resume and target roles", "/portal/profile", "cv career roles linkedin github"],
       ],
     ],

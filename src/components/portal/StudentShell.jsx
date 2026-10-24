@@ -19,6 +19,7 @@ import {
   Terminal,
   Trophy,
   UserRound,
+  Video,
   WandSparkles,
   X,
 } from "lucide-react";
@@ -41,6 +42,7 @@ const PRIMARY = [
   { to: "/portal/insights", label: "Predictive Risk & AI", icon: Sparkles },
   { to: "/portal/lms", label: "Learning & LMS", icon: BookOpen },
   { to: "/portal/placement", label: "Placement & Careers", icon: Briefcase },
+  { to: "/portal/interview", label: "AI Interview", icon: Video },
   { to: "/portal/skills", label: "Skills & Coding", icon: Terminal },
   { to: "/portal/ai-lessons", label: "Personalised AI Lessons", icon: WandSparkles },
 ];
@@ -81,8 +83,8 @@ function Sidebar({ name, program, onNavigate }) {
   return (
     <div className="flex h-full flex-col justify-between">
       <div className="flex min-h-0 flex-col">
-        <div className="border-b border-slate-200 p-4">
-          <Link to="/portal" className="flex items-center gap-2">
+        <div className="flex h-16 shrink-0 items-center border-b border-[#D9E1EC] px-4">
+          <Link to="/portal" onClick={onNavigate} className="flex items-center gap-2">
             <img
               src="/slqg-logo.png"
               alt=""
@@ -147,40 +149,40 @@ export function StudentShell({ profile, myRow, rows, onSignOut, children }) {
   const term = s ? `Semester ${s.semester} · Class of ${s.gradYear}` : null;
   return (
     <div data-role="student" className="cp-shell min-h-screen">
-      <aside className="fixed inset-y-0 left-0 z-50 hidden w-72 border-r border-slate-200 bg-white shadow-[0_1px_8px_rgba(0,0,0,0.04)] print:hidden lg:block">
-        <Sidebar name={name} program={program} />
-      </aside>
-
       {open && (
         <button
           type="button"
           aria-label="Close menu"
-          className="fixed inset-0 z-40 bg-slate-900/40 lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/40 print:hidden"
           onClick={() => setOpen(false)}
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-xl transition-transform lg:hidden ${open ? "translate-x-0" : "-translate-x-full"}`}
+        aria-label="Menu"
+        aria-hidden={!open}
+        inert={!open}
+        className={`fixed inset-y-0 left-0 z-50 w-72 border-r border-[#D9E1EC] bg-white shadow-xl transition-transform print:hidden ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
         <button
           type="button"
           aria-label="Close menu"
           onClick={() => setOpen(false)}
-          className="absolute right-3 top-4 text-slate-400 hover:text-slate-700"
+          className="absolute right-3 top-5 text-slate-400 hover:text-slate-700"
         >
           <X className="size-5" />
         </button>
         <Sidebar name={name} program={program} onNavigate={() => setOpen(false)} />
       </aside>
 
-      <div className="lg:pl-72">
+      <div>
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-[#D9E1EC] bg-white/90 px-4 backdrop-blur-xl print:hidden sm:px-6">
           <div className="flex min-w-0 items-center gap-2">
             <button
               type="button"
               aria-label="Open menu"
+              aria-expanded={open}
               onClick={() => setOpen(true)}
-              className="rounded p-2 text-slate-500 hover:bg-slate-100 lg:hidden"
+              className="rounded p-2 text-slate-500 hover:bg-slate-100"
             >
               <Menu className="size-5" />
             </button>

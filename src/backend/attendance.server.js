@@ -1,5 +1,6 @@
 import {
   isAdmin,
+  isFaculty,
   notify,
   ownStudent,
   requireAdminUser,
@@ -14,6 +15,12 @@ import { PERIODS, planTimetable } from "@/lib/timetable-plan";
 // on the student's record in step, so the Success Score and risk flags use the marked data.
 // Re-marking a class replaces its earlier marks instead of counting it twice.
 
+/**
+ * Whether attendance is open to every student. Only an administrator who is not also a teacher
+ * sees everyone: anyone with the teacher role marks attendance for their assigned students only.
+ */
+const seesEveryone = (user) => isAdmin(user) && !isFaculty(user);
+
 /** Teachers can manage attendance only for their assigned students; admins can manage all. */
 async function requireAttendanceManager(db, user, subject) {
   requireStaff(user);
@@ -22,7 +29,7 @@ async function requireAttendanceManager(db, user, subject) {
       WHERE ($2::boolean OR sr.faculty_id = $1)
         AND sr.record->'subjects' @> jsonb_build_array(jsonb_build_object('subject', $3::text))
       LIMIT 1`,
-    [user.id, isAdmin(user), subject],
+    [user.id, seesEveryone(user), subject],
   );
   if (!rowCount) throw new Error("That subject has no students assigned to you.");
 }
@@ -35,7 +42,7 @@ export async function attendanceSubjects(db, user) {
       WHERE ($2::boolean OR sr.faculty_id = $1)
         AND s->>'subject' IS NOT NULL
       ORDER BY 1`,
-    [user.id, isAdmin(user)],
+    [user.id, seesEveryone(user)],
   );
   return rows.map((r) => r.subject);
 }
@@ -48,7 +55,7 @@ async function roster(db, user, subject) {
       WHERE ($2::boolean OR sr.faculty_id = $1)
         AND sr.record->'subjects' @> jsonb_build_array(jsonb_build_object('subject', $3::text))
       ORDER BY sr.record->>'name', sr.id`,
-    [user.id, isAdmin(user), subject],
+    [user.id, seesEveryone(user), subject],
   );
   return rows;
 }
@@ -176,7 +183,7 @@ export async function recentSessions(db, user, { subject }) {
            WHERE sr.id = m.student_id AND ($2::boolean OR sr.faculty_id = $3)
         )
       GROUP BY s.id ORDER BY s.held_on DESC, s.period DESC LIMIT 15`,
-    [subject, isAdmin(user), user.id],
+    [subject, seesEveryone(user), user.id],
   );
   return rows.map((r) => ({ ...r, held_on: isoDate(r.held_on) }));
 }
@@ -222,7 +229,7 @@ export async function timetableCoverage(db, user) {
        FROM student_records sr
       WHERE ($2::boolean OR sr.faculty_id = $1)
       ORDER BY sr.record->>'name', sr.id`,
-    [user.id, isAdmin(user)],
+    [user.id, seesEveryone(user)],
   );
   const slots = await db.query(
     "SELECT subject, count(*)::int AS slots FROM timetable_slots GROUP BY subject",

@@ -97,7 +97,7 @@ function Screen({ role, scene, stage, time, onPage, onSignIn }) {
         <div className="ls-disclosure">Animated demo · no credentials collected</div>
         <div className="ls-login-foot">
           ◈<br />
-          Student, teacher and administrator access
+          Student and teacher access
           <br />
           follow the permissions of each account.
         </div>
@@ -160,7 +160,7 @@ function Screen({ role, scene, stage, time, onPage, onSignIn }) {
   );
 }
 
-export function LoginShowcase({ workspace, onWorkspace }) {
+export function LoginShowcase({ workspace, onWorkspace, showAdmin = true }) {
   const roleIndex = Math.max(0, ROLE_KEYS.indexOf(workspace));
   const role = TOUR_ROLES[roleIndex];
   const scene = SCENES[roleIndex];
@@ -248,18 +248,20 @@ export function LoginShowcase({ workspace, onWorkspace }) {
       </header>
 
       <div className="ls-rail" role="group" aria-label="Choose a workspace to preview">
-        {TOUR_ROLES.map((r, i) => (
-          <button
-            key={r.name}
-            type="button"
-            aria-pressed={i === roleIndex}
-            aria-label={`${r.name} preview`}
-            title={`${r.name} workspace`}
-            onClick={() => onWorkspace?.(ROLE_KEYS[i])}
-          >
-            {["▥", "◎", "▦"][i]}
-          </button>
-        ))}
+        {TOUR_ROLES.map((r, i) =>
+          ROLE_KEYS[i] === "admin" && !showAdmin ? null : (
+            <button
+              key={r.name}
+              type="button"
+              aria-pressed={i === roleIndex}
+              aria-label={`${r.name} preview`}
+              title={`${r.name} workspace`}
+              onClick={() => onWorkspace?.(ROLE_KEYS[i])}
+            >
+              {["▥", "◎", "▦"][i]}
+            </button>
+          ),
+        )}
       </div>
 
       <div className="ls-stage" ref={stageBox}>

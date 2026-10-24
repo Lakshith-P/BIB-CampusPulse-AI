@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { CheckCircle2, CircleHelp, ExternalLink, Plus, Trash2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,11 +22,18 @@ import {
   postDrive,
   removeDrive,
   removeMockInterview,
+  setDriveRound,
 } from "@/lib/platform.functions";
+import {
+  STAFF_DRIVE_FILTERS,
+  studentDriveFilters,
+  applyDriveFilter,
+  driveFilterCounts,
+} from "@/lib/drive-filters";
+import { parseRounds } from "@/lib/drive-rounds";
 import { roleMatch } from "@/lib/role-match";
 import { todayIso } from "@/lib/live-profile";
 import { useDrives, useMockInterviews, useRefreshAll } from "@/lib/use-platform";
-import { MockInterviewHub } from "@/components/portal/InterviewPages";
 import { AtsChecker, DriveMatch } from "@/components/portal/AtsChecker";
 import { useCampus } from "@/lib/use-campus";
 
@@ -74,6 +81,61 @@ const APPLICATION_TONE = {
   rejected: "danger",
 };
 
+/** Filter chips with the number of drives each one shows. */
+function DriveFilters({ drives, filters, value, onChange }) {
+  const counts = driveFilterCounts(drives, filters);
+  return (
+    <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Filter drives">
+      {filters.map(([key, label]) => (
+        <button
+          key={key}
+          type="button"
+          role="tab"
+          aria-selected={value === key}
+          onClick={() => onChange(key)}
+          className={`rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
+            value === key
+              ? "border-primary bg-primary text-primary-foreground"
+              : "bg-card text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {label} <span className="tabular opacity-80">({counts[key]})</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const ROUND_STATE = {
+  passed: ["success", "Passed"],
+  failed: ["danger", "Not cleared"],
+  current: ["info", "Next"],
+  upcoming: ["neutral", "Later"],
+};
+
+/** The selection rounds of a drive in order, with the student's result in each. */
+function RoundTimeline({ drive }) {
+  const states = drive.application
+    ? drive.roundStates
+    : drive.rounds.map((name) => ({ name, state: "upcoming" }));
+  return (
+    <div className="mt-3 rounded-lg border p-3">
+      <p className="mb-2 text-xs font-semibold uppercase text-label">Selection rounds</p>
+      <ol className="flex flex-wrap items-center gap-2 text-sm">
+        {states.map(({ name, state }, i) => (
+          <li key={name} className="flex items-center gap-2">
+            {i > 0 && <span aria-hidden="true">›</span>}
+            <span>{name}</span>
+            <StatusPill tone={ROUND_STATE[state][0]}>
+              {drive.application ? ROUND_STATE[state][1] : "Round " + (i + 1)}
+            </StatusPill>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 function DriveCard({ drive, refresh }) {
   const { busy, run } = useAction(refresh);
   const eligible = drive.eligibility?.eligible;
@@ -104,6 +166,7 @@ function DriveCard({ drive, refresh }) {
         Apply by {drive.deadline}
         {drive.driveDate && ` · Drive on ${drive.driveDate}`}
       </p>
+      {drive.rounds.length > 0 && <RoundTimeline drive={drive} />}
       <div className="mt-3 rounded-lg border p-3">
         <p className="mb-2 text-xs font-semibold uppercase text-label">Eligibility checklist</p>
         <EligibilityChecklist eligibility={drive.eligibility} />
@@ -243,6 +306,9 @@ function MockList({ studentId, canEdit }) {
 export function StudentDrives({ s }) {
   const { data, isLoading, error, refetch } = useDrives();
   const refresh = useRefreshAll();
+  const [filter, setFilter] = useState("all");
+  const filters = useMemo(() => studentDriveFilters(data ?? []), [data]);
+  const shown = data ? applyDriveFilter(data, filters, filter) : [];
   return (
     <div className="space-y-6">
       <section>
@@ -259,11 +325,18 @@ export function StudentDrives({ s }) {
             hint="Your placement cell posts drives here with their criteria."
           />
         ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {data.map((d) => (
-              <DriveCard key={d.id} drive={d} refresh={refresh} />
-            ))}
-          </div>
+          <>
+            <DriveFilters drives={data} filters={filters} value={filter} onChange={setFilter} />
+            {shown.length ? (
+              <div className="grid gap-4 lg:grid-cols-2">
+                {shown.map((d) => (
+                  <DriveCard key={d.id} drive={d} refresh={refresh} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState title="No drives match" hint="Try another filter." />
+            )}
+          </>
         )}
       </section>
       <div className="grid gap-4 lg:grid-cols-2">
@@ -281,7 +354,17 @@ export function StudentDrives({ s }) {
         </section>
       </div>
       <AtsChecker s={s} />
-      <MockInterviewHub />
+      <section className="surface flex flex-wrap items-center justify-between gap-3 p-4">
+        <div>
+          <p className="font-semibold">AI mock interview</p>
+          <p className="text-sm text-muted-foreground">
+            Practise on camera with spoken questions, get graded feedback and download a report.
+          </p>
+        </div>
+        <Button asChild>
+          <Link to="/portal/interview">Open AI Interview</Link>
+        </Button>
+      </section>
     </div>
   );
 }
@@ -301,6 +384,7 @@ function DriveForm({ onDone }) {
     gradYear: "",
     requiresAssessment: false,
     link: "",
+    rounds: "",
   };
   const [f, setF] = useState(empty);
   const { busy, run } = useAction(onDone);
@@ -322,6 +406,7 @@ function DriveForm({ onDone }) {
                   .map((b) => b.trim())
                   .filter(Boolean),
                 gradYear: f.gradYear ? Number(f.gradYear) : null,
+                rounds: parseRounds(f.rounds),
               },
             }),
           "Drive posted. Eligible students were notified.",
@@ -381,6 +466,16 @@ function DriveForm({ onDone }) {
       </Field>
       <Field label="Graduation year (blank = any)">
         <Input type="number" min={2020} max={2040} value={f.gradYear} onChange={set("gradYear")} />
+      </Field>
+      <Field
+        label="Selection rounds (comma separated, in order)"
+        hint="For example: Aptitude, Technical interview, HR interview. Leave blank for a single stage."
+      >
+        <Input
+          value={f.rounds}
+          onChange={set("rounds")}
+          placeholder="Aptitude, Technical interview, HR interview"
+        />
       </Field>
       <Field label="Branches (comma separated, blank = all)">
         <Input value={f.branches} onChange={set("branches")} placeholder="CSE, IT" />
@@ -447,6 +542,7 @@ function Applicants({ drive, onChanged }) {
             <th className="p-2">Student</th>
             <th>Branch</th>
             <th>CGPA</th>
+            {drive.rounds.length ? drive.rounds.map((r) => <th key={r}>{r}</th>) : null}
             <th>Stage</th>
           </tr>
         </thead>
@@ -464,38 +560,82 @@ function Applicants({ drive, onChanged }) {
               </td>
               <td>{a.branch}</td>
               <td className="tabular-nums">{a.cgpa}</td>
+              {drive.rounds.map((round, at) => {
+                const results = a.round_results ?? {};
+                const blocked =
+                  drive.rounds.slice(0, at).some((r) => results[r] !== "passed") && !results[round];
+                return (
+                  <td key={round}>
+                    <select
+                      value={results[round] ?? "pending"}
+                      disabled={busy || blocked}
+                      aria-label={`${round} result for ${a.name}`}
+                      className={inputClass + " w-auto"}
+                      onChange={(e) =>
+                        run(
+                          () =>
+                            setDriveRound({
+                              data: {
+                                driveId: drive.id,
+                                studentId: a.student_id,
+                                round,
+                                result: e.target.value,
+                              },
+                            }),
+                          `${round} updated.`,
+                        )
+                      }
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="passed">Passed</option>
+                      <option value="failed">Failed</option>
+                    </select>
+                  </td>
+                );
+              })}
               <td>
-                <select
-                  value={a.status}
-                  disabled={busy}
-                  aria-label={`Stage for ${a.name}`}
-                  className={inputClass + " w-auto"}
-                  onChange={(e) =>
-                    run(
-                      () =>
-                        moveApplication({
-                          data: {
-                            driveId: drive.id,
-                            studentId: a.student_id,
-                            status: e.target.value,
-                          },
-                        }),
-                      "Stage updated.",
-                    )
-                  }
-                >
-                  {["applied", "shortlisted", "selected", "rejected"].map((x) => (
-                    <option key={x} value={x}>
-                      {x}
-                    </option>
-                  ))}
-                </select>
+                {drive.rounds.length ? (
+                  <StatusPill
+                    tone={
+                      { selected: "success", rejected: "danger", shortlisted: "info" }[a.status] ??
+                      "neutral"
+                    }
+                  >
+                    {a.status}
+                  </StatusPill>
+                ) : (
+                  <select
+                    value={a.status}
+                    disabled={busy}
+                    aria-label={`Stage for ${a.name}`}
+                    className={inputClass + " w-auto"}
+                    onChange={(e) =>
+                      run(
+                        () =>
+                          moveApplication({
+                            data: {
+                              driveId: drive.id,
+                              studentId: a.student_id,
+                              status: e.target.value,
+                            },
+                          }),
+                        "Stage updated.",
+                      )
+                    }
+                  >
+                    {["applied", "shortlisted", "selected", "rejected"].map((x) => (
+                      <option key={x} value={x}>
+                        {x}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </td>
             </tr>
           ))}
           {!rows.length && (
             <tr>
-              <td colSpan={4} className="p-3 text-muted-foreground">
+              <td colSpan={4 + drive.rounds.length} className="p-3 text-muted-foreground">
                 No applicants from your students yet.
               </td>
             </tr>
@@ -580,6 +720,8 @@ export function StaffDrives() {
   const refresh = useRefreshAll();
   const { run } = useAction(refresh);
   const [removing, setRemoving] = useState(null);
+  const [filter, setFilter] = useState("all");
+  const shown = data ? applyDriveFilter(data, STAFF_DRIVE_FILTERS, filter) : [];
   return (
     <div className="space-y-6">
       <section className="surface p-4">
@@ -597,39 +739,53 @@ export function StaffDrives() {
         ) : !data.length ? (
           <EmptyState title="No drives yet" hint="Post the first one above." />
         ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {data.map((d) => (
-              <article key={d.id} className="surface p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className="font-numeric text-lg font-semibold">{d.company}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {d.roleTitle} · apply by {d.deadline}
-                    </p>
+          <>
+            <DriveFilters
+              drives={data}
+              filters={STAFF_DRIVE_FILTERS}
+              value={filter}
+              onChange={setFilter}
+            />
+            {!shown.length && <EmptyState title="No drives match" hint="Try another filter." />}
+            <div className="grid gap-4 lg:grid-cols-2">
+              {shown.map((d) => (
+                <article key={d.id} className="surface p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="font-numeric text-lg font-semibold">{d.company}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {d.roleTitle} · apply by {d.deadline}
+                      </p>
+                    </div>
+                    <StatusPill tone={d.open ? "success" : "neutral"}>
+                      {d.open ? "Open" : "Closed"}
+                    </StatusPill>
                   </div>
-                  <StatusPill tone={d.open ? "success" : "neutral"}>
-                    {d.open ? "Open" : "Closed"}
-                  </StatusPill>
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  CGPA ≥ {d.minCgpa} · backlogs ≤ {d.maxBacklogs} ·{" "}
-                  {d.branches.length ? d.branches.join("/") : "all branches"}
-                  {d.gradYear && ` · batch ${d.gradYear}`}
-                  {d.requiresAssessment && " · assessments required"}
-                </p>
-                <p className="mt-2 text-sm">
-                  {d.stats.applicants} applied · {d.stats.shortlisted} shortlisted ·{" "}
-                  {d.stats.selected} selected
-                </p>
-                <div className="mt-2 flex flex-wrap items-start gap-2">
-                  <Applicants drive={d} onChanged={refresh} />
-                  <Button type="button" size="sm" variant="ghost" onClick={() => setRemoving(d)}>
-                    <Trash2 /> Remove
-                  </Button>
-                </div>
-              </article>
-            ))}
-          </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    CGPA ≥ {d.minCgpa} · backlogs ≤ {d.maxBacklogs} ·{" "}
+                    {d.branches.length ? d.branches.join("/") : "all branches"}
+                    {d.gradYear && ` · batch ${d.gradYear}`}
+                    {d.requiresAssessment && " · assessments required"}
+                  </p>
+                  {d.rounds.length > 0 && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Rounds: {d.rounds.join(" › ")}
+                    </p>
+                  )}
+                  <p className="mt-2 text-sm">
+                    {d.stats.applicants} applied · {d.stats.shortlisted} shortlisted ·{" "}
+                    {d.stats.selected} selected
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-start gap-2">
+                    <Applicants drive={d} onChanged={refresh} />
+                    <Button type="button" size="sm" variant="ghost" onClick={() => setRemoving(d)}>
+                      <Trash2 /> Remove
+                    </Button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </>
         )}
       </section>
       <section className="surface p-4">
