@@ -155,10 +155,10 @@
   --hero-shadow: rgb(0 19 61 / 32%);
 
   /* workspace banner and sidebar */
-  --role-from: #0a3480;
+  --role-from: #00338d;
   --role-via: #00205f;
   --role-to: #00133d;
-  --role-side-from: #00205f;
+  --role-side-from: #00338d;
   --role-side-to: #00112e;
 
   --shadow-raised:

@@ -260,7 +260,7 @@ export function PortalShell({ children }) {
   const menuBtn =
     "flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground data-[state=open]:bg-secondary data-[state=open]:text-foreground";
   return (
-    <div data-role={role} className="min-h-screen">
+    <div data-role={role} className="cp-shell min-h-screen">
       <LoadingBar />
       <AnnouncementStrip />
       <header className="sticky top-0 z-30 border-b border-rule bg-card/95 backdrop-blur">
@@ -336,7 +336,7 @@ export function PortalShell({ children }) {
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-ink text-hero-foreground transition-transform lg:hidden ${open ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-gradient-to-b from-[var(--role-side-from)] to-[var(--role-side-to)] text-hero-foreground transition-transform lg:hidden ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="flex h-16 items-center justify-between border-b border-white/12 px-4">
           <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-white/70">
@@ -387,7 +387,7 @@ export function PortalShell({ children }) {
                 activeOptions={{ exact: to === "/portal" }}
                 className="flex flex-col items-center justify-center gap-1 border-b border-white/10 px-1 py-2 text-center text-[10px] font-medium leading-tight text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                 activeProps={{
-                  className: "!border-l-ochre !bg-white/10 !text-white font-semibold",
+                  className: "!border-l-accent-cyan !bg-white/10 !text-white font-semibold",
                 }}
               >
                 <Icon className="size-4 shrink-0" />
@@ -447,8 +447,15 @@ export function Banner({ title, sub, children }) {
     month: "long",
   });
   return (
-    <div className="relative mb-6 overflow-hidden rounded-lg bg-ink p-6 text-hero-foreground sm:p-8">
-      <span aria-hidden className="absolute inset-x-0 top-0 h-[3px] bg-ochre" />
+    <div className="relative mb-6 overflow-hidden rounded-lg bg-gradient-to-br from-[var(--role-from)] via-[var(--role-via)] to-[var(--role-to)] p-6 text-hero-foreground shadow-[var(--shadow-raised)] sm:p-8">
+      <span
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-accent-cyan to-ochre"
+      />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -right-16 -top-24 size-72 rounded-full bg-accent-cyan/15 blur-3xl"
+      />
       <div className="relative flex flex-wrap items-center justify-between gap-6">
         <div className="min-w-0">
           <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-white/65">
