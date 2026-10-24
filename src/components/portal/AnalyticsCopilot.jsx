@@ -171,7 +171,12 @@ function Answer({ turn }) {
         <a href={href}>{children}</a>
       ),
   };
-  const text = turn.answer.replace(/\[(E\d+)\]/g, (_, id) => `[${id}](#ev-${id})`);
+  const text = turn.answer.replace(/\[(E\d+(?:\s*,\s*E\d+)*)\]/g, (_, ids) =>
+    ids
+      .split(/\s*,\s*/)
+      .map((id) => `[${id}](#ev-${id})`)
+      .join(""),
+  );
   return (
     <div className="space-y-4">
       <div className="copilot-answer rounded-2xl rounded-tl-sm border border-rule bg-card p-5 text-sm leading-relaxed shadow-sm">

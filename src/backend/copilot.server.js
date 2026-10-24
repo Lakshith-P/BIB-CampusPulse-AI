@@ -470,12 +470,17 @@ export async function askCopilot(db, user, { question, messages = [] }, today) {
       temperature: 0.2,
     });
   } catch (error) {
+    console.error(
+      "[copilot] model call failed",
+      error?.lastError?.statusCode ?? error?.statusCode,
+      error?.lastError?.message ?? error?.message,
+    );
     throw new Error(modelFailure(error));
   }
   const answer = result.text.trim();
   if (!answer) throw new Error("The Copilot could not produce an answer. Please rephrase.");
   // Only evidence the answer cites is shown first; anything else the model looked at follows.
-  const cited = new Set([...answer.matchAll(/\[(E\d+)\]/g)].map((m) => m[1]));
+  const cited = new Set(answer.match(/E\d+/g) ?? []);
   const ordered = [
     ...evidence.filter((e) => cited.has(e.id)),
     ...evidence.filter((e) => !cited.has(e.id)),
