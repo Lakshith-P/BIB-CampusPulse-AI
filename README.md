@@ -186,6 +186,7 @@ Teachers see **only the students assigned to them** (plus every student taking a
 | **Interventions**                    | Support actions with reason, action, priority, owner and follow-up date; status and outcome tracking.                                                                                                                                            |
 | **Predictions agent**                | Predicts every student in scope, compares with the last run, raises alerts and builds a watchlist; one click turns a recommended action into an intervention.                                                                                    |
 | **Analytics Copilot**                | Natural-language questions answered with evidence (see [AI features](#ai-features)).                                                                                                                                                             |
+| **Message students**                 | From Chats, write to all assigned students or chosen ones; each student receives it in their own private chat and can reply.                                                                                                                     |
 
 ### Administrator workspace
 
@@ -385,32 +386,35 @@ docs/                 Focused documentation (see below)
 
 ## Commands
 
-| Command                                       | Purpose                                                     |
-| --------------------------------------------- | ----------------------------------------------------------- |
-| `npm run dev`                                 | Development server                                          |
-| `npm run build` / `npm start`                 | Production build / run it with Node                         |
-| `npm test` / `npm run lint`                   | Tests / ESLint                                              |
-| `npm run db:migrate`                          | Apply pending migrations                                    |
-| `npm run db:check`                            | Verify the connection and schema                            |
-| `npm run db:create-admin -- <email> "<name>"` | Create the first administrator (or reset an admin password) |
-| `npm run db:set-role -- <email> <role>`       | Grant a role (`--revoke` to remove)                         |
-| `npm run db:seed-demo`                        | Development sample data only                                |
-| `npm run whatsapp:chat`                       | Try the WhatsApp assistant from the terminal                |
+| Command                                       | Purpose                                                                            |
+| --------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `npm run dev`                                 | Development server                                                                 |
+| `npm run build` / `npm start`                 | Production build / run it with Node                                                |
+| `npm test` / `npm run lint`                   | Tests / ESLint                                                                     |
+| `npm run db:migrate`                          | Apply pending migrations                                                           |
+| `npm run db:check`                            | Verify the connection and schema                                                   |
+| `npm run db:create-admin -- <email> "<name>"` | Create the first administrator (or reset an admin password)                        |
+| `npm run db:set-role -- <email> <role>`       | Grant a role (`--revoke` to remove)                                                |
+| `npm run db:seed-demo`                        | Development sample data only                                                       |
+| `npm run db:seed-predictions`                 | Development prediction inputs for the sample students (`-- --remove` deletes them) |
+| `npm run whatsapp:chat`                       | Try the WhatsApp assistant from the terminal                                       |
 
 ---
 
 ## Further documentation
 
-| Document                                                       | Contents                                     |
-| -------------------------------------------------------------- | -------------------------------------------- |
-| [docs/PROJECT_DOCUMENTATION.md](docs/PROJECT_DOCUMENTATION.md) | Every feature in depth, with how it works    |
-| [docs/architecture.md](docs/architecture.md)                   | Stack, request flow, sessions, rate limiting |
-| [docs/data-model.md](docs/data-model.md)                       | Database tables and the student record       |
-| [docs/server-functions.md](docs/server-functions.md)           | What the server exposes and who may call it  |
-| [docs/SUCCESS_SCORE.md](docs/SUCCESS_SCORE.md)                 | The Success Score in detail                  |
-| [docs/PREDICTIONS.md](docs/PREDICTIONS.md)                     | Predictions, agents and the learned models   |
-| [docs/WHATSAPP.md](docs/WHATSAPP.md)                           | WhatsApp assistant setup                     |
-| [docs/development.md](docs/development.md)                     | Working on the code                          |
+| Document                                                       | Contents                                                                             |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| [docs/PROJECT_DOCUMENTATION.md](docs/PROJECT_DOCUMENTATION.md) | Every feature in depth, with how it works                                            |
+| [docs/PORTAL_GUIDE.md](docs/PORTAL_GUIDE.md)                   | Every section of the portal, role by role                                            |
+| [docs/PREDICTIVE_RISK.md](docs/PREDICTIVE_RISK.md)             | Every risk, prediction and model metric, with formulas, worked examples and accuracy |
+| [docs/architecture.md](docs/architecture.md)                   | Stack, request flow, sessions, rate limiting                                         |
+| [docs/data-model.md](docs/data-model.md)                       | Database tables and the student record                                               |
+| [docs/server-functions.md](docs/server-functions.md)           | What the server exposes and who may call it                                          |
+| [docs/SUCCESS_SCORE.md](docs/SUCCESS_SCORE.md)                 | The Success Score in detail                                                          |
+| [docs/PREDICTIONS.md](docs/PREDICTIONS.md)                     | Predictions, agents and the learned models                                           |
+| [docs/WHATSAPP.md](docs/WHATSAPP.md)                           | WhatsApp assistant setup                                                             |
+| [docs/development.md](docs/development.md)                     | Working on the code                                                                  |
 
 ---
 
