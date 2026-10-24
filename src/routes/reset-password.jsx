@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useAccount } from "@/lib/account";
-import { changePassword } from "@/lib/auth.functions";
+import { requestPasswordChange } from "@/lib/auth.functions";
 export const Route = createFileRoute("/reset-password")({
   head: () => pageHead("Change Password", "Change your SLQG account password."),
   component: ChangePassword,
@@ -25,9 +25,11 @@ function ChangePassword() {
     }
     setBusy(true);
     try {
-      await changePassword({ data: { current: String(f.get("current")), next } });
+      await requestPasswordChange({ data: { current: String(f.get("current")), next } });
       form.reset();
-      setMsg("Password updated.");
+      setMsg(
+        "Request sent. Your password changes after an administrator approves it. Until then, keep using your current password.",
+      );
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "Password could not be updated.");
     } finally {
@@ -38,6 +40,9 @@ function ChangePassword() {
     <PublicLayout>
       <main className="mx-auto max-w-md px-5 py-16">
         <h1 className="text-3xl font-semibold">Change your password</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          A password change is sent to an administrator for approval before it takes effect.
+        </p>
         {loading ? null : user ? (
           <form className="mt-6 space-y-4" onSubmit={submit}>
             <label className="block text-sm">
@@ -80,7 +85,7 @@ function ChangePassword() {
               </p>
             )}
             <Button disabled={busy} className="w-full" type="submit">
-              Update password
+              Request password change
             </Button>
           </form>
         ) : (

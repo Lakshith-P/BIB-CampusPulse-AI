@@ -168,7 +168,12 @@ export const SEARCH_GROUPS = {
         ["Teachers", "/portal/teachers", "faculty workload mentors"],
         ["Assign students to teachers", "/portal/assign", "link mentor connect"],
         ["People and roles", "/portal/people", "give teacher admin access permissions accounts"],
-        ["Reset a password", "/portal/people", "forgot temporary login"],
+        ["Reset a password", "/portal/access", "forgot temporary login approve request"],
+        [
+          "Login credentials",
+          "/portal/access",
+          "register students teachers csv bulk email credentials password requests approve",
+        ],
       ],
     ],
     [
@@ -249,6 +254,7 @@ export const RAIL = {
   ],
   admin: [
     ["/portal", "Dashboard", "dashboard"],
+    ["/portal/access", "Login credentials", "access"],
     ["/portal/students", "Students", "students"],
     ["/portal/profile", "Profile", "profile"],
     ["/portal/results", "Academic", "academic"],
@@ -346,6 +352,7 @@ export const MENUS = {
         ["/portal/teachers", "Teachers"],
         ["/portal/assign", "Assign students"],
         ["/portal/people", "People and roles"],
+        ["/portal/access", "Login credentials"],
       ],
     },
     {

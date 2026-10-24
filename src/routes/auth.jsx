@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { pageHead } from "@/lib/metadata";
-import { requestPasswordReset, signIn, signUp } from "@/lib/auth.functions";
+import { requestPasswordReset, setForgottenPassword, signIn } from "@/lib/auth.functions";
 import { CaptchaField, useCaptcha } from "@/components/CaptchaField";
 import { useAccount } from "@/lib/account";
 import { LoginShowcase } from "@/components/auth/LoginShowcase";
@@ -21,8 +21,6 @@ export const Route = createFileRoute("/auth")({
     workspace: ["student", "faculty", "admin"].includes(search.workspace)
       ? search.workspace
       : undefined,
-    // set after an account is created: the email to fill in on the login page
-    created: typeof search.created === "string" ? search.created.slice(0, 254) : undefined,
   }),
   head: () => pageHead("Log In", "Sign in to SLQG with student, teacher or administrator access."),
   component: Auth,
@@ -58,17 +56,17 @@ const fieldBox =
 
 function Auth() {
   const [workspace, setWorkspace] = useState(Route.useSearch().workspace ?? "student");
-  const [mode, setMode] = useState("login");
   const [busy, setBusy] = useState(false);
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
   const [view, setView] = useState("login");
   const [sent, setSent] = useState("");
+  // "Forgot password": null = asking, "pending" = waiting for the administrator,
+  // "approved" = the person may choose the new password now
+  const [forgot, setForgot] = useState({ state: null, email: "" });
   const navigate = useNavigate();
   const { user, refresh } = useAccount();
   const { captcha, reload: loadCaptcha } = useCaptcha(setError);
-  const [created, setCreated] = useState(Route.useSearch().created ?? ""); // email of an account just created
-  const signingUp = mode === "signup";
 
   async function submit(e) {
     e.preventDefault();
@@ -82,28 +80,7 @@ function Auth() {
       captchaAnswer: String(form.get("captcha") ?? ""),
     };
     try {
-      if (signingUp) {
-        const created = await signUp({
-          data: { email, password, name: String(form.get("name") ?? ""), workspace, ...proof },
-        });
-        if (created.status === "pending") {
-          setSent(
-            "Your teacher access request has been sent. An administrator has to approve it first, and they have been notified. You can log in to the Teacher workspace once it is approved.",
-          );
-          setView("notice");
-          return;
-        }
-        // Account made: go to the login page, with the email filled in, instead of signing in.
-        await refresh(); // forget any earlier session, so the login form is what shows
-        setCreated(email);
-        setMode("login");
-        setShow(false);
-        await navigate({ to: "/auth", search: { workspace, created: email }, replace: true });
-        void loadCaptcha();
-        return;
-      } else {
-        await signIn({ data: { email, password, workspace, ...proof } });
-      }
+      await signIn({ data: { email, password, workspace, ...proof } });
       await refresh();
       await navigate({ to: "/portal" });
     } catch (err) {
@@ -119,20 +96,23 @@ function Auth() {
     setError("");
     setBusy(true);
     const form = new FormData(e.currentTarget);
-    const email = String(form.get("email"));
+    const proof = {
+      captchaToken: captcha?.token ?? "",
+      captchaAnswer: String(form.get("captcha") ?? ""),
+    };
     try {
-      const { delivery } = await requestPasswordReset({
-        data: {
-          email,
-          captchaToken: captcha?.token ?? "",
-          captchaAnswer: String(form.get("captcha") ?? ""),
-        },
-      });
-      setSent(
-        delivery === "email"
-          ? `If an account exists for ${email}, we have sent a link to choose a new password. It works once and expires in 30 minutes.`
-          : "Email is not set up on this server yet, so your request has been sent to the administrators. They will give you a temporary password; change it after logging in.",
-      );
+      if (forgot.state === "approved") {
+        const password = String(form.get("password") ?? "");
+        if (password !== form.get("confirm")) throw new Error("The two passwords do not match.");
+        await setForgottenPassword({ data: { email: forgot.email, password, ...proof } });
+        setSent("Your new password is saved. Log in with it now.");
+        setForgot({ state: null, email: "" });
+      } else {
+        const email = String(form.get("email")).trim().toLowerCase();
+        const { state } = await requestPasswordReset({ data: { email, ...proof } });
+        setForgot({ state, email });
+        void loadCaptcha(); // the next step needs a fresh one
+      }
     } catch (err) {
       setError(friendly(err));
       void loadCaptcha();
@@ -143,6 +123,7 @@ function Auth() {
 
   const backToLogin = () => {
     setView("login");
+    setForgot({ state: null, email: "" });
     setSent("");
     setError("");
     void loadCaptcha();
@@ -208,29 +189,14 @@ function Auth() {
                 Open my workspace <ArrowRight />
               </Link>
             </div>
-          ) : view === "notice" ? (
-            <div className="space-y-[clamp(0.5rem,2vh,1rem)]">
-              <h1 className="font-display text-2xl font-semibold">Request sent</h1>
-              <p className="rounded-xl bg-muted/60 p-3 text-sm">{sent}</p>
-              <button
-                type="button"
-                onClick={() => {
-                  setView("login");
-                  setMode("login");
-                  setSent("");
-                  void loadCaptcha();
-                }}
-                className="flex h-[clamp(2.5rem,6vh,3.5rem)] w-full items-center justify-center rounded-xl bg-primary text-base font-semibold text-primary-foreground"
-              >
-                Back to log in
-              </button>
-            </div>
           ) : view === "forgot" ? (
             <form onSubmit={submitForgot} className="space-y-[clamp(0.35rem,1.4vh,1rem)]">
-              <h1 className="font-display text-2xl font-semibold">Reset password</h1>
+              <h1 className="font-display text-2xl font-semibold">Forgot password</h1>
               {sent ? (
                 <>
-                  <p className="rounded-xl bg-muted/60 p-3 text-sm">{sent}</p>
+                  <p role="status" className="rounded-xl bg-muted/60 p-3 text-sm">
+                    {sent}
+                  </p>
                   <button
                     type="button"
                     onClick={backToLogin}
@@ -239,10 +205,72 @@ function Auth() {
                     Back to log in
                   </button>
                 </>
+              ) : forgot.state === "pending" ? (
+                <>
+                  <p role="status" className="rounded-xl bg-muted/60 p-3 text-sm">
+                    Your request for <b>{forgot.email}</b> is waiting for the administrator to
+                    approve it. Come back to this page later, enter your email again, and you can
+                    set your new password.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={backToLogin}
+                    className="flex h-[clamp(2.5rem,6vh,3.5rem)] w-full items-center justify-center rounded-xl bg-primary text-base font-semibold text-primary-foreground"
+                  >
+                    Back to log in
+                  </button>
+                </>
+              ) : forgot.state === "approved" ? (
+                <>
+                  <p role="status" className="rounded-xl bg-primary/10 p-3 text-sm text-primary">
+                    The administrator approved your request. Choose a new password for{" "}
+                    <b>{forgot.email}</b>.
+                  </p>
+                  <input
+                    name="password"
+                    type="password"
+                    required
+                    minLength={8}
+                    maxLength={72}
+                    autoComplete="new-password"
+                    placeholder="New password (at least 8 characters)"
+                    aria-label="New password"
+                    className={fieldBox}
+                  />
+                  <input
+                    name="confirm"
+                    type="password"
+                    required
+                    minLength={8}
+                    maxLength={72}
+                    autoComplete="new-password"
+                    placeholder="Confirm new password"
+                    aria-label="Confirm new password"
+                    className={fieldBox}
+                  />
+                  {captchaBox}
+                  {error && (
+                    <p
+                      role="alert"
+                      className="rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive"
+                    >
+                      {error}
+                    </p>
+                  )}
+                  <button
+                    disabled={busy || !captcha}
+                    type="submit"
+                    className="flex h-[clamp(2.5rem,6vh,3.5rem)] w-full items-center justify-center gap-2 rounded-xl bg-primary text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+                  >
+                    {busy && <LoaderCircle className="animate-spin" />}
+                    Save new password
+                  </button>
+                </>
               ) : (
                 <>
                   <p className="text-sm text-muted-foreground">
-                    Enter your college email and we will help you choose a new password.
+                    Enter your college email. Your request goes to the administrator. Once it is
+                    approved, come back here, enter your email again and set a new password.
                   </p>
                   <div className="relative">
                     <input
@@ -271,7 +299,7 @@ function Auth() {
                     className="flex h-[clamp(2.5rem,6vh,3.5rem)] w-full items-center justify-center gap-2 rounded-xl bg-primary text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
                   >
                     {busy && <LoaderCircle className="animate-spin" />}
-                    Send reset link
+                    Ask the administrator
                   </button>
                   <button
                     type="button"
@@ -286,9 +314,7 @@ function Auth() {
           ) : (
             <form onSubmit={submit} className="space-y-[clamp(0.35rem,1.4vh,1rem)]">
               <div className="flex flex-wrap items-center gap-4">
-                <h1 className="font-display text-2xl font-semibold">
-                  {signingUp ? "Sign up" : "Log in"}
-                </h1>
+                <h1 className="font-display text-2xl font-semibold">Log in</h1>
                 <label className="min-w-44 flex-1">
                   <span className="sr-only">Workspace</span>
                   <select
@@ -308,33 +334,12 @@ function Auth() {
                 </label>
               </div>
 
-              {signingUp && (
-                <input
-                  name="name"
-                  required
-                  maxLength={100}
-                  autoComplete="name"
-                  placeholder="Full name"
-                  aria-label="Full name"
-                  className={fieldBox}
-                />
-              )}
-              {created && !signingUp && (
-                <p
-                  role="status"
-                  className="rounded-xl bg-primary/10 px-3 py-2 text-sm text-primary"
-                >
-                  Your account was created. Log in with your email and password.
-                </p>
-              )}
               <div className="relative">
                 <input
                   name="email"
                   type="email"
                   required
                   autoComplete="email"
-                  defaultValue={signingUp ? undefined : created}
-                  key={`${signingUp}-${created}`}
                   placeholder="User ID (your college email)"
                   aria-label="User ID, your college email"
                   className={`${fieldBox} pr-14`}
@@ -348,7 +353,7 @@ function Auth() {
                   required
                   minLength={8}
                   maxLength={72}
-                  autoComplete={signingUp ? "new-password" : "current-password"}
+                  autoComplete="current-password"
                   placeholder="Password"
                   aria-label="Password"
                   className={`${fieldBox} pr-14`}
@@ -379,7 +384,7 @@ function Auth() {
                 className="flex h-[clamp(2.5rem,6vh,3.5rem)] w-full items-center justify-center gap-2 rounded-xl bg-primary text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
               >
                 {busy && <LoaderCircle className="animate-spin" />}
-                {signingUp ? "Create account" : "Login"}
+                Login
               </button>
 
               <div className="relative space-y-1.5 text-center">
@@ -396,18 +401,7 @@ function Auth() {
                   Forgot your password?
                 </button>
                 <p className="text-sm text-muted-foreground">
-                  {signingUp ? "Already registered?" : "New here?"}{" "}
-                  <button
-                    type="button"
-                    className="font-semibold text-primary hover:underline"
-                    onClick={() => {
-                      setMode(signingUp ? "login" : "signup");
-                      setCreated("");
-                      setError("");
-                    }}
-                  >
-                    {signingUp ? "Log in" : "Create an account"}
-                  </button>
+                  Accounts are created by your administrator, who emails you your login.
                 </p>
               </div>
             </form>

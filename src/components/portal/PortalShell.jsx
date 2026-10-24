@@ -28,6 +28,7 @@ import {
   UserRound,
   Users,
   KeyRound,
+  LogIn,
   Menu,
   X,
   ChevronDown,
@@ -106,6 +107,7 @@ export const NAV = {
     { to: "/portal/teachers", label: "Teachers", icon: UserCheck },
     { to: "/portal/assign", label: "Assign students", icon: Link2 },
     { to: "/portal/people", label: "People & roles", icon: KeyRound },
+    { to: "/portal/access", label: "Login credentials", icon: LogIn },
     { to: "/portal/records", label: "Student records", icon: FolderOpen },
     { to: "/portal/interventions", label: "Interventions", icon: ClipboardList },
     { to: "/portal/predictions", label: "Predictions", icon: Gauge },
@@ -136,6 +138,7 @@ const RAIL_ICON = {
   support: ClipboardList,
   predictions: Gauge,
   people: KeyRound,
+  access: LogIn,
 };
 
 function initials(name) {
