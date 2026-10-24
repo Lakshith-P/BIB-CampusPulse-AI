@@ -35,11 +35,9 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/widgets";
 import { PageTitle, RoleGate } from "@/components/portal/PortalShell";
 import { PRODUCT } from "@/components/portal/StudentShell";
-import { MyRiskIdentification } from "@/components/portal/RiskIdentification";
-import { ScoreInsights } from "@/components/portal/ScoreInsights";
 import { liveAssignments, liveNotifications } from "@/lib/live-profile";
 import { classesNeededForTarget, componentScores, recommendations } from "@/lib/scoring";
-import { PredictionCoach, PredictionPanel } from "@/components/portal/PredictionPanel";
+import { PredictiveRisk } from "@/components/portal/PredictiveRisk";
 import { useCampus, useCohortStanding } from "@/lib/use-campus";
 import { useLeetcodeProfile } from "@/lib/use-leetcode";
 import { useDrives, useTimetable } from "@/lib/use-platform";
@@ -1468,38 +1466,16 @@ export function StudentDashboard() {
 /** "Predictive Risk & AI": the rule-based risk flags, what needs attention, and what drives the
  * Success Score — the detail behind the triage status on the dashboard. */
 export function StudentInsightsPage() {
-  const { myRow, today } = useCampus();
+  const { myRow } = useCampus();
   return (
     <RoleGate allow={["student"]}>
-      <PageTitle
-        title="Predictive Risk & AI"
-        sub="Predicted placement and results, your risk level, what to do about it, and what is driving your Success Score."
-      />
       {!myRow ? (
         <EmptyState
           title="No student record yet"
           hint="These insights appear once your record is linked."
         />
       ) : (
-        <div className="space-y-5">
-          <div className={`${card} p-4`}>
-            <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-[#00205f]">
-              Needs your attention
-            </h2>
-            <AttentionList s={myRow.s} today={today} score={myRow.score} />
-          </div>
-          <div className="pl space-y-5">
-            <div>
-              <h2 className="mb-2 text-xs font-bold uppercase tracking-wider text-[#00205f]">
-                Predictions, risk and recommended actions
-              </h2>
-              <PredictionPanel />
-            </div>
-            <PredictionCoach />
-          </div>
-          <MyRiskIdentification s={myRow.s} />
-          <ScoreInsights s={myRow.s} />
-        </div>
+        <PredictiveRisk />
       )}
     </RoleGate>
   );

@@ -544,7 +544,7 @@ export function PredictionInputsEditor({ studentId }) {
 // ------------------------------------------------------------------ student coach
 
 /** The student's agent: market-aware ranking of what to improve, with a plan that tracks progress. */
-export function PredictionCoach() {
+export function PredictionCoach({ className }) {
   const [role, setRole] = useState("");
   const qc = useQueryClient();
   const queryKey = ["agent-plans", "me", "coach"];
@@ -566,7 +566,7 @@ export function PredictionCoach() {
   };
 
   return (
-    <section className={card} aria-label="Prediction coach">
+    <section className={className ?? card} aria-label="Prediction coach">
       <div>
         <p className={label}>
           <Sparkles className="mr-1 inline size-3.5" /> Prediction coach
