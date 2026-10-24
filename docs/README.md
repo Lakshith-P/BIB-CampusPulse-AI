@@ -9,6 +9,8 @@ For every student, the platform answers three questions: who needs support, why,
 | I want to…                                           | Read                                              |
 | ---------------------------------------------------- | ------------------------------------------------- |
 | See every feature and how it works                   | [Project documentation](PROJECT_DOCUMENTATION.md) |
+| Use every section of the portal, role by role        | [Portal guide](PORTAL_GUIDE.md)                   |
+| Understand every risk and prediction metric          | [Predictive risk reference](PREDICTIVE_RISK.md)   |
 | Install, configure, run or deploy the app            | [Project README](../README.md)                    |
 | Understand how the system is put together            | [Architecture](architecture.md)                   |
 | Explain the score and segments (judges' note)        | [Success Score note](success-score-note.md)       |
@@ -35,7 +37,7 @@ The website assistant ("Pluto") appears on the public pages. It has no access to
 | `faculty` | Records of students assigned to them           | Interventions for those students; feedback notes on those records |
 | `admin`   | Every record, account, message and audit entry | Student records, role grants, teacher assignments                 |
 
-New accounts are always created as `student`. Staff roles are granted by an administrator (or by the `db:set-role` script for the first one).
+There is no self sign-up. An administrator registers every student and teacher under **Login credentials**, and the system emails a generated password. The first administrator is created with `npm run db:create-admin`. Staff roles can also be granted under **People & roles** or with `db:set-role`.
 
 ### Scoring in one table
 

@@ -4,6 +4,8 @@
 
 This document explains **every feature, who uses it, and how it works**. It complements the focused notes in this folder ([architecture](architecture.md), [data model](data-model.md), [server functions](server-functions.md), [Success Score](SUCCESS_SCORE.md), [predictions](PREDICTIONS.md), [WhatsApp](WHATSAPP.md)) and the install guide in the [project README](../README.md).
 
+> More detail: [Portal guide](PORTAL_GUIDE.md) (every section, role by role) and [Predictive risk reference](PREDICTIVE_RISK.md) (every metric, formula and accuracy figure).
+
 ## Contents
 
 1. [The product at a glance](#1-the-product-at-a-glance)
@@ -32,7 +34,7 @@ For every student the platform answers three questions: **Who needs help? Why? W
 | Public website    | `/`, `/solution`, `/benefits`, `/privacy`, `/contact` | none                    | no       |
 | Role-based portal | `/portal/*`                                           | live PostgreSQL records | required |
 
-There is **no demo mode** in the portal: every page runs on real accounts and real database rows. The first administrators come from `ADMIN_EMAILS` or `npm run db:set-role`.
+There is **no demo mode** in the portal: every page runs on real accounts and real database rows. There is no public sign-up: the first administrator comes from `npm run db:create-admin`, and an administrator registers everyone else under **Login credentials**.
 
 ### The seven data sources
 
@@ -94,7 +96,7 @@ Key rules (from `AGENTS.md`):
 - **Missing is not zero.** Components without data are left out and weights re-scaled.
 - **Plain JavaScript.** `src/routeTree.gen.ts` is the only TypeScript file and is generated — never hand-edit it.
 
-Cross-cutting protections: bcrypt cost 12, httpOnly + SameSite cookie (Secure in production), in-memory rate limits on sign-up/sign-in/password/chat/feedback/Copilot, same-origin and size checks on public endpoints, uploaded files stored in PostgreSQL (documents/images only, ≤3 MB, never served inline).
+Cross-cutting protections: bcrypt cost 12, httpOnly + SameSite cookie (Secure in production), in-memory rate limits on sign-in/registration/password/chat/feedback/Copilot, same-origin and size checks on public endpoints, uploaded files stored in PostgreSQL (documents/images only, ≤3 MB, never served inline).
 
 ---
 
@@ -115,10 +117,10 @@ The public **Pluto** assistant (floating button) answers questions about the pro
 
 ## 4. Accounts, sign-in and roles
 
-- **Sign-up** creates a `student` account (bcrypt password) and an empty student record so it appears in administrator lists immediately. A **self-hosted text captcha** (`captcha.server.js`: distorted image, signed single-use token holding only a keyed hash of the answer, 5-minute life) protects sign-up and sign-in.
-- **Administrators** come from `ADMIN_EMAILS` (or the first admin sign-up when none exists, or `npm run db:set-role`). **Teachers** who sign up wait for approval unless their email is in `TEACHER_EMAILS`; administrators approve and grant roles under **People & roles**.
+- **No self sign-up.** An administrator registers each student and teacher under **Login credentials** (one by one, or a CSV of up to 500). The system generates a 12-character password, creates the role (a student also gets a student record; a teacher gets no student role or record) and emails the login. If email is not set up the password is shown once to the administrator, with a download. A **self-hosted text captcha** (`captcha.server.js`, case-sensitive, 6 characters, single-use signed token holding only a keyed hash, 5-minute life) protects sign-in and forgot-password.
+- **The first administrator** is created with `npm run db:create-admin -- email "Name"` (the password is printed once). More administrators and teachers are granted under **People & roles** or registered under **Login credentials**.
 - **Sign-in** returns the same message for unknown email and wrong password. The session is a 12-hour JWT in an httpOnly cookie; a freshly loaded page clears the cookie first, so sessions do not silently outlive a reload.
-- **Forgot password:** emails a single-use link (only a SHA-256 hash is stored, 30-minute life) when `SMTP_URL`+`APP_URL` are set; otherwise it becomes a note in administrators' Messages, and an administrator can issue a temporary password (shown once, never stored readable).
+- **Forgot password** is an administrator-approved request, with no email needed: the person asks on the login page; every administrator is notified; the administrator approves under **Login credentials, Password requests**; the person returns to the same screen, enters their email and sets a new password, which is saved to the database. The approval works once and for 24 hours, and the reply is identical for emails with no account. **Changing a password** while signed in is also a request that takes effect when an administrator approves.
 - **Login frequency** is recorded in `login_events` and shown on the LMS page.
 - **Animated login page** with a product showcase; role is chosen by workspace but **selecting a role never grants access** — the database does.
 
@@ -142,7 +144,7 @@ Subject marks, SGPA/CGPA computed **from the marks already on the record** (`res
 
 ### 5.3 Attendance Planner (`/portal/attendance`)
 
-Targets of 75/80/85/90%, **classes still to attend** and **classes you can miss**, what-if projections with red/amber warnings (each gives a reason and an action), and a timetable-aware plan (`attendance-planner.js`, `timetable-plan.js`). Teachers mark attendance class by class; each save updates the subject's held/attended totals.
+Targets of 75/80/85/90%, **classes still to attend** and **classes you can miss**, an **Attend or skip** table with advice per subject (attend every class, attend with little room, safe to skip some) plus this week's classes from the timetable and the effect of skipping the next class, what-if projections with red/amber warnings (each gives a reason and an action), and a timetable-aware plan (`attendance-planner.js`, `timetable-plan.js`). Teachers mark attendance class by class for their assigned students; each save updates the subject's held/attended totals.
 
 ### 5.4 Predictive Risk & AI (`/portal/insights`)
 
@@ -191,7 +193,7 @@ Questions (and what a strong answer covers) are written **server-side from the s
 
 - **Engagement:** events, clubs, hackathons and certifications with eligibility, how to apply and deadline; the student records status and a **teacher verifies** completion — only verified activities count towards the score.
 - **Feedback centre:** weekly satisfaction ratings, notes to the mentor, **confidential complaints** readable only by the author and administrators (notifications never include complaint text). Complaints have severity, assignment and a **tamper-evident audit trail** ([8.4](#84-tamper-evident-complaint-audit-chain)).
-- **Chats:** auto-created **section rooms** (branch|semester|section|year) and **private chats** with a teacher that the teacher must approve; file attachments allowed.
+- **Chats:** auto-created **section rooms** (branch|semester|section|year) and **private chats** with a teacher that the teacher must approve; teachers and administrators can attach files, and can **message all their students at once, or chosen students**, from "Message students" (each student gets it in their own private chat and can answer).
 - **Notifications:** a bell with unread count; rules for attendance, deadlines, marks, backlogs, risk band, follow-ups, contests; each situation stored **once** by a stable key.
 - **Announcements:** placement, event, notice and poster posts with an auto-advancing strip at the top of staff workspaces.
 - **Profile:** contact fields, bio, LinkedIn/GitHub, resume and target roles, **LeetCode username**.
@@ -224,16 +226,17 @@ Teachers see **only students assigned to them**. Shell: top menus (Academics, Su
 
 Everything a teacher has, across **all** students, plus:
 
-| Area                               | Purpose                                                                                                                                                                                   |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **All students / Student records** | Full list, create/edit records, **CSV import**, data-quality checks.                                                                                                                      |
-| **Teachers / Assign students**     | See teacher load and link each student to a mentor.                                                                                                                                       |
-| **People & roles**                 | Grant or remove `faculty`/`admin`, approve teachers, reset passwords (temporary password shown once). The last administrator cannot be removed and you cannot remove your own admin role. |
-| **Admin analytics**                | Branch/year/cohort/band filters drive every chart; click a band or risk count to list students; coverage per source and data-quality alerts; intervention progress.                       |
-| **Messages**                       | Contact-form messages and password-reset requests.                                                                                                                                        |
-| **Complaints**                     | Review confidential complaints, set severity, assign, resolve with evidence; verify chain integrity.                                                                                      |
-| **Audit log**                      | Every insert/update of a student record with actor and time.                                                                                                                              |
-| **Predictions**                    | Train the learned models from live data (every run kept in `ml_models`).                                                                                                                  |
+| Area                               | Purpose                                                                                                                                                                                                                                          |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **All students / Student records** | Full list, create/edit records, **CSV import**, data-quality checks.                                                                                                                                                                             |
+| **Teachers / Assign students**     | See teacher load and link each student to a mentor.                                                                                                                                                                                              |
+| **Login credentials**              | Register students and teachers (manual form or CSV with preview), generated passwords emailed; **Password requests** tab to approve or reject forgot-password and password-change requests (pending count on the tab, notification in the bell). |
+| **People & roles**                 | Grant or remove `faculty`/`admin`, delete accounts, reset passwords (temporary password shown once). Lists teachers and administrators, not students. The last administrator cannot be removed and you cannot remove your own admin role.        |
+| **Admin analytics**                | Branch/year/cohort/band filters drive every chart; click a band or risk count to list students; coverage per source and data-quality alerts; intervention progress.                                                                              |
+| **Messages**                       | Contact-form messages and password-reset requests.                                                                                                                                                                                               |
+| **Complaints**                     | Review confidential complaints, set severity, assign, resolve with evidence; verify chain integrity.                                                                                                                                             |
+| **Audit log**                      | Every insert/update of a student record with actor and time.                                                                                                                                                                                     |
+| **Predictions**                    | Train the learned models from live data (every run kept in `ml_models`).                                                                                                                                                                         |
 
 ---
 
@@ -249,7 +252,7 @@ Weights (`src/lib/types.js`): Academics 30, Attendance 20, LMS 15, Engagement 10
 
 ### 8.3 Predictions and learned models
 
-Fixed, published weights for placement/result predictions plus three cross-validated ridge regressions (student-grouped 5-fold). Accuracy, precision, recall and F1 are measured on the _decisions_ made from each number and compared with simple baselines. Full detail and caveats: [PREDICTIONS.md](PREDICTIONS.md).
+Fixed, published weights for placement/result predictions plus three cross-validated ridge regressions (student-grouped 5-fold). Accuracy, precision, recall and F1 are measured on the _decisions_ made from each number and compared with simple baselines. Full detail and caveats: [PREDICTIVE_RISK.md](PREDICTIVE_RISK.md) (every formula, threshold and accuracy figure) and [PREDICTIONS.md](PREDICTIONS.md).
 
 ### 8.4 Tamper-evident complaint audit chain
 
@@ -295,7 +298,7 @@ For teachers and administrators (`/portal/copilot`, in the rail just below **Aca
 
 - **WhatsApp (Twilio):** signed webhook `/api/public/whatsapp`; `login` flow in chat (5 wrong passwords lock a number for 15 minutes; chat lasts 8 hours); commands `score`, `attendance`, `marks`, `timetable`, `assignments` (students) and `students`, `risk`, `low`, `student S-101` (staff). Same data and permissions as the site. See [WHATSAPP.md](WHATSAPP.md).
 - **LeetCode:** public GraphQL, stored per student, refreshed daily.
-- **Email (SMTP):** password reset links.
+- **Email (SMTP):** the login emailed to each newly registered person (optional).
 - **Web research (roadmap.sh, Tavily, Wikipedia):** for the prediction coach.
 - **Vercel Cron:** `vercel.json` daily job for LeetCode.
 
@@ -330,17 +333,17 @@ Student data is a validated `jsonb` document (`student_records.record`, schema i
 
 ### Environment variables
 
-| Variable                                               | Purpose                                                     |
-| ------------------------------------------------------ | ----------------------------------------------------------- |
-| `DATABASE_URL` (+ `DATABASE_SSL`, `DATABASE_POOL_MAX`) | PostgreSQL (use the pooled string on serverless)            |
-| `JWT_SECRET`                                           | 32+ random characters for session tokens                    |
-| `ADMIN_EMAILS` / `TEACHER_EMAILS`                      | first admins / auto-approved teachers                       |
-| `SMTP_URL`, `APP_URL`, `MAIL_FROM`                     | password-reset email                                        |
-| `LLM_API_KEY`, `LLM_MODEL`, `LLM_BASE_URL`             | main AI model (default Gemini via OpenAI-compatible API)    |
-| `GROK_API_KEY`, `GROK_MODEL`, `GROK_BASE_URL`          | Copilot fallback (defaults `grok-4`, `https://api.x.ai/v1`) |
-| `HF_API_KEY`, `TAVILY_API_KEY`                         | optional model provider / web research                      |
-| `TWILIO_AUTH_TOKEN`, `TWILIO_WEBHOOK_URL`              | WhatsApp webhook                                            |
-| `CRON_SECRET`                                          | authorises the LeetCode cron route                          |
+| Variable                                               | Purpose                                                                   |
+| ------------------------------------------------------ | ------------------------------------------------------------------------- |
+| `DATABASE_URL` (+ `DATABASE_SSL`, `DATABASE_POOL_MAX`) | PostgreSQL (use the pooled string on serverless)                          |
+| `JWT_SECRET`                                           | 32+ random characters for session tokens                                  |
+| `SMTP_URL`-free sign-up                                | no sign-up: create the first administrator with `npm run db:create-admin` |
+| `SMTP_URL`, `APP_URL`, `MAIL_FROM`                     | email each new person their login (optional)                              |
+| `LLM_API_KEY`, `LLM_MODEL`, `LLM_BASE_URL`             | main AI model (default Gemini via OpenAI-compatible API)                  |
+| `GROK_API_KEY`, `GROK_MODEL`, `GROK_BASE_URL`          | Copilot fallback (defaults `grok-4`, `https://api.x.ai/v1`)               |
+| `HF_API_KEY`, `TAVILY_API_KEY`                         | optional model provider / web research                                    |
+| `TWILIO_AUTH_TOKEN`, `TWILIO_WEBHOOK_URL`              | WhatsApp webhook                                                          |
+| `CRON_SECRET`                                          | authorises the LeetCode cron route                                        |
 
 `.env.example` documents each. **Never commit real values.** Environment variables must also be set on the host (e.g. Vercel) — a local `.env` is not deployed.
 

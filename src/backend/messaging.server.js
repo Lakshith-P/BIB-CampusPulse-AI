@@ -1,4 +1,5 @@
 import { isAdmin, isFaculty, ownStudent } from "./access.server.js";
+import { randomUUID } from "node:crypto";
 import { decodeFile, encodeFile } from "./files.server.js";
 
 const sectionKey = (record) =>
@@ -198,4 +199,80 @@ export async function downloadChatFile(db, user, { type, id, messageId }) {
   );
   if (!rows[0]?.file_data) throw new Error("That file is not available.");
   return encodeFile(rows[0].file_name, rows[0].file_type, rows[0].file_data);
+}
+
+/** Most people one message can go to, and the most file bytes copied across all of them. */
+export const MAX_RECIPIENTS = 500;
+const MAX_BROADCAST_BYTES = 30 * 1024 * 1024;
+
+/**
+ * A teacher writes to students: to everyone assigned to them (`all`), or to chosen students
+ * (`studentIds`, which can be just one). Each student gets it in their own private chat with the
+ * teacher, which opens if it was not open yet, so the student can answer there. Students who are
+ * not assigned to the teacher are skipped; an administrator can write to any student with an account.
+ * It is written as a few set-based statements, not one round trip per student.
+ */
+export async function messageStudents(db, user, { all = false, studentIds = [], body, file }) {
+  requireChatRole(user);
+  if (!isFaculty(user) && !isAdmin(user))
+    throw new Error("Only teachers and administrators can message students.");
+  const text = (body ?? "").trim();
+  if (!text && !file) throw new Error("Write a message or attach a file.");
+  if (!all && !studentIds.length) throw new Error("Choose who to message.");
+  const upload = file ? decodeFile(file) : null;
+
+  // who can be reached: assigned to this teacher (anyone, for an administrator), and with an account
+  const reach = await db.query(
+    `SELECT sr.id, sr.owner_id, COALESCE(sr.faculty_id, $1::uuid) AS teacher_id
+       FROM student_records sr
+      WHERE sr.owner_id IS NOT NULL
+        AND ($2::boolean OR sr.faculty_id = $1)
+        AND ($3::boolean OR sr.id = ANY($4::text[]))`,
+    [user.id, isAdmin(user), all, studentIds],
+  );
+  const targets = reach.rows;
+  if (!targets.length) throw new Error("None of those students can be messaged by you.");
+  if (targets.length > MAX_RECIPIENTS)
+    throw new Error(`Message at most ${MAX_RECIPIENTS} students at a time.`);
+  if (upload && upload.buffer.length * targets.length > MAX_BROADCAST_BYTES)
+    throw new Error(
+      "That file is too large to send to this many students at once. Send it to fewer students.",
+    );
+
+  const ids = targets.map((t) => t.id);
+  const teachers = targets.map((t) => t.teacher_id);
+  // open (or reopen) each private chat; a rejected or pending one becomes approved
+  const chats = await db.query(
+    `INSERT INTO private_chat_requests(student_id, teacher_id, status)
+     SELECT s, t, 'approved' FROM unnest($1::text[], $2::uuid[]) AS x(s, t)
+     ON CONFLICT (student_id, teacher_id) DO UPDATE SET status = 'approved', updated_at = now()
+     RETURNING id, student_id`,
+    [ids, teachers],
+  );
+  await db.query(
+    `INSERT INTO private_chat_messages(request_id, sender_id, body, file_name, file_type, file_data)
+     SELECT id, $1, $2, $3, $4, $5 FROM unnest($6::uuid[]) AS id`,
+    [
+      user.id,
+      text,
+      upload?.name ?? "",
+      upload?.type ?? "",
+      upload?.buffer ?? null,
+      chats.rows.map((c) => c.id),
+    ],
+  );
+  const batch = randomUUID();
+  const sender = user.displayName || user.email;
+  await db.query(
+    `INSERT INTO notifications(user_id, area, priority, title, body, link, dedupe_key)
+     SELECT owner, 'Chat', 'medium', $2, $3, '/portal/chat', $4 FROM unnest($1::uuid[]) AS owner
+     ON CONFLICT (user_id, dedupe_key) DO NOTHING`,
+    [
+      targets.map((t) => t.owner_id),
+      `New message from ${sender}`,
+      (text || upload?.name || "").slice(0, 140),
+      `message:${batch}`,
+    ],
+  );
+  return { sent: chats.rows.length, skipped: all ? 0 : studentIds.length - targets.length };
 }
